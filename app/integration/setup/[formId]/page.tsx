@@ -1,6 +1,4 @@
 import { IntegrationForm } from '@/components/integration-form'
-import { NotFound } from '@/components/not-found'
-import { mockFormConfigs } from '@/lib/mock-data'
 
 interface Props {
   params: Promise<{ formId: string }>
@@ -11,13 +9,6 @@ export default async function IntegrationSetupPage({ params, searchParams }: Pro
   const { formId } = await params
   const search = await searchParams
   const userId = search.userId as string
-
-  // Mock fetching form configuration
-  const formConfig = mockFormConfigs.find(config => config.id === formId)
-
-  if (!formConfig) {
-    return <NotFound />
-  }
 
   if (!userId) {
     return (
@@ -36,7 +27,7 @@ export default async function IntegrationSetupPage({ params, searchParams }: Pro
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
         <IntegrationForm 
-          formConfig={formConfig}
+          formId={formId}
           userId={userId}
         />
       </div>

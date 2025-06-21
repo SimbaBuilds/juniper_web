@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -13,24 +13,85 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Eye, EyeOff, HelpCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { FormConfig } from '@/lib/mock-data'
+import { ConfigFormData } from '@/lib/mock-data'
+import { createClient } from '@/lib/utils/supabase/client'
 
 interface IntegrationFormProps {
-  formConfig: FormConfig
+  formId: string
   userId: string
 }
 
-export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
+export function IntegrationForm({ formId, userId }: IntegrationFormProps) {
+  const [configForm, setConfigForm] = useState<ConfigFormData | null>(null)
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({})
+  const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const supabase = createClient()
+
+  const fetchConfigForm = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch config form from database
+      const { data: configFormData, error: configError } = await supabase
+        .from('config_forms')
+        .select('*')
+        .eq('id', formId)
+        .single()
+
+      if (configError || !configFormData?.json) {
+        // Fallback to specific form ID when original form is not found
+        console.warn(`Form ${formId} not found, trying fallback form...`)
+        
+        const { data: fallbackFormData, error: fallbackError } = await supabase
+          .from('config_forms')
+          .select('*')
+          .eq('id', '404b06d2-ea98-4ed1-b4b5-01c7dfb8e99a')
+          .single()
+
+        if (fallbackError || !fallbackFormData?.json) {
+          throw new Error(`Neither form ${formId} nor fallback form found`)
+        }
+
+        const fallbackConfig: ConfigFormData = {
+          ...fallbackFormData.json,
+          setup_instructions: fallbackFormData.setup_instructions || ''
+        }
+        
+        setConfigForm(fallbackConfig)
+        return
+      }
+
+      const formConfig: ConfigFormData = {
+        ...configFormData.json,
+        setup_instructions: configFormData.setup_instructions || ''
+      }
+      
+      setConfigForm(formConfig)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load config form')
+      console.error('Error fetching config form:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [formId, supabase])
+
+  useEffect(() => {
+    fetchConfigForm()
+  }, [fetchConfigForm])
+
   // Dynamic schema generation based on form fields
   const createSchema = () => {
+    if (!configForm) return z.object({})
+    
     const schemaObj: Record<string, z.ZodTypeAny> = {}
     
-    formConfig.form_fields.forEach(field => {
+    configForm.form_fields.forEach((field) => {
       if (field.field_type === 'number') {
         schemaObj[field.field_name] = field.required 
           ? z.coerce.number().min(1, `${field.label} is required`)
@@ -58,11 +119,22 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: formConfig.form_fields.reduce((acc, field) => {
+    defaultValues: configForm?.form_fields.reduce((acc: Record<string, string>, field) => {
       acc[field.field_name as keyof FormData] = field.default_value || ''
       return acc
-    }, {} as FormData)
+    }, {} as FormData) || {}
   })
+
+  // Re-initialize form when configForm changes
+  useEffect(() => {
+    if (configForm) {
+      const defaultValues = configForm.form_fields.reduce((acc: Record<string, string>, field) => {
+        acc[field.field_name as keyof FormData] = field.default_value || ''
+        return acc
+      }, {} as FormData)
+      form.reset(defaultValues)
+    }
+  }, [configForm, form])
 
   const togglePasswordVisibility = (fieldName: string) => {
     setShowPasswords(prev => ({
@@ -71,37 +143,173 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
     }))
   }
 
+  // Hybrid mapping system from dynamic example
+  const mapFormDataToIntegrationSchema = (
+    formData: Record<string, unknown>, 
+    configForm: ConfigFormData
+  ): Record<string, unknown> => {
+    const mappedData: Record<string, unknown> = {
+      user_id: userId,
+      service_id: formId, // Using formId as service_id for now
+      configuration: {},
+      status: 'auth_ready'
+    }
+
+    // Use hybrid mapping instructions if available
+    const mappingInstructions = configForm.mapping_instructions || {}
+
+    Object.entries(formData).forEach(([fieldName, value]) => {
+      const mapping = mappingInstructions[fieldName]
+      
+      if (mapping) {
+        if (mapping.startsWith('configuration.')) {
+          // Map to configuration JSON
+          const configKey = mapping.replace('configuration.', '')
+          ;(mappedData.configuration as Record<string, unknown>)[configKey] = value
+        } else {
+          // Map to direct database column
+          mappedData[mapping] = value
+        }
+      } else {
+        // Enhanced fallback mapping based on field names
+        switch (fieldName) {
+          case 'client_id':
+            mappedData.client_id = value
+            break
+          case 'client_secret':
+            mappedData.client_secret_value = value
+            break
+          case 'api_key':
+            mappedData.access_token = value
+            break
+          case 'email_address':
+            mappedData.email_address = value
+            break
+          default:
+            // Fallback: put in configuration
+            ;(mappedData.configuration as Record<string, unknown>)[fieldName] = value
+        }
+      }
+    })
+
+    return mappedData
+  }
+
+  const submitToIntegration = async (mappedData: Record<string, unknown>) => {
+    // First, try to find existing integration
+    const { data: existingIntegration } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('service_id', mappedData.service_id)
+      .single()
+
+    if (existingIntegration) {
+      // Update existing integration
+      const { error } = await supabase
+        .from('integrations')
+        .update({
+          ...mappedData,
+          updated_at: new Date().toISOString(),
+          is_active: true
+        })
+        .eq('id', existingIntegration.id)
+
+      if (error) {
+        throw new Error(`Failed to update integration: ${error.message}`)
+      }
+    } else {
+      // Create new integration
+      const { error } = await supabase
+        .from('integrations')
+        .insert([{
+          ...mappedData,
+          created_at: new Date().toISOString(),
+          is_active: true
+        }])
+
+      if (error) {
+        throw new Error(`Failed to create integration: ${error.message}`)
+      }
+    }
+
+    // Update integration build state
+    const { error: buildStateError } = await supabase
+      .from('integration_build_states')
+      .upsert({
+        user_id: userId,
+        service_name: configForm?.service_name || 'Unknown Service',
+        current_status: 'auth_ready',
+        completed_steps: ['form_response'],
+        state_data: { form_data_received: true },
+        last_updated: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,service_name'
+      })
+
+    if (buildStateError) {
+      console.error('Failed to update build state:', buildStateError)
+      // Don't throw error here as integration was successful
+    }
+  }
+
   const onSubmit = async (data: FormData) => {
+    if (!configForm) return
+
     setIsSubmitting(true)
     setError(null)
 
     try {
-      // Mock API call - simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Mock database operations
-      console.log('Mock Integration Update:', {
-        userId,
-        serviceId: formConfig.service_name,
-        credentials: data,
-        status: 'auth_ready'
-      })
-      
-      console.log('Mock IntegrationBuildState Update:', {
-        userId,
-        serviceName: formConfig.service_name,
-        currentStatus: 'auth_ready',
-        completedSteps: ['form_response'],
-        stateData: { form_data_received: true }
-      })
+      // Map form data to integration schema using hybrid mapping
+      const mappedData = mapFormDataToIntegrationSchema(data, configForm)
+
+      // Submit to database
+      await submitToIntegration(mappedData)
 
       setIsSubmitted(true)
     } catch (err) {
-      setError('Failed to submit form. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to submit form')
       console.error('Form submission error:', err)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-2 text-gray-600">Loading setup instructions...</span>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!configForm) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          <div className="text-center p-8">
+            <p className="text-gray-500">No configuration form available for this service.</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (isSubmitted) {
@@ -112,7 +320,7 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
             <h2 className="text-2xl font-bold text-green-700">Integration Configured!</h2>
             <p className="text-gray-600">
-              Your {formConfig.service_name} integration has been successfully configured.
+              Your {configForm.service_name} integration has been successfully configured.
               You can now return to the mobile app to continue.
             </p>
             <Button 
@@ -131,14 +339,8 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Configure {formConfig.service_name} Integration
+          Configure {configForm.service_name} Integration
         </CardTitle>
-        <CardDescription>
-          {formConfig.existing_service 
-            ? 'Connect your existing account' 
-            : 'Set up a new integration'
-          }
-        </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-6">
@@ -146,9 +348,20 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">Setup Instructions</h3>
           <div className="text-blue-800 text-sm whitespace-pre-line">
-            {formConfig.setup_instructions}
+            {configForm.setup_instructions}
           </div>
         </div>
+
+        {/* Mapping confidence indicator */}
+        {configForm.mapping_confidence && (
+          <div className="flex items-center text-sm text-gray-600">
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              configForm.mapping_confidence > 0.8 ? 'bg-green-500' : 
+              configForm.mapping_confidence > 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+            }`}></div>
+            Mapping confidence: {Math.round(configForm.mapping_confidence * 100)}%
+          </div>
+        )}
 
         <Separator />
 
@@ -160,7 +373,7 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <TooltipProvider>
-            {formConfig.form_fields.map((field) => (
+            {configForm.form_fields.map((field) => (
               <div key={field.field_name} className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label htmlFor={field.field_name} className="text-sm font-medium">
@@ -221,7 +434,7 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
                 
                 {form.formState.errors[field.field_name as keyof FormData] && (
                   <p className="text-sm text-red-600">
-                    {String(form.formState.errors[field.field_name as keyof FormData]?.message)}
+                    This field is required
                   </p>
                 )}
               </div>
@@ -244,6 +457,12 @@ export function IntegrationForm({ formConfig, userId }: IntegrationFormProps) {
               'Complete Integration Setup'
             )}
           </Button>
+
+          {/* Approach indicator */}
+          <div className="text-center text-sm text-gray-500">
+            Integration method: {configForm.approach}
+            {configForm.cached && <span className="ml-2 text-blue-600">(Cached)</span>}
+          </div>
         </form>
       </CardContent>
     </Card>
