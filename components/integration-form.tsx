@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
-import { Eye, EyeOff, HelpCircle, CheckCircle, Loader2, Info } from 'lucide-react'
+import { Eye, EyeOff, HelpCircle, CheckCircle, Loader2, Info, Copy, Check } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ConfigFormData } from '@/lib/mock-data'
 import { createClient } from '@/lib/utils/supabase/client'
@@ -24,12 +24,26 @@ interface IntegrationFormProps {
 export function IntegrationForm({ formId, userId }: IntegrationFormProps) {
   const [configForm, setConfigForm] = useState<ConfigFormData | null>(null)
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({})
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const supabase = createClient()
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedFields(prev => ({ ...prev, [fieldName]: true }))
+      setTimeout(() => {
+        setCopiedFields(prev => ({ ...prev, [fieldName]: false }))
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
 
   // Function to determine next status based on auth requirements
   const determineNextStatus = async (serviceId: string, userId: string): Promise<string> => {
@@ -114,6 +128,12 @@ export function IntegrationForm({ formId, userId }: IntegrationFormProps) {
     const schemaObj: Record<string, z.ZodTypeAny> = {}
     
     configForm.form_fields.forEach((field) => {
+      // Readonly fields don't need validation since they can't be changed
+      if (field.readonly) {
+        schemaObj[field.field_name] = z.string().optional()
+        return
+      }
+      
       if (field.field_type === 'number') {
         schemaObj[field.field_name] = field.required 
           ? z.coerce.number().min(1, `${field.label} is required`)
@@ -453,7 +473,31 @@ export function IntegrationForm({ formId, userId }: IntegrationFormProps) {
                   )}
                 </div>
 
-                {field.field_type === 'textarea' ? (
+{field.readonly ? (
+                  <div className="relative">
+                    <Input
+                      id={field.field_name}
+                      type="text"
+                      value={field.default_value || ''}
+                      readOnly
+                      className="bg-gray-100 cursor-not-allowed pr-10"
+                      {...form.register(field.field_name)}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => copyToClipboard(field.default_value || '', field.field_name)}
+                    >
+                      {copiedFields[field.field_name] ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : field.field_type === 'textarea' ? (
                   <Textarea
                     id={field.field_name}
                     placeholder={field.help_text}

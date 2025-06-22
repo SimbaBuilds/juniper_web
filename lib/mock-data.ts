@@ -7,6 +7,7 @@ export interface FormField {
   required: boolean
   help_text: string
   default_value?: string
+  readonly?: boolean
 }
 
 export interface FormJson {
