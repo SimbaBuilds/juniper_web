@@ -50,7 +50,7 @@ const features = [
   {
     icon: Smartphone,
     title: "Cross-Platform Mobile",
-    description: "Available on iOS and Android with always-on wake word detection on Android"
+    description: "Available cross platform with Android featuring always-on wake word detection"
   },
   {
     icon: Brain,
