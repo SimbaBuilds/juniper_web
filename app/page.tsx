@@ -202,6 +202,9 @@ export default function HomePage() {
                 <Link href="/integration/setup" className="block text-gray-400 hover:text-white">
                   Setup Guide
                 </Link>
+                <Link href="/privacy-policy" className="block text-gray-400 hover:text-white">
+                  Privacy Policy
+                </Link>
               </div>
             </div>
             <div>
