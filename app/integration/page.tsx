@@ -1,16 +1,21 @@
 import { redirect } from 'next/navigation';
-import { NextPage } from 'next';
 
 // This page is a server component that immediately redirects to the Supabase Edge Function,
 // preserving all query parameters from the incoming request.
 
 const SUPABASE_EDGE_FUNCTION_URL = 'https://your-project-ref.supabase.co/functions/v1/handle-integration-form';
 
-export default function IntegrationRedirectPage({ searchParams }: { searchParams: Record<string, string | string[]> }) {
+export default async function IntegrationRedirectPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<Record<string, string | string[]>> 
+}) {
+  const params = await searchParams;
+  
   // Build the query string from searchParams
   const query = new URLSearchParams();
-  for (const key in searchParams) {
-    const value = searchParams[key];
+  for (const key in params) {
+    const value = params[key];
     if (Array.isArray(value)) {
       value.forEach((v) => query.append(key, v));
     } else if (value !== undefined) {
