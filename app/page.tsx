@@ -72,7 +72,7 @@ export default function HomePage() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Mobile Jarvis</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Juniper</h1>
           </div>
           <div className="flex items-center space-x-4">
             <Link href="/integrations">
@@ -94,7 +94,7 @@ export default function HomePage() {
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Connect all your favorite apps and services with voice-controlled intelligence. 
-            Mobile Jarvis integrates seamlessly with 18+ platforms to streamline your workflow.
+            Juniper integrates seamlessly with 18+ platforms to streamline your workflow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/integration/setup">
@@ -170,7 +170,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-3xl font-bold mb-4">Ready to Get Started?</h3>
           <p className="text-xl mb-8 text-blue-100">
-            Set up your first integration in minutes and experience the power of Mobile Jarvis
+            Set up your first integration in minutes and experience the power of Juniper
           </p>
           <Link href="/integration/setup">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
@@ -187,7 +187,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Brain className="h-6 w-6 text-blue-400" />
-                <span className="text-xl font-bold">Mobile Jarvis</span>
+                <span className="text-xl font-bold">Juniper</span>
               </div>
               <p className="text-gray-400">
                 Your intelligent mobile assistant for seamless app integration and voice-controlled productivity.
@@ -220,7 +220,7 @@ export default function HomePage() {
           </div>
           <Separator className="my-8 bg-gray-800" />
           <div className="text-center text-gray-400">
-            <p>&copy; 2025 Mobile Jarvis. All rights reserved.</p>
+            <p>&copy; 2025 Juniper. All rights reserved.</p>
           </div>
         </div>
       </footer>

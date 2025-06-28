@@ -195,7 +195,7 @@ export default function IntegrationsPage() {
             </Link>
             <div className="flex items-center space-x-2">
               <Brain className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Mobile Jarvis</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Juniper</h1>
             </div>
           </div>
           <Link href="/integration/setup">
@@ -209,7 +209,7 @@ export default function IntegrationsPage() {
         <div className="text-center mb-8">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">All Integrations</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Connect Mobile Jarvis with your favorite apps and services. Choose from 18+ integrations 
+            Connect Juniper with your favorite apps and services. Choose from 18+ integrations 
             to streamline your workflow and boost productivity.
           </p>
         </div>
@@ -294,7 +294,7 @@ export default function IntegrationsPage() {
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-3xl font-bold mb-4">Ready to Connect?</h3>
           <p className="text-xl mb-8 text-blue-100">
-            Start setting up your integrations and unlock the full potential of Mobile Jarvis
+            Start setting up your integrations and unlock the full potential of Juniper
           </p>
           <Link href="/integration/setup">
             <Button size="lg" variant="secondary" className="text-lg px-8 py-3">

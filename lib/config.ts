@@ -1,5 +1,5 @@
 /**
- * Mobile Jarvis integration configuration
+ * Juniper integration configuration
  */
 export const INTEGRATION_CONFIG = {
   // Default form ID to load (can be overridden via URL params)
@@ -9,8 +9,8 @@ export const INTEGRATION_CONFIG = {
   DEFAULT_USER_ID: process.env.NEXT_PUBLIC_DEFAULT_USER_ID || "user-123",
   
   // App metadata
-  APP_TITLE: "Mobile Jarvis - Integration Setup",
-  APP_DESCRIPTION: "Configure your Mobile Jarvis integrations to connect with your favorite apps and services.",
+  APP_TITLE: "Juniper - Integration Setup",
+  APP_DESCRIPTION: "Configure your Juniper integrations to connect with your favorite apps and services.",
   
   // Feature flags
   ALLOW_URL_PARAMS: true, // Allow overriding via URL parameters
@@ -26,12 +26,12 @@ export const INTEGRATION_CONFIG = {
 } as const
 
 /**
- * Mobile Jarvis application constants
+ * Juniper application constants
  */
 export const APP_CONFIG = {
-  NAME: "Mobile Jarvis",
+  NAME: "Juniper",
   TAGLINE: "AI-Powered Mobile Assistant",
-  DESCRIPTION: "Connect all your favorite apps and services with voice-controlled intelligence. Mobile Jarvis integrates seamlessly with 18+ platforms to streamline your workflow.",
+  DESCRIPTION: "Connect all your favorite apps and services with voice-controlled intelligence. Juniper integrates seamlessly with 18+ platforms to streamline your workflow.",
   
   // Feature highlights
   FEATURES: {

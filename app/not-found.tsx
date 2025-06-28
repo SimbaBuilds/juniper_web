@@ -41,7 +41,7 @@ export default function NotFound() {
         {/* Brand */}
         <div className="pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500">
-            © 2025 Mobile Jarvis. Your AI-Powered Mobile Assistant.
+            © 2025 Juniper. Your AI-Powered Mobile Assistant.
           </p>
         </div>
       </div>

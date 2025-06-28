@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
               </Link>
               <div className="flex items-center space-x-2">
                 <Brain className="h-6 w-6 text-blue-600" />
-                <span className="text-lg font-semibold text-gray-900">Mobile Jarvis</span>
+                <span className="text-lg font-semibold text-gray-900">Juniper</span>
               </div>
             </div>
           </nav>
@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
                   
                   <h3 className="text-xl font-semibold text-gray-800 mb-3">Personal Information</h3>
                   <p className="text-gray-600 mb-4">
-                    When you use Mobile Jarvis, we may collect personal information you provide, including:
+                    When you use Juniper, we may collect personal information you provide, including:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li>Profile information (name, display name, location, profession, education)</li>
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
 
                   <h3 className="text-xl font-semibold text-gray-800 mb-3">Voice and Audio Data</h3>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis processes voice data to provide AI assistance:
+                    Juniper processes voice data to provide AI assistance:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li>Voice recordings for transcription and AI processing</li>
@@ -135,11 +135,11 @@ export default function PrivacyPolicyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Third-Party Integrations</h2>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis integrates with various third-party services. When you connect these services:
+                    Juniper integrates with various third-party services. When you connect these services:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li>We store authentication tokens to access your connected accounts</li>
-                    <li>We may sync data between Mobile Jarvis and your connected services</li>
+                    <li>We may sync data between Juniper and your connected services</li>
                     <li>Each integration follows the privacy policy of the respective service</li>
                     <li>You can disconnect integrations at any time through your settings</li>
                   </ul>
@@ -154,7 +154,7 @@ export default function PrivacyPolicyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">4. AI and Machine Learning</h2>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis uses AI to provide intelligent assistance:
+                    Juniper uses AI to provide intelligent assistance:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li><strong>Memory Management:</strong> We store conversation context and user preferences to improve future interactions</li>
@@ -213,7 +213,7 @@ export default function PrivacyPolicyPage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Children&apos;s Privacy</h2>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis is not intended for children under 13 years of age. We do not knowingly 
+                    Juniper is not intended for children under 13 years of age. We do not knowingly 
                     collect personal information from children under 13.
                   </p>
                 </section>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
           <div className="text-center mt-12">
             <Link href="/">
               <Button size="lg" className="text-lg px-8 py-3">
-                Return to Mobile Jarvis
+                Return to Juniper
               </Button>
             </Link>
           </div>
@@ -261,7 +261,7 @@ export default function PrivacyPolicyPage() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-gray-600">
-            <p>&copy; 2025 Mobile Jarvis. All rights reserved.</p>
+            <p>&copy; 2025 Juniper. All rights reserved.</p>
           </div>
         </div>
       </footer>

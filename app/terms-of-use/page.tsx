@@ -18,7 +18,7 @@ export default function TermsOfUsePage() {
               </Link>
               <div className="flex items-center space-x-2">
                 <Brain className="h-6 w-6 text-blue-600" />
-                <span className="text-lg font-semibold text-gray-900">Mobile Jarvis</span>
+                <span className="text-lg font-semibold text-gray-900">Juniper</span>
               </div>
             </div>
           </nav>
@@ -37,7 +37,7 @@ export default function TermsOfUsePage() {
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Terms of Use</h1>
             <p className="text-xl text-gray-600">
-              Please read these terms carefully before using Mobile Jarvis
+              Please read these terms carefully before using Juniper
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Last updated: January 1, 2025
@@ -52,7 +52,7 @@ export default function TermsOfUsePage() {
                 <CardTitle className="text-lg">User Responsibilities</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Your obligations when using Mobile Jarvis services</p>
+                <p className="text-gray-600">Your obligations when using Juniper services</p>
               </CardContent>
             </Card>
             
@@ -84,7 +84,7 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
                   <p className="text-gray-600 mb-4">
-                    By accessing and using Mobile Jarvis (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                    By accessing and using Juniper (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                   </p>
                   <p className="text-gray-600 mb-4">
                     These Terms of Use apply to all users of the Service, including users who are also contributors of content, information, and other materials or services on the Service.
@@ -96,7 +96,7 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Description of Service</h2>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis is an AI-powered mobile assistant that provides:
+                    Juniper is an AI-powered mobile assistant that provides:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li>Voice-to-voice conversational AI assistance</li>
@@ -107,7 +107,7 @@ export default function TermsOfUsePage() {
                     <li>Automation and task management capabilities</li>
                   </ul>
                   <p className="text-gray-600 mb-4">
-                    The Service is provided &quot;as is&quot; and Mobile Jarvis reserves the right to modify, suspend, or discontinue the Service with or without notice.
+                    The Service is provided &quot;as is&quot; and Juniper reserves the right to modify, suspend, or discontinue the Service with or without notice.
                   </p>
                 </section>
 
@@ -135,13 +135,13 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">4. AI and Voice Processing Terms</h2>
                   <p className="text-gray-600 mb-4">
-                    By using Mobile Jarvis, you understand and agree that:
+                    By using Juniper, you understand and agree that:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li><strong>AI Responses:</strong> AI-generated responses are not guaranteed to be accurate, complete, or suitable for any particular purpose</li>
                     <li><strong>Voice Data:</strong> Your voice recordings may be processed by third-party services (e.g., Deepgram) for transcription</li>
                     <li><strong>Learning:</strong> The AI may learn from your interactions to improve personalized assistance</li>
-                    <li><strong>No Medical/Legal Advice:</strong> Mobile Jarvis does not provide medical, legal, financial, or professional advice</li>
+                    <li><strong>No Medical/Legal Advice:</strong> Juniper does not provide medical, legal, financial, or professional advice</li>
                     <li><strong>Content Monitoring:</strong> We may monitor conversations for safety, security, and service improvement purposes</li>
                   </ul>
                 </section>
@@ -151,12 +151,12 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Third-Party Integrations</h2>
                   <p className="text-gray-600 mb-4">
-                    Mobile Jarvis integrates with various third-party services. You acknowledge that:
+                    Juniper integrates with various third-party services. You acknowledge that:
                   </p>
                   <ul className="list-disc pl-6 text-gray-600 mb-6 space-y-1">
                     <li>Each integration is subject to the terms and policies of the respective service</li>
                     <li>We are not responsible for the availability, functionality, or content of third-party services</li>
-                    <li>You grant Mobile Jarvis permission to access and sync data from connected services</li>
+                    <li>You grant Juniper permission to access and sync data from connected services</li>
                     <li>Integration functionality may change or cease without notice due to third-party changes</li>
                     <li>You can disconnect integrations at any time through your account settings</li>
                   </ul>
@@ -187,10 +187,10 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Intellectual Property Rights</h2>
                   <p className="text-gray-600 mb-4">
-                    The Service and its original content, features, and functionality are and will remain the exclusive property of Mobile Jarvis and its licensors. The Service is protected by copyright, trademark, and other laws.
+                    The Service and its original content, features, and functionality are and will remain the exclusive property of Juniper and its licensors. The Service is protected by copyright, trademark, and other laws.
                   </p>
                   <p className="text-gray-600 mb-4">
-                    You retain ownership of content you provide to the Service, but grant Mobile Jarvis a license to use, modify, and process your content as necessary to provide the Service.
+                    You retain ownership of content you provide to the Service, but grant Juniper a license to use, modify, and process your content as necessary to provide the Service.
                   </p>
                 </section>
 
@@ -229,10 +229,10 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Disclaimers and Limitations of Liability</h2>
                   <p className="text-gray-600 mb-4">
-                    THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, MOBILE JARVIS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED.
+                    THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, Juniper DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED.
                   </p>
                   <p className="text-gray-600 mb-4">
-                    IN NO EVENT SHALL MOBILE JARVIS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF YOUR USE OF THE SERVICE.
+                    IN NO EVENT SHALL Juniper BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF YOUR USE OF THE SERVICE.
                   </p>
                 </section>
 
@@ -256,7 +256,7 @@ export default function TermsOfUsePage() {
                 <section className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Governing Law and Dispute Resolution</h2>
                   <p className="text-gray-600 mb-4">
-                    These Terms shall be governed by and construed in accordance with the laws of the jurisdiction where Mobile Jarvis is headquartered, without regard to conflict of law principles.
+                    These Terms shall be governed by and construed in accordance with the laws of the jurisdiction where Juniper is headquartered, without regard to conflict of law principles.
                   </p>
                   <p className="text-gray-600 mb-4">
                     Any disputes arising from these Terms or your use of the Service shall be resolved through binding arbitration, except where prohibited by law.
@@ -306,7 +306,7 @@ export default function TermsOfUsePage() {
           <div className="text-center mt-12">
             <Link href="/">
               <Button size="lg" className="text-lg px-8 py-3">
-                Return to Mobile Jarvis
+                Return to Juniper
               </Button>
             </Link>
           </div>
@@ -317,7 +317,7 @@ export default function TermsOfUsePage() {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-gray-600">
-            <p>&copy; 2025 Mobile Jarvis. All rights reserved.</p>
+            <p>&copy; 2025 Juniper. All rights reserved.</p>
           </div>
         </div>
       </footer>

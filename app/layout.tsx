@@ -14,21 +14,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Mobile Jarvis - AI-Powered Mobile Assistant",
-    template: "%s | Mobile Jarvis"
+    default: "Juniper - AI-Powered Mobile Assistant",
+    template: "%s | Juniper"
   },
-  description: "Connect all your favorite apps and services with voice-controlled intelligence. Mobile Jarvis integrates seamlessly with 18+ platforms to streamline your workflow.",
+  description: "Connect all your favorite apps and services with voice-controlled intelligence. Juniper integrates seamlessly with 18+ platforms to streamline your workflow.",
   keywords: ["mobile assistant", "AI", "integrations", "voice control", "productivity", "automation"],
-  authors: [{ name: "Mobile Jarvis Team" }],
+  authors: [{ name: "Juniper Team" }],
   openGraph: {
-    title: "Mobile Jarvis - AI-Powered Mobile Assistant",
+    title: "Juniper - AI-Powered Mobile Assistant",
     description: "Connect all your favorite apps and services with voice-controlled intelligence.",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mobile Jarvis - AI-Powered Mobile Assistant",
+    title: "Juniper - AI-Powered Mobile Assistant",
     description: "Connect all your favorite apps and services with voice-controlled intelligence.",
   },
   robots: {
