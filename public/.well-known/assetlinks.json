@@ -1,0 +1,12 @@
+[
+    {
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.anonymous.MobileJarvisNative",
+        "sha256_cert_fingerprints": [
+          "66:F5:2B:A6:3A:75:BD:E4:2F:39:B5:F7:7A:F6:A7:D4:F9:01:13:76"
+        ]
+      }
+    }
+  ]
