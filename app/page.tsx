@@ -68,14 +68,14 @@ export default function HomePage() {
             <Brain className="h-8 w-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">Juniper</h1>
           </div>
-          <div className="flex items-center space-x-4">
+          {/* <div className="flex items-center space-x-4">
             <Link href="/integrations">
               <Button variant="outline">View Integrations</Button>
             </Link>
             <Link href="/integration/setup">
               <Button>Get Started</Button>
             </Link>
-          </div>
+          </div> */}
         </nav>
       </header>
 
@@ -91,7 +91,7 @@ export default function HomePage() {
             Juniper integrates seamlessly with 12+ platforms to streamline your workflow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/integration/setup">
+            {/* <Link href="/integration/setup">
               <Button size="lg" className="text-lg px-8 py-3">
                 Start Your Setup
               </Button>
@@ -100,7 +100,7 @@ export default function HomePage() {
               <Button size="lg" variant="outline" className="text-lg px-8 py-3">
                 Explore Integrations
               </Button>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>
@@ -164,13 +164,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-3xl font-bold mb-4">Ready to Get Started?</h3>
           <p className="text-xl mb-8 text-blue-100">
-            Set up your first integration in minutes and experience the power of Juniper
+            Download the app and start using Juniper today
           </p>
-          <Link href="/integration/setup">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-              Configure Your First Integration
-            </Button>
-          </Link>
         </div>
       </section>
 
@@ -192,9 +187,6 @@ export default function HomePage() {
               <div className="space-y-2">
                 <Link href="/integrations" className="block text-gray-400 hover:text-white">
                   Integrations
-                </Link>
-                <Link href="/integration/setup" className="block text-gray-400 hover:text-white">
-                  Setup Guide
                 </Link>
                 <Link href="/privacy-policy" className="block text-gray-400 hover:text-white">
                   Privacy Policy
