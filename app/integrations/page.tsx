@@ -9,8 +9,7 @@ import {
   MessageSquare, 
   Calendar, 
   FileText, 
-  Users, 
-  Video, 
+  Users,  
   CheckCircle,
   Phone,
   Search,
@@ -35,14 +34,6 @@ const integrations = [
     color: "bg-purple-600",
     description: "Connect with your team through channels, direct messages, and integrations",
     features: ["Team Communication", "Channel Management", "File Sharing", "Notifications"]
-  },
-  { 
-    name: "Zoom", 
-    category: "Video Conferencing", 
-    icon: Video, 
-    color: "bg-blue-500",
-    description: "High-quality video meetings and webinars for remote collaboration",
-    features: ["Video Conferencing", "Screen Sharing", "Recording", "Webinars"]
   },
   { 
     name: "Todoist", 
@@ -142,7 +133,7 @@ const integrations = [
   }
 ]
 
-const categories = ["All", "Project Management", "Team Communication", "Video Conferencing", "Cloud Storage", "Task Management", "AI Research", "Spreadsheets", "Documents", "Email", "Calendar", "SMS"]
+const categories = ["All", "Project Management", "Team Communication", "Cloud Storage", "Task Management", "AI Research", "Spreadsheets", "Documents", "Email", "Calendar", "SMS"]
 
 export default function IntegrationsPage() {
   const [searchTerm, setSearchTerm] = useState('')

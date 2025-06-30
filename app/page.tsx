@@ -12,7 +12,6 @@ import {
   Calendar, 
   FileText, 
   Users, 
-  Video, 
   CheckCircle,
   Zap,
   Smartphone
@@ -22,7 +21,6 @@ import Link from 'next/link'
 const integrations = [
   { name: "Notion", category: "Project Management", icon: FileText, color: "bg-black" },
   { name: "Slack", category: "Team Communication", icon: MessageSquare, color: "bg-purple-600" },
-  { name: "Zoom", category: "Video Conferencing", icon: Video, color: "bg-blue-500" },
   { name: "Todoist", category: "Task Management", icon: CheckCircle, color: "bg-red-500" },
   { name: "Perplexity", category: "AI Research", icon: Brain, color: "bg-indigo-600" },
   { name: "Google Sheets", category: "Spreadsheets", icon: FileText, color: "bg-green-600" },

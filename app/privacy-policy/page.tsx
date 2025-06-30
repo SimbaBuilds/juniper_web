@@ -144,7 +144,7 @@ export default function PrivacyPolicyPage() {
                     <li>You can disconnect integrations at any time through your settings</li>
                   </ul>
                   <p className="text-gray-600 mb-4">
-                    <strong>Supported Integrations:</strong> Notion, Slack, Zoom, Todoist, 
+                    <strong>Supported Integrations:</strong> Notion, Slack, Todoist, 
                     Perplexity, Google Workspace, Microsoft Office 365, Twilio, and others.
                   </p>
                 </section>
