@@ -86,6 +86,18 @@ export default async function IntegrationPage({
       `action="${baseUrl}/api/integration-proxy"`
     );
     
+    // Update fetch URLs in JavaScript to use our proxy
+    htmlContent = htmlContent.replace(
+      /fetch\(['"]\/functions\/v1\/handle-integration-form['"]/g,
+      `fetch('${baseUrl}/api/integration-proxy'`
+    );
+    
+    // Update any absolute Supabase URLs in fetch calls
+    htmlContent = htmlContent.replace(
+      new RegExp(`fetch\\(['"]${supabaseUrl}/functions/v1/handle-integration-form['"]`, 'g'),
+      `fetch('${baseUrl}/api/integration-proxy'`
+    );
+    
     // Return the HTML content with a wrapper div for proper rendering
     return (
       <div 

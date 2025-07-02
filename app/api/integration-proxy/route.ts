@@ -45,15 +45,19 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'POST') {
     // For POST requests, include the body
     if (method === 'POST') {
       const contentType = request.headers.get('content-type') || '';
+      const body = await request.text();
       
-      // Handle form data submissions
-      if (contentType.includes('application/x-www-form-urlencoded')) {
-        fetchOptions.body = await request.text();
-        if (fetchOptions.headers && typeof fetchOptions.headers === 'object') {
-          (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/x-www-form-urlencoded';
-        }
-      } else {
-        fetchOptions.body = await request.text();
+      console.log('POST request details:', {
+        contentType,
+        bodyLength: body.length,
+        bodyPreview: body.substring(0, 100)
+      });
+      
+      fetchOptions.body = body;
+      
+      // Preserve the original content type
+      if (fetchOptions.headers && typeof fetchOptions.headers === 'object') {
+        (fetchOptions.headers as Record<string, string>)['Content-Type'] = contentType || 'application/json';
       }
     }
     
