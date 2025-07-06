@@ -32,28 +32,40 @@ export const mockServices: Service[] = [
     created_at: new Date(),
     service_name: "Google Calendar",
     num_users: 0,
-    integration_method: "oauth"
+    integration_method: "oauth",
+    interactions_day: 0,
+    interactions_week: 0,
+    interactions_month: 0
   },
   {
     id: "service-2", 
     created_at: new Date(),
     service_name: "Notion",
     num_users: 0,
-    integration_method: "api_key"
+    integration_method: "api_key",
+    interactions_day: 0,
+    interactions_week: 0,
+    interactions_month: 0
   },
   {
     id: "service-3",
     created_at: new Date(), 
     service_name: "Gmail SMTP",
     num_users: 0,
-    integration_method: "smtp"
+    integration_method: "smtp",
+    interactions_day: 0,
+    interactions_week: 0,
+    interactions_month: 0
   },
   {
     id: "service-4",
     created_at: new Date(),
     service_name: "Slack", 
     num_users: 0,
-    integration_method: "api_key"
+    integration_method: "api_key",
+    interactions_day: 0,
+    interactions_week: 0,
+    interactions_month: 0
   }
 ]
 

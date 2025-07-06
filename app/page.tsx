@@ -6,34 +6,15 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { 
   Mic, 
-  Phone, 
   Brain, 
-  MessageSquare, 
-  Calendar, 
-  FileText, 
-  Users, 
-  CheckCircle,
   Zap,
-  Smartphone
+  Smartphone,
+  Settings
 } from 'lucide-react'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { fetchServicesWithTags, ServiceWithTags } from '@/lib/services'
 
-const integrations = [
-  { name: "Notion", category: "Project Management", icon: FileText, color: "bg-black" },
-  { name: "Slack", category: "Team Communication", icon: MessageSquare, color: "bg-purple-600" },
-  { name: "Todoist", category: "Task Management", icon: CheckCircle, color: "bg-red-500" },
-  { name: "Perplexity", category: "AI Research", icon: Brain, color: "bg-indigo-600" },
-  { name: "Google Sheets", category: "Spreadsheets", icon: FileText, color: "bg-green-600" },
-  { name: "Google Docs", category: "Documents", icon: FileText, color: "bg-blue-600" },
-  { name: "Gmail", category: "Email", icon: MessageSquare, color: "bg-red-600" },
-  { name: "Google Calendar", category: "Calendar", icon: Calendar, color: "bg-blue-500" },
-  { name: "Microsoft Excel", category: "Spreadsheets", icon: FileText, color: "bg-green-700" },
-  { name: "Microsoft Word", category: "Documents", icon: FileText, color: "bg-blue-700" },
-  { name: "Outlook Calendar", category: "Calendar", icon: Calendar, color: "bg-blue-600" },
-  { name: "Outlook Mail", category: "Email", icon: MessageSquare, color: "bg-blue-600" },
-  { name: "Microsoft Teams", category: "Communication", icon: Users, color: "bg-purple-700" },
-  { name: "Textbelt", category: "SMS", icon: Phone, color: "bg-red-500" }
-]
 
 const features = [
   {
@@ -59,6 +40,24 @@ const features = [
 ]
 
 export default function HomePage() {
+  const [services, setServices] = useState<ServiceWithTags[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const servicesData = await fetchServicesWithTags()
+        setServices(servicesData)
+      } catch (error) {
+        console.error('Error loading services:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadServices()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
@@ -88,7 +87,7 @@ export default function HomePage() {
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Connect all your favorite apps and services with voice-controlled intelligence. 
-            Juniper integrates seamlessly with 12+ platforms to streamline your workflow.
+            Juniper integrates seamlessly with {services.length}+ platforms to streamline your workflow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {/* <Link href="/integration/setup">
@@ -136,19 +135,27 @@ export default function HomePage() {
           <p className="text-lg text-gray-600">Connect with all your essential tools and services</p>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          {integrations.map((integration, index) => (
-            <Card key={index} className="p-4 text-center border-0 shadow-md hover:shadow-lg transition-shadow">
-              <div className={`w-12 h-12 ${integration.color} rounded-lg flex items-center justify-center mx-auto mb-3`}>
-                <integration.icon className="h-6 w-6 text-white" />
-              </div>
-              <h4 className="font-semibold text-sm text-gray-900 mb-1">{integration.name}</h4>
-              <Badge variant="secondary" className="text-xs">
-                {integration.category}
-              </Badge>
-            </Card>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600">Loading integrations...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {services.slice(0, 12).map((service) => (
+              <Card key={service.id} className="p-4 text-center border-0 shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <Settings className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="font-semibold text-sm text-gray-900 mb-1">{service.service_name}</h4>
+                {service.tags.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {service.tags[0]}
+                  </Badge>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
         
         <div className="text-center">
           <Link href="/integrations">

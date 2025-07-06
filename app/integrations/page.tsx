@@ -6,145 +6,44 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { 
   Brain, 
-  MessageSquare, 
-  Calendar, 
-  FileText, 
-  Users,  
-  CheckCircle,
-  Phone,
   Search,
-  ArrowLeft
+  ArrowLeft,
+  Settings
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchServicesWithTags, ServiceWithTags } from '@/lib/services'
 
-const integrations = [
-  { 
-    name: "Notion", 
-    category: "Project Management", 
-    icon: FileText, 
-    color: "bg-black",
-    description: "Organize your projects, tasks, and team collaboration in one workspace",
-    features: ["Project Management", "Task Management", "Team Collaboration", "Documentation"]
-  },
-  { 
-    name: "Slack", 
-    category: "Team Communication", 
-    icon: MessageSquare, 
-    color: "bg-purple-600",
-    description: "Connect with your team through channels, direct messages, and integrations",
-    features: ["Team Communication", "Channel Management", "File Sharing", "Notifications"]
-  },
-  { 
-    name: "Todoist", 
-    category: "Task Management", 
-    icon: CheckCircle, 
-    color: "bg-red-500",
-    description: "Smart task scheduling with reminders and project organization",
-    features: ["Task Scheduling", "Reminders", "Task Management", "Project Organization"]
-  },
-  { 
-    name: "Perplexity", 
-    category: "AI Research", 
-    icon: Brain, 
-    color: "bg-indigo-600",
-    description: "AI-powered search and research assistant for finding accurate information",
-    features: ["Search", "AI Research", "Information Discovery", "Content Generation"]
-  },
-  { 
-    name: "Google Sheets", 
-    category: "Spreadsheets", 
-    icon: FileText, 
-    color: "bg-green-600",
-    description: "Collaborative spreadsheets with real-time editing and data analysis",
-    features: ["Cloud Spreadsheets", "Data Analysis", "Collaboration", "Formulas"]
-  },
-  { 
-    name: "Google Docs", 
-    category: "Documents", 
-    icon: FileText, 
-    color: "bg-blue-600",
-    description: "Create and edit documents collaboratively in the cloud",
-    features: ["Cloud Documents", "Real-time Collaboration", "Version History", "Comments"]
-  },
-  { 
-    name: "Gmail", 
-    category: "Email", 
-    icon: MessageSquare, 
-    color: "bg-red-600",
-    description: "Powerful email management with smart filtering and organization",
-    features: ["Email Management", "Smart Filters", "Labels", "Search"]
-  },
-  { 
-    name: "Google Calendar", 
-    category: "Calendar", 
-    icon: Calendar, 
-    color: "bg-blue-500",
-    description: "Schedule management with smart suggestions and event coordination",
-    features: ["Calendar Management", "Event Scheduling", "Reminders", "Integration"]
-  },
-  { 
-    name: "Microsoft Excel Online", 
-    category: "Spreadsheets", 
-    icon: FileText, 
-    color: "bg-green-700",
-    description: "Advanced spreadsheet capabilities with cloud collaboration",
-    features: ["Cloud Spreadsheets", "Advanced Formulas", "Data Visualization", "Collaboration"]
-  },
-  { 
-    name: "Microsoft Word Online", 
-    category: "Documents", 
-    icon: FileText, 
-    color: "bg-blue-700",
-    description: "Professional document creation and editing in the cloud",
-    features: ["Cloud Documents", "Professional Templates", "Track Changes", "Co-authoring"]
-  },
-  { 
-    name: "Microsoft Outlook Calendar", 
-    category: "Calendar", 
-    icon: Calendar, 
-    color: "bg-blue-600",
-    description: "Enterprise calendar solution with meeting management",
-    features: ["Calendar Management", "Meeting Scheduling", "Room Booking", "Integration"]
-  },
-  { 
-    name: "Microsoft Outlook Mail", 
-    category: "Email", 
-    icon: MessageSquare, 
-    color: "bg-blue-600",
-    description: "Professional email with advanced organization and security",
-    features: ["Email Management", "Advanced Security", "Rules", "Categories"]
-  },
-  { 
-    name: "Microsoft Teams", 
-    category: "Communication", 
-    icon: Users, 
-    color: "bg-purple-700",
-    description: "Unified communication platform for chat, meetings, and collaboration",
-    features: ["Team Communication", "Video Meetings", "File Collaboration", "App Integration"]
-  },
-  { 
-    name: "Textbelt", 
-    category: "SMS", 
-    icon: Phone, 
-    color: "bg-red-500",
-    description: "Simple SMS API for sending text messages programmatically",
-    features: ["SMS Delivery", "Text Messaging", "SMS APIs", "Simple Integration"]
-  }
-]
-
-const categories = ["All", "Project Management", "Team Communication", "Cloud Storage", "Task Management", "AI Research", "Spreadsheets", "Documents", "Email", "Calendar", "SMS"]
 
 export default function IntegrationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [services, setServices] = useState<ServiceWithTags[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredIntegrations = integrations.filter(integration => {
-    const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         integration.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         integration.features.some(feature => feature.toLowerCase().includes(searchTerm.toLowerCase()))
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const servicesData = await fetchServicesWithTags()
+        setServices(servicesData)
+      } catch (error) {
+        console.error('Error loading services:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadServices()
+  }, [])
+
+  const allCategories = ['All', ...new Set(services.flatMap(service => service.tags))]
+
+  const filteredIntegrations = services.filter(service => {
+    const matchesSearch = service.service_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         service.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
     
-    const matchesCategory = selectedCategory === 'All' || integration.category === selectedCategory
+    const matchesCategory = selectedCategory === 'All' || service.tags.includes(selectedCategory)
     
     return matchesSearch && matchesCategory
   })
@@ -190,7 +89,7 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2 justify-center">
-            {categories.map((category) => (
+            {allCategories.map((category) => (
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "outline"}
@@ -207,42 +106,52 @@ export default function IntegrationsPage() {
 
       {/* Integrations Grid */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredIntegrations.map((integration, index) => (
-            <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className={`w-12 h-12 ${integration.color} rounded-lg flex items-center justify-center`}>
-                    <integration.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <Badge variant="secondary">{integration.category}</Badge>
-                </div>
-                <CardTitle className="text-xl">{integration.name}</CardTitle>
-                <CardDescription className="text-gray-600">
-                  {integration.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <h4 className="font-semibold text-sm text-gray-900 mb-2">Features:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {integration.features.map((feature, featureIndex) => (
-                      <Badge key={featureIndex} variant="outline" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredIntegrations.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-600 mb-4">No integrations found</p>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <p className="text-xl text-gray-600">Loading integrations...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredIntegrations.map((service) => (
+                <Card key={service.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Settings className="h-6 w-6 text-white" />
+                      </div>
+                      {service.tags.length > 0 && (
+                        <Badge variant="secondary">{service.tags[0]}</Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl">{service.service_name}</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      {service.description || 'No description available'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-sm text-gray-900 mb-2">Tags:</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {service.tags.map((tag, tagIndex) => (
+                          <Badge key={tagIndex} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredIntegrations.length === 0 && !loading && (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-600 mb-4">No integrations found</p>
+                <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+              </div>
+            )}
+          </>
         )}
       </section>
 
