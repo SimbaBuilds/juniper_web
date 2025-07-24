@@ -1,4 +1,4 @@
-import { ConfigForm, Service } from './tables'
+import { ConfigForm, Service } from './utils/supabase/tables'
 
 export interface FormField {
   field_name: string

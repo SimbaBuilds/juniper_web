@@ -10,7 +10,7 @@ export const createClient = (request: NextRequest) => {
     },
   });
 
-  createServerClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -31,6 +31,33 @@ export const createClient = (request: NextRequest) => {
     },
   );
 
-  return supabaseResponse
+  return { supabase, response: supabaseResponse }
 };
+
+export async function updateSession(request: NextRequest) {
+  const { supabase, response } = createClient(request)
+  
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Protected routes that require authentication
+  const protectedPaths = ['/dashboard', '/automations', '/integrations', '/repository', '/account']
+  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  // Auth routes that authenticated users shouldn't access
+  const authPaths = ['/login', '/signup', '/reset-password']
+  const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  // Redirect unauthenticated users away from protected routes
+  if (isProtectedPath && !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+  
+  // Redirect authenticated users away from auth pages
+  if (isAuthPath && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+  
+  return response
+}
 

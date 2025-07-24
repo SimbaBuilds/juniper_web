@@ -10,6 +10,7 @@ import {
   Smartphone
 } from 'lucide-react'
 import Link from 'next/link'
+import { useAuth } from './providers/auth-provider'
 
 
 const features = [
@@ -36,6 +37,7 @@ const features = [
 ]
 
 export default function HomePage() {
+  const { user, loading, signOut } = useAuth()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -46,14 +48,30 @@ export default function HomePage() {
             <Brain className="h-8 w-8 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">Juniper</h1>
           </div>
-          {/* <div className="flex items-center space-x-4">
-            <Link href="/integrations">
-              <Button variant="outline">View Integrations</Button>
-            </Link>
-            <Link href="/integration/setup">
-              <Button>Get Started</Button>
-            </Link>
-          </div> */}
+          <div className="flex items-center space-x-4">
+            {loading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : user ? (
+              <>
+                <span className="text-gray-700">{user.email}</span>
+                <Link href="/dashboard">
+                  <Button variant="outline">Dashboard</Button>
+                </Link>
+                <Button variant="ghost" onClick={signOut}>
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost">Sign in</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
+          </div>
         </nav>
       </header>
 
@@ -69,6 +87,26 @@ export default function HomePage() {
             Juniper integrates seamlessly with multiple platforms to streamline your workflow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {user ? (
+              <Link href="/dashboard">
+                <Button size="lg" className="text-lg px-8 py-3">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/signup">
+                  <Button size="lg" className="text-lg px-8 py-3">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="text-lg px-8 py-3">
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -117,8 +155,21 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h3 className="text-3xl font-bold mb-4">Ready to Get Started?</h3>
           <p className="text-xl mb-8 text-blue-100">
-            Download the app and start using Juniper today
+            {user ? 'Access your dashboard and manage your automations' : 'Create your account and start using Juniper today'}
           </p>
+          {user ? (
+            <Link href="/dashboard">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+                Go to Dashboard
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/signup">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
+                Sign Up Now
+              </Button>
+            </Link>
+          )}
         </div>
       </section>
 

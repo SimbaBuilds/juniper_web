@@ -1,5 +1,5 @@
 import { createClient } from './utils/supabase/client'
-import { Service } from './tables'
+import { Service } from './utils/supabase/tables'
 
 export interface ServiceWithTags extends Service {
   tags: string[]
