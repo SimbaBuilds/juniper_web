@@ -12,7 +12,9 @@ import {
 import Link from 'next/link'
 import { useAuth } from './providers/auth-provider'
 import { ThemeToggle } from './components/theme-toggle'
+import { getPublicServices } from './lib/integrations/constants'
 
+const publicServicesCount = getPublicServices().length;
 
 const features = [
   {
@@ -32,7 +34,7 @@ const features = [
   },
   {
     icon: Zap,
-    title: "12+ Integrations",
+    title: `${publicServicesCount}+ Integrations`,
     description: "Connect to multiple services with seamless authentication and setup"
   }
 ]

@@ -35,7 +35,8 @@ export const mockServices: Service[] = [
     integration_method: "oauth",
     interactions_day: 0,
     interactions_week: 0,
-    interactions_month: 0
+    interactions_month: 0,
+    public: true
   },
   {
     id: "service-2", 
@@ -45,7 +46,8 @@ export const mockServices: Service[] = [
     integration_method: "api_key",
     interactions_day: 0,
     interactions_week: 0,
-    interactions_month: 0
+    interactions_month: 0,
+    public: true
   },
   {
     id: "service-3",
@@ -55,7 +57,8 @@ export const mockServices: Service[] = [
     integration_method: "smtp",
     interactions_day: 0,
     interactions_week: 0,
-    interactions_month: 0
+    interactions_month: 0,
+    public: true
   },
   {
     id: "service-4",
@@ -65,7 +68,8 @@ export const mockServices: Service[] = [
     integration_method: "api_key",
     interactions_day: 0,
     interactions_week: 0,
-    interactions_month: 0
+    interactions_month: 0,
+    public: true
   }
 ]
 

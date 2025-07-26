@@ -1,22 +1,22 @@
 export const SERVICES = [
-  'Notion',
-  'Slack', 
-  'Dropbox',
-  'Todoist',
-  'Perplexity',
-  'Google Sheets',
-  'Google Docs',
-  'Gmail',
-  'Google Calendar',
-  'Microsoft Excel Online',
-  'Microsoft Word Online',
-  'Microsoft Calendar',
-  'Microsoft Email',
-  'Microsoft Teams',
-  'Textbelt',
-  'Twilio',
-  'Google Meet',
-  'Twitter/X'
+  { name: 'Notion', public: true },
+  { name: 'Slack', public: true }, 
+  { name: 'Dropbox', public: true },
+  { name: 'Todoist', public: true },
+  { name: 'Perplexity', public: true },
+  { name: 'Google Sheets', public: true },
+  { name: 'Google Docs', public: true },
+  { name: 'Gmail', public: true },
+  { name: 'Google Calendar', public: true },
+  { name: 'Microsoft Excel Online', public: true },
+  { name: 'Microsoft Word Online', public: true },
+  { name: 'Microsoft Calendar', public: true },
+  { name: 'Microsoft Email', public: true },
+  { name: 'Microsoft Teams', public: true },
+  { name: 'Textbelt', public: false },
+  { name: 'Twilio', public: false },
+  { name: 'Google Meet', public: true },
+  { name: 'Twitter/X', public: true }
 ] as const;
 
 export const SERVICE_CATEGORIES = {
@@ -31,7 +31,7 @@ export const SERVICE_CATEGORIES = {
   'Cloud Spreadsheets': ['Google Sheets', 'Microsoft Excel Online']
 } as const;
 
-export type ServiceName = typeof SERVICES[number];
+export type ServiceName = typeof SERVICES[number]['name'];
 export type ServiceCategory = keyof typeof SERVICE_CATEGORIES;
 
 export interface IntegrationStatus {
@@ -41,4 +41,8 @@ export interface IntegrationStatus {
   category: ServiceCategory;
   description: string;
   isSystemIntegration?: boolean;
+  public?: boolean;
 }
+
+// Helper function to get public services
+export const getPublicServices = () => SERVICES.filter(service => service.public);

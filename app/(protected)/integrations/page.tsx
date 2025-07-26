@@ -8,53 +8,61 @@ const mockIntegrations: IntegrationStatus[] = [
     status: 'connected',
     lastConnected: '2 hours ago',
     category: 'Email',
-    description: 'Access and manage your email messages'
+    description: 'Access and manage your email messages',
+    public: true
   },
   {
     name: 'Google Calendar',
     status: 'connected',
     lastConnected: '1 day ago',
     category: 'Calendar',
-    description: 'Sync and manage your calendar events'
+    description: 'Sync and manage your calendar events',
+    public: true
   },
   {
     name: 'Notion',
     status: 'connected',
     lastConnected: '3 hours ago',
     category: 'Productivity and Task Management',
-    description: 'Create and update your notes and databases'
+    description: 'Create and update your notes and databases',
+    public: true
   },
   {
     name: 'Slack',
     status: 'pending_setup',
     category: 'Communications',
-    description: 'Send messages to your workspace'
+    description: 'Send messages to your workspace',
+    public: true
   },
   {
     name: 'Google Docs',
     status: 'connected',
     lastConnected: '1 week ago',
     category: 'Cloud Text Documents',
-    description: 'Create and edit documents'
+    description: 'Create and edit documents',
+    public: true
   },
   {
     name: 'Microsoft Teams',
     status: 'disconnected',
     category: 'Communications',
-    description: 'Team collaboration and messaging'
+    description: 'Team collaboration and messaging',
+    public: true
   },
   {
     name: 'Todoist',
     status: 'connected',
     lastConnected: '5 minutes ago',
     category: 'Productivity and Task Management',
-    description: 'Manage your tasks and projects'
+    description: 'Manage your tasks and projects',
+    public: true
   },
   {
     name: 'Dropbox',
     status: 'disconnected',
     category: 'Cloud Storage',
-    description: 'Access your cloud files'
+    description: 'Access your cloud files',
+    public: true
   },
   {
     name: 'Perplexity',
@@ -62,7 +70,8 @@ const mockIntegrations: IntegrationStatus[] = [
     lastConnected: 'Always active',
     category: 'Research',
     description: 'AI-powered research and answers',
-    isSystemIntegration: true
+    isSystemIntegration: true,
+    public: true
   },
   {
     name: 'Twitter/X',
@@ -70,7 +79,22 @@ const mockIntegrations: IntegrationStatus[] = [
     lastConnected: 'Always active',
     category: 'Research',
     description: 'Social media monitoring and interaction',
-    isSystemIntegration: true
+    isSystemIntegration: true,
+    public: true
+  },
+  {
+    name: 'Textbelt',
+    status: 'disconnected',
+    category: 'Communications',
+    description: 'SMS messaging service',
+    public: false
+  },
+  {
+    name: 'Twilio',
+    status: 'disconnected',
+    category: 'Communications',
+    description: 'Communication platform',
+    public: false
   }
 ];
 
@@ -103,9 +127,12 @@ function getStatusText(status: IntegrationStatus['status']) {
 export default async function IntegrationsPage() {
   // const user = await getUser() // Currently using mock data
   
+  // Filter integrations to only show public ones
+  const publicIntegrations = mockIntegrations.filter(integration => integration.public !== false);
+  
   const integrationsByCategory = Object.entries(SERVICE_CATEGORIES).map(([category, services]) => ({
     category: category as keyof typeof SERVICE_CATEGORIES,
-    integrations: mockIntegrations.filter(integration => 
+    integrations: publicIntegrations.filter(integration => 
       (services as readonly string[]).includes(integration.name) || integration.category === category
     )
   })).filter(group => group.integrations.length > 0);
@@ -124,7 +151,7 @@ export default async function IntegrationsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Connected</h3>
           <div className="text-3xl font-bold text-green-600 mb-1">
-            {mockIntegrations.filter(i => i.status === 'connected').length}
+            {publicIntegrations.filter(i => i.status === 'connected').length}
           </div>
           <p className="text-sm text-muted-foreground">Active integrations</p>
         </div>
@@ -132,7 +159,7 @@ export default async function IntegrationsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Pending Setup</h3>
           <div className="text-3xl font-bold text-yellow-600 mb-1">
-            {mockIntegrations.filter(i => i.status === 'pending_setup').length}
+            {publicIntegrations.filter(i => i.status === 'pending_setup').length}
           </div>
           <p className="text-sm text-muted-foreground">Awaiting completion</p>
         </div>
@@ -140,7 +167,7 @@ export default async function IntegrationsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Available</h3>
           <div className="text-3xl font-bold text-primary mb-1">
-            {mockIntegrations.filter(i => i.status === 'disconnected').length}
+            {publicIntegrations.filter(i => i.status === 'disconnected').length}
           </div>
           <p className="text-sm text-muted-foreground">Ready to connect</p>
         </div>
@@ -205,7 +232,7 @@ export default async function IntegrationsPage() {
           Built-in services that are always available to Juniper
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mockIntegrations
+          {publicIntegrations
             .filter(integration => integration.isSystemIntegration)
             .map((integration) => (
               <div key={integration.name} className="flex items-center justify-between p-4 bg-accent rounded-lg">
