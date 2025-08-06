@@ -1,7 +1,12 @@
 import { getUser } from '@/lib/auth/get-user'
+import { getDashboardStats, fetchUserProfile } from '@/lib/services'
 
 export default async function DashboardPage() {
   const user = await getUser()
+  const [dashboardStats, userProfile] = await Promise.all([
+    getDashboardStats(user.id),
+    fetchUserProfile(user.id)
+  ])
 
   return (
     <div className="space-y-8">
@@ -25,7 +30,7 @@ export default async function DashboardPage() {
           </div>
           <div>
             <span className="text-muted-foreground">Usage this month:</span>
-            <span className="ml-2 text-foreground">247 requests</span>
+            <span className="ml-2 text-foreground">{userProfile?.requests_month || 0} requests</span>
           </div>
         </div>
       </div>
@@ -34,19 +39,19 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Active Integrations</h3>
-          <div className="text-3xl font-bold text-primary mb-1">12</div>
+          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.activeIntegrationsCount}</div>
           <p className="text-sm text-muted-foreground">Connected services</p>
         </div>
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Automations</h3>
-          <div className="text-3xl font-bold text-primary mb-1">8</div>
+          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.activeAutomationsCount}</div>
           <p className="text-sm text-muted-foreground">Active workflows</p>
         </div>
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Repository Items</h3>
-          <div className="text-3xl font-bold text-primary mb-1">156</div>
+          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.resourcesCount}</div>
           <p className="text-sm text-muted-foreground">Total saved items</p>
         </div>
       </div>
@@ -56,27 +61,21 @@ export default async function DashboardPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Integrations</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Gmail</span>
-              </div>
-              <span className="text-xs text-muted-foreground">2 hours ago</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Notion</span>
-              </div>
-              <span className="text-xs text-muted-foreground">1 day ago</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Slack</span>
-              </div>
-              <span className="text-xs text-muted-foreground">3 days ago</span>
-            </div>
+            {dashboardStats.recentIntegrations.length > 0 ? (
+              dashboardStats.recentIntegrations.map((integration, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-2 h-2 rounded-full ${integration.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span className="text-sm text-foreground">{integration.name}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {integration.lastUsed ? new Date(integration.lastUsed).toLocaleDateString() : 'Never used'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No recent integrations</p>
+            )}
           </div>
           <a href="/integrations" className="text-primary hover:underline text-sm mt-4 inline-block">
             View all integrations →
@@ -86,27 +85,21 @@ export default async function DashboardPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Automations</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Email to Notion</span>
-              </div>
-              <span className="text-xs text-muted-foreground">Running</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Calendar Sync</span>
-              </div>
-              <span className="text-xs text-muted-foreground">Running</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                <span className="text-sm text-foreground">Task Reminders</span>
-              </div>
-              <span className="text-xs text-muted-foreground">Paused</span>
-            </div>
+            {dashboardStats.recentAutomations.length > 0 ? (
+              dashboardStats.recentAutomations.map((automation, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-2 h-2 rounded-full ${automation.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                    <span className="text-sm text-foreground">{automation.name}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {automation.status === 'active' ? 'Running' : 'Inactive'}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No recent automations</p>
+            )}
           </div>
           <a href="/automations" className="text-primary hover:underline text-sm mt-4 inline-block">
             View all automations →

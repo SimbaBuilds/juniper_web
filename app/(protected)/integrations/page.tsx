@@ -1,102 +1,6 @@
-// import { getUser } from '@/lib/auth/get-user'
+import { getUser } from '@/lib/auth/get-user'
+import { fetchIntegrations } from '@/lib/services'
 import { SERVICE_CATEGORIES, type IntegrationStatus } from '@/app/lib/integrations/constants'
-
-// Mock data - in real app this would come from API
-const mockIntegrations: IntegrationStatus[] = [
-  {
-    name: 'Gmail',
-    status: 'connected',
-    lastConnected: '2 hours ago',
-    category: 'Email',
-    description: 'Access and manage your email messages',
-    public: true
-  },
-  {
-    name: 'Google Calendar',
-    status: 'connected',
-    lastConnected: '1 day ago',
-    category: 'Calendar',
-    description: 'Sync and manage your calendar events',
-    public: true
-  },
-  {
-    name: 'Notion',
-    status: 'connected',
-    lastConnected: '3 hours ago',
-    category: 'Productivity and Task Management',
-    description: 'Create and update your notes and databases',
-    public: true
-  },
-  {
-    name: 'Slack',
-    status: 'pending_setup',
-    category: 'Communications',
-    description: 'Send messages to your workspace',
-    public: true
-  },
-  {
-    name: 'Google Docs',
-    status: 'connected',
-    lastConnected: '1 week ago',
-    category: 'Cloud Text Documents',
-    description: 'Create and edit documents',
-    public: true
-  },
-  {
-    name: 'Microsoft Teams',
-    status: 'disconnected',
-    category: 'Communications',
-    description: 'Team collaboration and messaging',
-    public: true
-  },
-  {
-    name: 'Todoist',
-    status: 'connected',
-    lastConnected: '5 minutes ago',
-    category: 'Productivity and Task Management',
-    description: 'Manage your tasks and projects',
-    public: true
-  },
-  {
-    name: 'Dropbox',
-    status: 'disconnected',
-    category: 'Cloud Storage',
-    description: 'Access your cloud files',
-    public: true
-  },
-  {
-    name: 'Perplexity',
-    status: 'connected',
-    lastConnected: 'Always active',
-    category: 'Research',
-    description: 'AI-powered research and answers',
-    isSystemIntegration: true,
-    public: true
-  },
-  {
-    name: 'Twitter/X',
-    status: 'connected',
-    lastConnected: 'Always active',
-    category: 'Research',
-    description: 'Social media monitoring and interaction',
-    isSystemIntegration: true,
-    public: true
-  },
-  {
-    name: 'Textbelt',
-    status: 'disconnected',
-    category: 'Communications',
-    description: 'SMS messaging service',
-    public: false
-  },
-  {
-    name: 'Twilio',
-    status: 'disconnected',
-    category: 'Communications',
-    description: 'Communication platform',
-    public: false
-  }
-];
 
 function getStatusColor(status: IntegrationStatus['status']) {
   switch (status) {
@@ -124,11 +28,34 @@ function getStatusText(status: IntegrationStatus['status']) {
   }
 }
 
+function mapDatabaseIntegrationToDisplay(dbIntegration: { status: string; services?: { service_name?: string; description?: string; public?: boolean; type?: string }; last_used?: string }): IntegrationStatus {
+  const statusMap: Record<string, IntegrationStatus['status']> = {
+    'active': 'connected',
+    'pending': 'pending_setup',
+    'inactive': 'disconnected',
+    'failed': 'disconnected'
+  }
+  
+  return {
+    name: (dbIntegration.services?.service_name || 'Unknown Service') as IntegrationStatus['name'],
+    status: statusMap[dbIntegration.status] || 'disconnected',
+    lastConnected: dbIntegration.last_used ? new Date(dbIntegration.last_used).toLocaleDateString() : undefined,
+    category: 'Communications' as IntegrationStatus['category'], // Default category
+    description: dbIntegration.services?.description || 'Service integration',
+    public: dbIntegration.services?.public !== false,
+    isSystemIntegration: dbIntegration.services?.type === 'system'
+  }
+}
+
 export default async function IntegrationsPage() {
-  // const user = await getUser() // Currently using mock data
+  const user = await getUser()
+  const dbIntegrations = await fetchIntegrations(user.id)
+  
+  // Convert database integrations to display format
+  const integrations = dbIntegrations.map(mapDatabaseIntegrationToDisplay)
   
   // Filter integrations to only show public ones
-  const publicIntegrations = mockIntegrations.filter(integration => integration.public !== false);
+  const publicIntegrations = integrations.filter(integration => integration.public !== false);
   
   const integrationsByCategory = Object.entries(SERVICE_CATEGORIES).map(([category, services]) => ({
     category: category as keyof typeof SERVICE_CATEGORIES,

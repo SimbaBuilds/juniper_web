@@ -14,7 +14,7 @@ export default async function ProtectedLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-semibold text-foreground">Juniper</h1>
+              <a href="/" className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</a>
               <div className="hidden md:flex space-x-6">
                 <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</a>
                 <a href="/integrations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Integrations</a>

@@ -1,5 +1,7 @@
 import { createClient } from './utils/supabase/client'
-import { Service } from './utils/supabase/tables'
+import { createClient as createServerClient } from './utils/supabase/server'
+import { Service, Automation, HotPhrase, Resource } from './utils/supabase/tables'
+import { cookies } from 'next/headers'
 
 export interface ServiceWithTags extends Service {
   tags: string[]
@@ -75,4 +77,197 @@ export async function fetchServicesWithTags(): Promise<ServiceWithTags[]> {
       tags: serviceTags
     }
   })
+}
+
+export async function fetchAutomations(userId?: string): Promise<Automation[]> {
+  const supabase = createServerClient(cookies())
+  
+  let query = supabase
+    .from('automations')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  if (userId) {
+    query = query.eq('user_id', userId)
+  }
+  
+  const { data: automations, error } = await query
+  
+  if (error) {
+    console.error('Error fetching automations:', error)
+    return []
+  }
+  
+  return automations || []
+}
+
+export async function fetchHotPhrases(userId?: string): Promise<HotPhrase[]> {
+  const supabase = createServerClient(cookies())
+  
+  let query = supabase
+    .from('hot_phrases')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  if (userId) {
+    query = query.eq('user_id', userId)
+  }
+  
+  const { data: hotPhrases, error } = await query
+  
+  if (error) {
+    console.error('Error fetching hot phrases:', error)
+    return []
+  }
+  
+  return hotPhrases || []
+}
+
+export async function fetchUserProfile(userId: string) {
+  const supabase = createServerClient(cookies())
+  
+  const { data: profile, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  
+  if (error) {
+    console.error('Error fetching user profile:', error)
+    return null
+  }
+  
+  return profile
+}
+
+export async function fetchIntegrations(userId?: string) {
+  const supabase = createServerClient(cookies())
+  
+  let query = supabase
+    .from('integrations')
+    .select(`
+      *,
+      services (
+        service_name,
+        description,
+        type
+      )
+    `)
+    .order('created_at', { ascending: false })
+  
+  if (userId) {
+    query = query.eq('user_id', userId)
+  }
+  
+  const { data: integrations, error } = await query
+  
+  if (error) {
+    console.error('Error fetching integrations:', error)
+    return []
+  }
+  
+  return integrations || []
+}
+
+export async function fetchResources(userId?: string) {
+  const supabase = createServerClient(cookies())
+  
+  let query = supabase
+    .from('resources')
+    .select('*')
+    .order('created_at', { ascending: false })
+  
+  if (userId) {
+    query = query.eq('user_id', userId)
+  }
+  
+  const { data: resources, error } = await query
+  
+  if (error) {
+    console.error('Error fetching resources:', error)
+    return []
+  }
+  
+  return resources || []
+}
+
+export async function getDashboardStats(userId: string) {
+  const [integrations, automations, resources] = await Promise.all([
+    fetchIntegrations(userId),
+    fetchAutomations(userId),
+    fetchResources(userId)
+  ])
+  
+  return {
+    activeIntegrationsCount: integrations.filter(i => i.is_active).length,
+    activeAutomationsCount: automations.filter(a => a.is_active).length,
+    resourcesCount: resources.length,
+    recentIntegrations: integrations
+      .filter(i => i.is_active)
+      .slice(0, 3)
+      .map(i => ({
+        name: i.services?.service_name || 'Unknown',
+        status: i.status || 'active',
+        lastUsed: i.last_used || i.created_at
+      })),
+    recentAutomations: automations
+      .filter(a => a.is_active)
+      .slice(0, 3)
+      .map(a => ({
+        name: a.name,
+        status: a.is_active ? 'active' : 'inactive',
+        lastExecuted: a.last_executed
+      }))
+  }
+}
+
+export async function createResource(userId: string, resourceData: Partial<Resource>) {
+  const supabase = createServerClient(cookies())
+  
+  const { data: resource, error } = await supabase
+    .from('resources')
+    .insert([{ ...resourceData, user_id: userId }])
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error creating resource:', error)
+    throw error
+  }
+  
+  return resource
+}
+
+export async function updateResource(resourceId: string, resourceData: Partial<Resource>) {
+  const supabase = createServerClient(cookies())
+  
+  const { data: resource, error } = await supabase
+    .from('resources')
+    .update({ ...resourceData, updated_at: new Date() })
+    .eq('id', resourceId)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Error updating resource:', error)
+    throw error
+  }
+  
+  return resource
+}
+
+export async function deleteResource(resourceId: string) {
+  const supabase = createServerClient(cookies())
+  
+  const { error } = await supabase
+    .from('resources')
+    .delete()
+    .eq('id', resourceId)
+  
+  if (error) {
+    console.error('Error deleting resource:', error)
+    throw error
+  }
+  
+  return true
 }

@@ -1,57 +1,20 @@
-// import { getUser } from '@/lib/auth/get-user'
-import { UserProfile, SubscriptionInfo, AVAILABLE_MODELS } from '@/app/lib/account/types'
-
-// Mock data - in real app this would come from API
-const mockUserProfile: UserProfile = {
-  id: 'user1',
-  display_name: 'John Doe',
-  name: 'John Doe',
-  location: 'San Francisco, CA',
-  education: 'Computer Science',
-  profession: 'Software Engineer',
-  email: 'john@example.com',
-  phone: '+1 (555) 123-4567',
-  timezone: 'America/Los_Angeles',
-  base_language_model: 'claude-sonnet-4-20250514',
-  deepgram_enabled: true,
-  deepgram_voice: 'Apollo',
-  wake_word: 'Hey Jarvis',
-  wake_word_sensitivity: 75,
-  wake_word_enabled: true,
-  xai_live_search_enabled: true,
-  xai_live_search_safe_search: true,
-  general_instructions: 'Be concise and helpful. Focus on practical solutions.',
-  requests_today: 47,
-  requests_week: 312,
-  requests_month: 1248,
-  user_tags: ['Developer', 'AI Enthusiast', 'Early Adopter'],
-  preferences: {
-    notifications: true,
-    analytics: false,
-    beta_features: true
-  },
-  enabled_integrations: {
-    gmail: true,
-    slack: true,
-    notion: true,
-    calendar: true
-  },
-  created_at: new Date('2024-01-01'),
-  updated_at: new Date('2024-01-20')
-};
-
-const mockSubscription: SubscriptionInfo = {
-  plan: 'pro',
-  status: 'active',
-  current_period_start: new Date('2024-01-01'),
-  current_period_end: new Date('2024-02-01'),
-  cancel_at_period_end: false,
-  requests_limit: 5000,
-  requests_used: 1248
-};
+import { getUser } from '@/lib/auth/get-user'
+import { fetchUserProfile } from '@/lib/services'
 
 export default async function AccountPage() {
-  // const user = await getUser() // Currently using mock data
+  const user = await getUser()
+  const userProfile = await fetchUserProfile(user.id)
+  
+  // Mock subscription data - this would come from a billing system
+  const mockSubscription = {
+    plan: 'pro',
+    status: 'active',
+    current_period_start: new Date('2024-01-01'),
+    current_period_end: new Date('2024-02-01'),
+    cancel_at_period_end: false,
+    requests_limit: 5000,
+    requests_used: userProfile?.requests_month || 0
+  }
 
   return (
     <div className="space-y-8">
@@ -66,65 +29,65 @@ export default async function AccountPage() {
       <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-xl font-semibold text-foreground mb-6">Profile Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-foreground mb-2">Display Name</label>
             <input
               type="text"
-              value={mockUserProfile.display_name || ''}
+              value={userProfile?.display_name || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
-          </div>
+          </div> */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Email</label>
             <input
               type="email"
-              value={mockUserProfile.email}
+              value={user.email || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-foreground mb-2">Phone</label>
             <input
               type="text"
-              value={mockUserProfile.phone || 'Not provided'}
+              value={userProfile?.phone || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
-          </div>
-          <div>
+          </div> */}
+          {/* <div>
             <label className="block text-sm font-medium text-foreground mb-2">Location</label>
             <input
               type="text"
-              value={mockUserProfile.location || 'Not provided'}
+              value={userProfile?.location || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
-          </div>
-          <div>
+          </div> */}
+          {/* <div>
             <label className="block text-sm font-medium text-foreground mb-2">Education</label>
             <input
               type="text"
-              value={mockUserProfile.education || 'Not provided'}
+              value={userProfile?.education || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
-          </div>
-          <div>
+          </div> */}
+          {/* <div>
             <label className="block text-sm font-medium text-foreground mb-2">Profession</label>
             <input
               type="text"
-              value={mockUserProfile.profession || 'Not provided'}
+              value={userProfile?.profession || 'Not provided'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
-          </div>
-        </div>
-        <div className="mt-4 p-3 bg-muted rounded-md">
-          <p className="text-xs text-muted-foreground text-center">
+          </div> */}
+        {/* </div>
+        <div className="mt-4 p-3 bg-muted rounded-md"> */}
+          {/* <p className="text-xs text-muted-foreground text-center">
             Profile information can be updated through the mobile app
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -198,7 +161,7 @@ export default async function AccountPage() {
       </div>
 
       {/* Voice & AI Settings */}
-      <div className="bg-card p-6 rounded-lg border border-border">
+      {/* <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-xl font-semibold text-foreground mb-6">Voice & AI Settings</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -206,7 +169,7 @@ export default async function AccountPage() {
             <label className="block text-sm font-medium text-foreground mb-2">Language Model</label>
             <input
               type="text"
-              value={AVAILABLE_MODELS.find(m => m.value === mockUserProfile.base_language_model)?.label || mockUserProfile.base_language_model}
+              value={AVAILABLE_MODELS.find(m => m.value === userProfile?.base_language_model)?.label || userProfile?.base_language_model || 'Not configured'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
@@ -216,7 +179,7 @@ export default async function AccountPage() {
             <label className="block text-sm font-medium text-foreground mb-2">Timezone</label>
             <input
               type="text"
-              value={mockUserProfile.timezone}
+              value={userProfile?.timezone || 'Not configured'}
               disabled
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
             />
@@ -227,16 +190,16 @@ export default async function AccountPage() {
             <div className="flex items-center space-x-2">
               <input
                 type="text"
-                value={mockUserProfile.deepgram_voice || 'Not selected'}
+                value={userProfile?.selected_deepgram_voice || 'Not selected'}
                 disabled
                 className="flex-1 px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
               />
               <span className={`px-2 py-1 rounded-full text-xs ${
-                mockUserProfile.deepgram_enabled 
+                userProfile?.deepgram_enabled 
                   ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                   : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
               }`}>
-                {mockUserProfile.deepgram_enabled ? 'Enabled' : 'Disabled'}
+                {userProfile?.deepgram_enabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
           </div>
@@ -247,20 +210,20 @@ export default async function AccountPage() {
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
-                  value={mockUserProfile.wake_word || 'Not set'}
+                  value={userProfile?.wake_word || 'Not set'}
                   disabled
                   className="flex-1 px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
                 />
                 <span className={`px-2 py-1 rounded-full text-xs ${
-                  mockUserProfile.wake_word_enabled 
+                  userProfile?.wake_word_detection_enabled 
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                     : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                 }`}>
-                  {mockUserProfile.wake_word_enabled ? 'Enabled' : 'Disabled'}
+                  {userProfile?.wake_word_detection_enabled ? 'Enabled' : 'Disabled'}
                 </span>
               </div>
               <div className="text-sm text-muted-foreground">
-                Sensitivity: {mockUserProfile.wake_word_sensitivity}%
+                Sensitivity: {userProfile?.wake_word_sensitivity || 50}%
               </div>
             </div>
           </div>
@@ -268,7 +231,7 @@ export default async function AccountPage() {
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-foreground mb-2">General Instructions</label>
             <textarea
-              value={mockUserProfile.general_instructions || 'No custom instructions set'}
+              value={userProfile?.general_instructions || 'No custom instructions set'}
               disabled
               rows={3}
               className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground resize-none"
@@ -281,7 +244,7 @@ export default async function AccountPage() {
             Voice and AI settings can be modified through the mobile app
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Usage Statistics */}
       <div className="bg-card p-6 rounded-lg border border-border">
@@ -289,15 +252,15 @@ export default async function AccountPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{mockUserProfile.requests_today}</div>
+            <div className="text-3xl font-bold text-primary mb-1">{userProfile?.requests_today || 0}</div>
             <p className="text-sm text-muted-foreground">Requests Today</p>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{mockUserProfile.requests_week}</div>
+            <div className="text-3xl font-bold text-primary mb-1">{userProfile?.requests_week || 0}</div>
             <p className="text-sm text-muted-foreground">Requests This Week</p>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{mockUserProfile.requests_month}</div>
+            <div className="text-3xl font-bold text-primary mb-1">{userProfile?.requests_month || 0}</div>
             <p className="text-sm text-muted-foreground">Requests This Month</p>
           </div>
         </div>
@@ -314,11 +277,11 @@ export default async function AccountPage() {
               <p className="text-xs text-muted-foreground">Real-time web search capabilities</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm ${
-              mockUserProfile.xai_live_search_enabled 
+              userProfile.xai_live_search_enabled 
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
             }`}>
-              {mockUserProfile.xai_live_search_enabled ? 'Enabled' : 'Disabled'}
+              {userProfile.xai_live_search_enabled ? 'Enabled' : 'Disabled'}
             </span>
           </div>
           
@@ -328,11 +291,11 @@ export default async function AccountPage() {
               <p className="text-xs text-muted-foreground">Filter explicit content from search results</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm ${
-              mockUserProfile.xai_live_search_safe_search 
+              userProfile.xai_live_search_safe_search 
                 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
             }`}>
-              {mockUserProfile.xai_live_search_safe_search ? 'On' : 'Off'}
+              {userProfile.xai_live_search_safe_search ? 'On' : 'Off'}
             </span>
           </div>
         </div>
@@ -349,14 +312,16 @@ export default async function AccountPage() {
         <h2 className="text-xl font-semibold text-foreground mb-6">User Tags</h2>
         
         <div className="flex flex-wrap gap-2 mb-4">
-          {mockUserProfile.user_tags.map((tag) => (
+          {userProfile?.user_tags?.length ? userProfile.user_tags.map((tag: string) => (
             <span
               key={tag}
               className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-secondary text-secondary-foreground"
             >
               {tag}
             </span>
-          ))}
+          )) : (
+            <span className="text-sm text-muted-foreground">No user tags configured</span>
+          )}
         </div>
         
         <div className="p-3 bg-muted rounded-md">
@@ -373,10 +338,10 @@ export default async function AccountPage() {
         <div className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground mb-2">
-              Account created: {mockUserProfile.created_at.toLocaleDateString()}
+              Account created: {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString() : 'Unknown'}
             </p>
             <p className="text-sm text-muted-foreground">
-              Last updated: {mockUserProfile.updated_at.toLocaleDateString()}
+              Last updated: {userProfile?.updated_at ? new Date(userProfile.updated_at).toLocaleDateString() : 'Unknown'}
             </p>
           </div>
           

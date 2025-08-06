@@ -73,7 +73,7 @@ export async function seedConfigForms() {
           service_id: config.service_id,
           json: config.json,
           setup_instructions: config.setup_instructions,
-          updated_at: config.updated_at.toISOString()
+          updated_at: config.updated_at?.toISOString() || new Date().toISOString()
         }))
       )
       .select()
@@ -165,7 +165,7 @@ export async function seedEnhancedConfigForms() {
           service_id: config.service_id,
           json: config.json,
           setup_instructions: config.setup_instructions,
-          updated_at: config.updated_at.toISOString()
+          updated_at: config.updated_at?.toISOString() || new Date().toISOString()
         }))
       )
       .select()

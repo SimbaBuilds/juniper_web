@@ -1,24 +1,32 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import { themes, type ThemeName, getCSSVariables } from '@/lib/themes'
 
-type Theme = 'dark' | 'light'
+type Mode = 'dark' | 'light'
 
 type ThemeProviderProps = {
   children: React.ReactNode
-  defaultTheme?: Theme
+  defaultTheme?: ThemeName
+  defaultMode?: Mode
   storageKey?: string
 }
 
 type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
+  theme: ThemeName
+  mode: Mode
+  setTheme: (theme: ThemeName) => void
+  setMode: (mode: Mode) => void
+  toggleMode: () => void
   mounted: boolean
 }
 
 const initialState: ThemeProviderState = {
-  theme: 'light',
+  theme: 'default',
+  mode: 'light',
   setTheme: () => null,
+  setMode: () => null,
+  toggleMode: () => null,
   mounted: false,
 }
 
@@ -26,18 +34,30 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
+  defaultTheme = 'vintage',
+  defaultMode = 'light',
   storageKey = 'juniper-ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
+  const [theme, setTheme] = useState<ThemeName>(defaultTheme)
+  const [mode, setMode] = useState<Mode>(defaultMode)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    const storedTheme = localStorage.getItem(storageKey) as Theme
-    if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
-      setTheme(storedTheme)
+    const storedData = localStorage.getItem(storageKey)
+    if (storedData) {
+      try {
+        const { theme: storedTheme, mode: storedMode } = JSON.parse(storedData)
+        if (storedTheme && themes[storedTheme]) {
+          setTheme(storedTheme)
+        }
+        if (storedMode && (storedMode === 'light' || storedMode === 'dark')) {
+          setMode(storedMode)
+        }
+      } catch {
+        // Invalid JSON, ignore
+      }
     }
   }, [storageKey])
 
@@ -45,16 +65,46 @@ export function ThemeProvider({
     if (!mounted) return
 
     const root = window.document.documentElement
+    
+    // Remove existing theme classes
     root.classList.remove('light', 'dark')
+    Object.keys(themes).forEach(themeName => {
+      root.classList.remove(themeName)
+    })
+    
+    // Add current mode and theme classes
+    root.classList.add(mode)
     root.classList.add(theme)
-  }, [theme, mounted])
+    
+    // Apply CSS variables
+    const cssVariables = getCSSVariables(theme, mode)
+    Object.entries(cssVariables).forEach(([key, value]) => {
+      root.style.setProperty(key, value)
+    })
+  }, [theme, mode, mounted])
+
+  const updateTheme = (newTheme: ThemeName) => {
+    const data = { theme: newTheme, mode }
+    localStorage.setItem(storageKey, JSON.stringify(data))
+    setTheme(newTheme)
+  }
+
+  const updateMode = (newMode: Mode) => {
+    const data = { theme, mode: newMode }
+    localStorage.setItem(storageKey, JSON.stringify(data))
+    setMode(newMode)
+  }
+
+  const toggleMode = () => {
+    updateMode(mode === 'light' ? 'dark' : 'light')
+  }
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
-    },
+    mode,
+    setTheme: updateTheme,
+    setMode: updateMode,
+    toggleMode,
     mounted,
   }
 

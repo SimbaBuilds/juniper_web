@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Resource, ResourceType, RESOURCE_TYPES, MAX_CONTENT_LENGTH, MAX_INSTRUCTIONS_LENGTH, PREDEFINED_TAGS, MAX_RESOURCE_TAGS } from '@/app/lib/repository/types'
+import { ResourceType, RESOURCE_TYPES, MAX_CONTENT_LENGTH, MAX_INSTRUCTIONS_LENGTH, PREDEFINED_TAGS, MAX_RESOURCE_TAGS } from '@/app/lib/repository/types'
+import { Resource } from '@/lib/utils/supabase/tables'
 
 interface ResourceModalProps {
   isOpen: boolean
@@ -25,11 +26,11 @@ export function ResourceModal({ isOpen, onClose, onSave, resource, mode }: Resou
   useEffect(() => {
     if (resource && mode === 'edit') {
       setFormData({
-        title: resource.title,
+        title: resource.title || '',
         content: resource.content,
         instructions: resource.instructions || '',
-        type: resource.type,
-        tags: resource.tags
+        type: resource.type as ResourceType,
+        tags: [] // Tags handled separately since they're stored as tag_1_id, etc.
       })
     } else {
       setFormData({
@@ -74,11 +75,15 @@ export function ResourceModal({ isOpen, onClose, onSave, resource, mode }: Resou
     }
 
     const resourceData: Partial<Resource> = {
-      ...formData,
+      title: formData.title,
+      content: formData.content,
+      instructions: formData.instructions || undefined,
+      type: formData.type,
       ...(mode === 'edit' && resource ? { id: resource.id } : {}),
       relevance_score: resource?.relevance_score || 100,
-      decay_factor: resource?.decay_factor || 1,
+      decay_factor: resource?.decay_factor || 0.8,
       auto_committed: resource?.auto_committed || false,
+      last_accessed: new Date(),
       updated_at: new Date(),
       ...(mode === 'add' ? { created_at: new Date() } : {})
     }

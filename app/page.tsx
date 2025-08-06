@@ -49,7 +49,7 @@ export default function HomePage() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-foreground">Juniper</h1>
+            <a href="/" className="text-2xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</a>
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />

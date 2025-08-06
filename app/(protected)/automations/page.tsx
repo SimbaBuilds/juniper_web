@@ -1,91 +1,6 @@
-// import { getUser } from '@/lib/auth/get-user'
-import { Automation, HotPhrase } from '@/app/lib/automations/types'
+import { getUser } from '@/lib/auth/get-user'
+import { fetchAutomations } from '@/lib/services'
 
-// Mock data - in real app this would come from API
-const mockAutomations: Automation[] = [
-  {
-    id: '1',
-    user_id: 'user1',
-    name: 'Email to Notion Workflow',
-    trigger_conditions: { type: 'email_received', from: 'important@example.com' },
-    actions: { type: 'create_notion_page', database: 'inbox' },
-    is_active: true,
-    execution_count: 47,
-    last_executed: new Date('2024-01-20T10:30:00Z'),
-    notes: 'Automatically creates Notion pages from important emails',
-    created_at: new Date('2024-01-01T00:00:00Z'),
-    integrations: ['Gmail', 'Notion']
-  },
-  {
-    id: '2',
-    user_id: 'user1',
-    name: 'Calendar Event Sync',
-    trigger_conditions: { type: 'calendar_event_created' },
-    actions: { type: 'send_slack_notification', channel: '#general' },
-    is_active: true,
-    execution_count: 23,
-    last_executed: new Date('2024-01-19T14:15:00Z'),
-    created_at: new Date('2024-01-05T00:00:00Z'),
-    integrations: ['Google Calendar', 'Slack']
-  },
-  {
-    id: '3',
-    user_id: 'user1',
-    name: 'Weekly Task Summary',
-    trigger_conditions: { type: 'schedule', cron: '0 9 * * 1' },
-    actions: { type: 'generate_summary', source: 'todoist' },
-    is_active: false,
-    execution_count: 8,
-    last_executed: new Date('2024-01-15T09:00:00Z'),
-    created_at: new Date('2024-01-10T00:00:00Z'),
-    integrations: ['Todoist', 'Gmail']
-  }
-];
-
-const mockHotPhrases: HotPhrase[] = [
-  {
-    id: '1',
-    user_id: 'user1',
-    phrase: 'send a text',
-    service_name: 'Textbelt',
-    tool_name: 'send_sms',
-    description: 'Send SMS messages quickly',
-    is_built_in: true,
-    is_active: true,
-    execution_count: 156,
-    last_used: new Date('2024-01-20T08:45:00Z'),
-    created_at: new Date('2024-01-01T00:00:00Z'),
-    updated_at: new Date('2024-01-01T00:00:00Z')
-  },
-  {
-    id: '2',
-    user_id: 'user1',
-    phrase: 'create meeting note',
-    service_name: 'Notion',
-    tool_name: 'create_page',
-    description: 'Quickly create meeting notes in Notion',
-    is_built_in: false,
-    is_active: true,
-    execution_count: 34,
-    last_used: new Date('2024-01-19T16:30:00Z'),
-    created_at: new Date('2024-01-08T00:00:00Z'),
-    updated_at: new Date('2024-01-08T00:00:00Z')
-  },
-  {
-    id: '3',
-    user_id: 'user1',
-    phrase: 'schedule reminder',
-    service_name: 'Google Calendar',
-    tool_name: 'create_event',
-    description: 'Set calendar reminders',
-    is_built_in: false,
-    is_active: false,
-    execution_count: 12,
-    last_used: new Date('2024-01-10T11:15:00Z'),
-    created_at: new Date('2024-01-03T00:00:00Z'),
-    updated_at: new Date('2024-01-15T00:00:00Z')
-  }
-];
 
 function formatLastExecuted(date: Date): string {
   const now = new Date();
@@ -103,12 +18,12 @@ function formatLastExecuted(date: Date): string {
 }
 
 export default async function AutomationsPage() {
-  // const user = await getUser() // Currently using mock data
+  const user = await getUser()
   
-  const activeAutomations = mockAutomations.filter(a => a.is_active);
-  const inactiveAutomations = mockAutomations.filter(a => !a.is_active);
-  const activeHotPhrases = mockHotPhrases.filter(h => h.is_active);
-  const inactiveHotPhrases = mockHotPhrases.filter(h => !h.is_active);
+  const automations = await fetchAutomations(user.id)
+  
+  const activeAutomations = automations.filter(a => a.is_active);
+  const inactiveAutomations = automations.filter(a => !a.is_active);
 
   return (
     <div className="space-y-8">
@@ -120,7 +35,7 @@ export default async function AutomationsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Active Automations</h3>
           <div className="text-3xl font-bold text-green-600 mb-1">{activeAutomations.length}</div>
@@ -130,12 +45,12 @@ export default async function AutomationsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Total Executions</h3>
           <div className="text-3xl font-bold text-primary mb-1">
-            {mockAutomations.reduce((sum, a) => sum + a.execution_count, 0)}
+            {automations.reduce((sum, a) => sum + a.execution_count, 0)}
           </div>
           <p className="text-sm text-muted-foreground">All time</p>
         </div>
         
-        <div className="bg-card p-6 rounded-lg border border-border">
+        {/* <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Hot Phrases</h3>
           <div className="text-3xl font-bold text-blue-600 mb-1">{activeHotPhrases.length}</div>
           <p className="text-sm text-muted-foreground">Quick actions</p>
@@ -144,10 +59,10 @@ export default async function AutomationsPage() {
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Phrase Usage</h3>
           <div className="text-3xl font-bold text-primary mb-1">
-            {mockHotPhrases.reduce((sum, h) => sum + h.execution_count, 0)}
+            {hotPhrases.reduce((sum, h) => sum + h.execution_count, 0)}
           </div>
           <p className="text-sm text-muted-foreground">Total uses</p>
-        </div>
+        </div> */}
       </div>
 
       {/* Event-Driven Automations */}
@@ -191,13 +106,11 @@ export default async function AutomationsPage() {
                       </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Integrations:</span>
+                      <span className="text-muted-foreground">Actions:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {automation.integrations.map((integration) => (
-                          <span key={integration} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded dark:bg-blue-900 dark:text-blue-200">
-                            {integration}
-                          </span>
-                        ))}
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded dark:bg-blue-900 dark:text-blue-200">
+                          {(automation.actions as { type?: string })?.type || 'Unknown'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -247,7 +160,7 @@ export default async function AutomationsPage() {
           </div>
         )}
 
-        {mockAutomations.length === 0 && (
+        {automations.length === 0 && (
           <div className="bg-card p-8 rounded-lg border border-border text-center">
             <h3 className="text-lg font-medium text-foreground mb-2">No automations yet</h3>
             <p className="text-muted-foreground mb-4">
@@ -261,7 +174,7 @@ export default async function AutomationsPage() {
       </div>
 
       {/* Hot Phrases Section */}
-      <div className="space-y-6">
+      {/* <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-semibold text-foreground mb-4">Hot Phrases</h2>
           <p className="text-sm text-muted-foreground mb-6">
@@ -341,7 +254,7 @@ export default async function AutomationsPage() {
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   )
 }
