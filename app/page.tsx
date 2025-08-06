@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { 
@@ -9,7 +10,6 @@ import {
   Zap,
   Smartphone
 } from 'lucide-react'
-import Link from 'next/link'
 import { useAuth } from './providers/auth-provider'
 import { ThemeToggle } from './components/theme-toggle'
 import { getPublicServices } from './lib/integrations/constants'
@@ -49,7 +49,7 @@ export default function HomePage() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-8 w-8 text-blue-600" />
-            <a href="/" className="text-2xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</a>
+            <Link href="/" className="text-2xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</Link>
           </div>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
