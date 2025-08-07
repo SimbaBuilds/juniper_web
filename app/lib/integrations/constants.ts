@@ -20,15 +20,25 @@ export const SERVICES = [
 ] as const;
 
 export const SERVICE_CATEGORIES = {
-  'Communications': ['Slack', 'Microsoft Teams', 'Twilio', 'Textbelt'],
-  'Productivity and Task Management': ['Notion', 'Todoist'],
-  'Calendar': ['Google Calendar', 'Microsoft Calendar'],
+  'Cloud Spreadsheets': ['Google Sheets', 'Microsoft Excel Online'],
+  'Search': ['Perplexity'],
   'Email': ['Gmail', 'Microsoft Email'],
   'Video Conferencing': ['Google Meet'],
-  'Research': ['Perplexity', 'Twitter/X'],
-  'Cloud Storage': ['Dropbox'],
   'Cloud Text Documents': ['Google Docs', 'Microsoft Word Online'],
-  'Cloud Spreadsheets': ['Google Sheets', 'Microsoft Excel Online']
+  'Reminders': [],
+  'Project Management': ['Notion'],
+  'Team Collaboration': ['Slack', 'Microsoft Teams'],
+  'Cloud Storage': ['Dropbox'],
+  'Research': ['Twitter/X'],
+  'Note-Taking': [],
+  'Calendar': ['Google Calendar', 'Microsoft Calendar'],
+  'SMS': ['Textbelt'],
+  'AI': [],
+  'Team Communication': [],
+  'Text Message': ['Twilio'],
+  'Task Management': ['Todoist'],
+  'Task Scheduling': [],
+  'Other': [] // Fallback category
 } as const;
 
 export type ServiceName = typeof SERVICES[number]['name'];

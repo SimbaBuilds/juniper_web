@@ -38,13 +38,13 @@ export default async function AutomationsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Active Automations</h3>
-          <div className="text-3xl font-bold text-primary mb-1">{activeAutomations.length}</div>
+          <div className="text-number-lg mb-1">{activeAutomations.length}</div>
           <p className="text-sm text-muted-foreground">Running workflows</p>
         </div>
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Total Executions</h3>
-          <div className="text-3xl font-bold text-primary mb-1">
+          <div className="text-number-lg mb-1">
             {automations.reduce((sum, a) => sum + a.execution_count, 0)}
           </div>
           <p className="text-sm text-muted-foreground">All time</p>
@@ -76,7 +76,7 @@ export default async function AutomationsPage() {
 
         {activeAutomations.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Active Automations ({activeAutomations.length})</h3>
+            <h3 className="text-lg font-medium text-foreground">Active Automations (<span className="text-number">{activeAutomations.length}</span>)</h3>
             <div className="grid grid-cols-1 gap-4">
               {activeAutomations.map((automation) => (
                 <div key={automation.id} className="bg-card p-6 rounded-lg border border-border">
@@ -97,7 +97,7 @@ export default async function AutomationsPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                     <div>
                       <span className="text-muted-foreground">Executions:</span>
-                      <span className="ml-2 font-medium text-foreground">{automation.execution_count}</span>
+                      <span className="ml-2 font-medium text-foreground text-number">{automation.execution_count}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Last run:</span>
@@ -128,7 +128,7 @@ export default async function AutomationsPage() {
 
         {inactiveAutomations.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Inactive Automations ({inactiveAutomations.length})</h3>
+            <h3 className="text-lg font-medium text-foreground">Inactive Automations (<span className="text-number">{inactiveAutomations.length}</span>)</h3>
             <div className="grid grid-cols-1 gap-4">
               {inactiveAutomations.map((automation) => (
                 <div key={automation.id} className="bg-card p-6 rounded-lg border border-border opacity-60">
@@ -145,7 +145,7 @@ export default async function AutomationsPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Executions:</span>
-                      <span className="ml-2 font-medium text-foreground">{automation.execution_count}</span>
+                      <span className="ml-2 font-medium text-foreground text-number">{automation.execution_count}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Last run:</span>

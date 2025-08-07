@@ -28,7 +28,21 @@ function getStatusText(status: IntegrationStatus['status']) {
   }
 }
 
-function mapDatabaseIntegrationToDisplay(dbIntegration: { status: string; services?: { service_name?: string; description?: string; public?: boolean; type?: string }; last_used?: string }): IntegrationStatus {
+function mapDatabaseIntegrationToDisplay(dbIntegration: { 
+  status: string; 
+  services?: { 
+    service_name?: string; 
+    description?: string; 
+    public?: boolean; 
+    type?: string;
+    tag_1?: { name: string; type: string } | null;
+    tag_2?: { name: string; type: string } | null;
+    tag_3?: { name: string; type: string } | null;
+    tag_4?: { name: string; type: string } | null;
+    tag_5?: { name: string; type: string } | null;
+  }; 
+  last_used?: string 
+}): IntegrationStatus {
   const statusMap: Record<string, IntegrationStatus['status']> = {
     'active': 'connected',
     'pending': 'pending_setup',
@@ -36,11 +50,22 @@ function mapDatabaseIntegrationToDisplay(dbIntegration: { status: string; servic
     'failed': 'disconnected'
   }
   
+  // Extract service type from tags
+  const serviceTypeTags = [
+    dbIntegration.services?.tag_1,
+    dbIntegration.services?.tag_2,
+    dbIntegration.services?.tag_3,
+    dbIntegration.services?.tag_4,
+    dbIntegration.services?.tag_5
+  ].filter(tag => tag && tag.type === 'service_type')
+  
+  const serviceType = serviceTypeTags.length > 0 ? serviceTypeTags[0]!.name : 'Other'
+  
   return {
     name: (dbIntegration.services?.service_name || 'Unknown Service') as IntegrationStatus['name'],
     status: statusMap[dbIntegration.status] || 'disconnected',
     lastConnected: dbIntegration.last_used ? new Date(dbIntegration.last_used).toLocaleDateString() : undefined,
-    category: 'Communications' as IntegrationStatus['category'], // Default category
+    category: serviceType as IntegrationStatus['category'],
     description: dbIntegration.services?.description || 'Service integration',
     public: dbIntegration.services?.public !== false,
     isSystemIntegration: dbIntegration.services?.type === 'system'
@@ -57,12 +82,24 @@ export default async function IntegrationsPage() {
   // Filter integrations to only show public ones
   const publicIntegrations = integrations.filter(integration => integration.public !== false);
   
-  const integrationsByCategory = Object.entries(SERVICE_CATEGORIES).map(([category, services]) => ({
-    category: category as keyof typeof SERVICE_CATEGORIES,
-    integrations: publicIntegrations.filter(integration => 
-      (services as readonly string[]).includes(integration.name) || integration.category === category
-    )
-  })).filter(group => group.integrations.length > 0);
+  // Group integrations by their actual categories from the database
+  const integrationsByCategory = publicIntegrations.reduce((acc, integration) => {
+    const category = integration.category || 'Other'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(integration)
+    return acc
+  }, {} as Record<string, typeof publicIntegrations>)
+
+  // Convert to the format expected by the template
+  const integrationsCategorized = Object.entries(integrationsByCategory)
+    .map(([category, integrations]) => ({
+      category: category as keyof typeof SERVICE_CATEGORIES,
+      integrations: integrations
+    }))
+    .filter(group => group.integrations.length > 0)
+    .sort((a, b) => a.category.localeCompare(b.category)); // Sort categories alphabetically
 
   return (
     <div className="space-y-8">
@@ -77,7 +114,7 @@ export default async function IntegrationsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Connected</h3>
-          <div className="text-3xl font-bold text-primary mb-1">
+          <div className="text-number-lg mb-1">
             {publicIntegrations.filter(i => i.status === 'connected').length}
           </div>
           <p className="text-sm text-muted-foreground">Active integrations</p>
@@ -85,7 +122,7 @@ export default async function IntegrationsPage() {
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Pending Setup</h3>
-          <div className="text-3xl font-bold text-yellow-600 mb-1">
+          <div className="text-number-lg mb-1">
             {publicIntegrations.filter(i => i.status === 'pending_setup').length}
           </div>
           <p className="text-sm text-muted-foreground">Awaiting completion</p>
@@ -93,7 +130,7 @@ export default async function IntegrationsPage() {
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Available</h3>
-          <div className="text-3xl font-bold text-primary mb-1">
+          <div className="text-number-lg mb-1">
             {publicIntegrations.filter(i => i.status === 'disconnected').length}
           </div>
           <p className="text-sm text-muted-foreground">Ready to connect</p>
@@ -102,7 +139,7 @@ export default async function IntegrationsPage() {
 
       {/* Integration Categories */}
       <div className="space-y-8">
-        {integrationsByCategory.map(({ category, integrations }) => (
+        {integrationsCategorized.map(({ category, integrations }) => (
           <div key={category} className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">{category}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

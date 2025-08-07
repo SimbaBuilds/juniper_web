@@ -30,7 +30,7 @@ export default async function DashboardPage() {
           </div>
           <div>
             <span className="text-muted-foreground">Usage this month:</span>
-            <span className="ml-2 text-foreground">{userProfile?.requests_month || 0} requests</span>
+            <span className="ml-2 text-foreground"><span className="text-number">{userProfile?.requests_month || 0}</span> requests</span>
           </div>
         </div>
       </div>
@@ -39,19 +39,19 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Active Integrations</h3>
-          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.activeIntegrationsCount}</div>
+          <div className="text-number-lg mb-1">{dashboardStats.activeIntegrationsCount}</div>
           <p className="text-sm text-muted-foreground">Connected services</p>
         </div>
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Automations</h3>
-          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.activeAutomationsCount}</div>
+          <div className="text-number-lg mb-1">{dashboardStats.activeAutomationsCount}</div>
           <p className="text-sm text-muted-foreground">Active workflows</p>
         </div>
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Repository Items</h3>
-          <div className="text-3xl font-bold text-primary mb-1">{dashboardStats.resourcesCount}</div>
+          <div className="text-number-lg mb-1">{dashboardStats.resourcesCount}</div>
           <p className="text-sm text-muted-foreground">Total saved items</p>
         </div>
       </div>

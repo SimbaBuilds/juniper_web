@@ -142,7 +142,7 @@ export function EnhancedTagSelector({
               selectedTags.map((tag) => (
                 <span
                   key={tag.id}
-                  className="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-secondary text-secondary-foreground border border-border"
+                  className="inline-flex items-center px-2.5 py-1 rounded-md text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border border-border"
                 >
                   <span className="max-w-24 truncate">{tag.name}</span>
                   <button

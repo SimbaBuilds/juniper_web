@@ -238,7 +238,7 @@ export default function RepositoryPage() {
         {RESOURCE_TYPES.map((type) => (
           <div key={type.value} className="bg-card p-6 rounded-lg border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-2">{type.label}</h3>
-            <div className="text-3xl font-bold text-primary mb-1">
+            <div className="text-number-lg mb-1">
               {resourcesByType[type.value]?.length || 0}
             </div>
             <p className="text-sm text-muted-foreground">Total items</p>
@@ -252,7 +252,7 @@ export default function RepositoryPage() {
       {/* Expiring Resources */}
       {expiringResources.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-2xl font-semibold text-foreground">Expiring Resources ({expiringResources.length})</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Expiring Resources (<span className="text-number">{expiringResources.length}</span>)</h2>
           <div className="space-y-4">
             {expiringResources.map((resource) => (
               <div key={resource.id} className="bg-card p-6 rounded-lg border border-border">
@@ -260,7 +260,7 @@ export default function RepositoryPage() {
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-foreground mb-2">{resource.title}</h3>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>Score: {resource.relevance_score}%</span>
+                      {/* <span>Relevance Score: <span className="text-number">{resource.relevance_score}</span>%</span> */}
                       <span>Last accessed: {formatLastAccessed(new Date(resource.last_accessed))}</span>
                       {resource.auto_committed && (
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs dark:bg-blue-900 dark:text-blue-200">
@@ -310,7 +310,7 @@ export default function RepositoryPage() {
                     {resource.tags.map((tag) => (
                       <span
                         key={tag.id}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground"
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                       >
                         {tag.name}
                       </span>
@@ -332,7 +332,7 @@ export default function RepositoryPage() {
           return (
             <div key={type.value} className="space-y-4">
               <h2 className="text-2xl font-semibold text-foreground">
-                {type.label} ({typeResources.length})
+                {type.label} (<span className="text-number">{typeResources.length}</span>)
               </h2>
               
               <div className="space-y-4">
@@ -342,7 +342,7 @@ export default function RepositoryPage() {
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-foreground mb-2">{resource.title}</h3>
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <span>Score: {resource.relevance_score}%</span>
+                          {/* <span>Relevance Score: <span className="text-number">{resource.relevance_score}</span>%</span> */}
                           <span>Last accessed: {formatLastAccessed(new Date(resource.last_accessed))}</span>
                           {resource.auto_committed && (
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs dark:bg-blue-900 dark:text-blue-200">
@@ -392,7 +392,7 @@ export default function RepositoryPage() {
                         {resource.tags.map((tag) => (
                           <span
                             key={tag.id}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground"
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           >
                             {tag.name}
                           </span>

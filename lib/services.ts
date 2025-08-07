@@ -149,7 +149,17 @@ export async function fetchIntegrations(userId?: string) {
       services (
         service_name,
         description,
-        type
+        type,
+        tag_1_id,
+        tag_2_id,
+        tag_3_id,
+        tag_4_id,
+        tag_5_id,
+        tag_1:tags!services_tag_1_id_fkey(id, name, type),
+        tag_2:tags!services_tag_2_id_fkey(id, name, type),
+        tag_3:tags!services_tag_3_id_fkey(id, name, type),
+        tag_4:tags!services_tag_4_id_fkey(id, name, type),
+        tag_5:tags!services_tag_5_id_fkey(id, name, type)
       )
     `)
     .order('created_at', { ascending: false })
