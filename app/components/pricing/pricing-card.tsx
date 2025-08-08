@@ -58,11 +58,11 @@ export default function PricingCard({
           {period && <span className="text-muted-foreground">{period}</span>}
         </div>
         
-        <ul className="space-y-3 mb-6">
+        <ul className="space-y-3 mb-6 text-left">
           {features.map((feature, index) => (
-            <li key={index} className="flex items-center text-sm">
-              <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
-              <span className="text-muted-foreground">{feature}</span>
+            <li key={index} className="relative pl-7 text-sm">
+              <Check className="absolute left-0 top-0.5 h-4 w-4 text-green-500 flex-shrink-0" />
+              <span className="text-muted-foreground leading-relaxed">{feature}</span>
             </li>
           ))}
         </ul>
