@@ -205,6 +205,7 @@ export async function POST(req: Request) {
               subscription_status: 'canceled',
               subscription_tier: 'free',
               subscription_cancel_at_period_end: false,
+              subscription_current_period_end: null,
             })
             .eq('id', profile.id);
         }
