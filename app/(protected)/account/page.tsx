@@ -88,9 +88,16 @@ export default async function AccountPage() {
       {/* Usage Tracking */}
       <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-xl font-semibold text-foreground mb-6">Usage Tracking</h2>
-        <p className="text-sm text-muted-foreground mb-4">Monthly usage for system integrations</p>
+        <p className="text-sm text-muted-foreground mb-4">Monthly usage statistics</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-muted p-4 rounded-lg min-w-0">
+            <h3 className="text-lg font-medium text-foreground mb-2 break-words">Total Requests</h3>
+            <p className="text-2xl font-bold text-primary">
+              {userProfile?.requests_month || 0}
+            </p>
+            <p className="text-sm text-muted-foreground">requests this month</p>
+          </div>
           <div className="bg-muted p-4 rounded-lg min-w-0">
             <h3 className="text-lg font-medium text-foreground mb-2 break-words">Perplexity</h3>
             <p className="text-2xl font-bold text-primary">
