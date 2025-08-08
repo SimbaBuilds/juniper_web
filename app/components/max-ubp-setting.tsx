@@ -33,7 +33,7 @@ export default function MaxUbpSetting({ userProfile }: MaxUbpSettingProps) {
         const error = await response.json()
         setMessage(error.message || 'Failed to update max UBP')
       }
-    } catch (error) {
+    } catch {
       setMessage('An error occurred while updating max UBP')
     } finally {
       setIsLoading(false)

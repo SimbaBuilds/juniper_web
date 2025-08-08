@@ -33,6 +33,11 @@ export type UserProfile = {
     updated_at: Date;
     ubp_current: number;
     ubp_max: number;
+    // Subscription fields
+    subscription_tier?: string;
+    subscription_status?: string;
+    subscription_current_period_end?: string;
+    subscription_cancel_at_period_end?: boolean;
   };
   
   export const userProfileFields = [
@@ -42,10 +47,15 @@ export type UserProfile = {
     'requests_today', 'requests_week', 'requests_month', 
     'perplexity_usage_month', 'textbelt_usage_month', 'xai_ls_usage_month',
     'ubp_current', 'ubp_max',
+    'subscription_tier', 'subscription_status', 'subscription_current_period_end', 'subscription_cancel_at_period_end',
     'created_at', 'updated_at'
   ] as const;
   export type UserProfileField = (typeof userProfileFields)[number];
   
+  interface ConversationMetadata {
+    [key: string]: string | number | boolean | null;
+  }
+
   export type Conversation = {
     id: string;
     user_id: string;
@@ -53,7 +63,7 @@ export type UserProfile = {
     summary?: string;
     conversation_type: string;
     status: string;
-    metadata: Record<string, any>;
+    metadata: ConversationMetadata;
     created_at: Date;
     updated_at: Date;
   };
@@ -72,8 +82,8 @@ export type UserProfile = {
     content: string;
     audio_url?: string;
     transcription_confidence?: number;
-    tool_calls?: Record<string, any>;
-    metadata: Record<string, any>;
+    tool_calls?: Record<string, string | number | boolean | null>;
+    metadata: Record<string, string | number | boolean | null>;
     created_at: Date;
   };
   
@@ -140,8 +150,8 @@ export type UserProfile = {
     id: string;
     user_id: string;
     name: string;
-    trigger_conditions: Record<string, any>;
-    actions: Record<string, any>;
+    trigger_conditions: Record<string, string | number | boolean | null>;
+    actions: Record<string, string | number | boolean | null>;
     is_active: boolean;
     execution_count: number;
     last_executed?: Date;
@@ -180,7 +190,7 @@ export type UserProfile = {
     workspace_name?: string;
     workspace_icon?: string;
     workspace_id?: string;
-    owner_info?: Record<string, any>;
+    owner_info?: Record<string, string | number | boolean | null>;
     duplicated_template_id?: string;
     // Common sync fields
     last_sync?: Date;
@@ -188,7 +198,7 @@ export type UserProfile = {
     client_id?: string;
     client_secret_id?: string;
     client_secret_value?: string;
-    configuration?: Record<string, any>; // New field for integration configuration
+    configuration?: Record<string, string | number | boolean | null>; // New field for integration configuration
   };
   
   export const integrationFields = [
@@ -238,9 +248,9 @@ export type UserProfile = {
     name: string;
     display_name?: string;
     description?: string;
-    parameters?: Record<string, any>;  // JSON schema for input parameters
-    returns?: Record<string, any>;     // JSON schema for output format
-    example?: Record<string, any>;     // Example usage
+    parameters?: Record<string, string | number | boolean | null>;  // JSON schema for input parameters
+    returns?: Record<string, string | number | boolean | null>;     // JSON schema for output format
+    example?: Record<string, string | number | boolean | null>;     // Example usage
     run_script?: string;               // Executable Python script/logic
     endpoint_url?: string;            // API endpoint if applicable
     http_method?: string;             // GET, POST, etc.
@@ -277,7 +287,7 @@ export type UserProfile = {
     request_id: string;          // Unique identifier for the request to cancel
     request_type: string;        // Type of request (chat, integration, etc.)
     status: string;              // pending, processed, expired
-    metadata: Record<string, any>; // Additional cancellation context
+    metadata: Record<string, string | number | boolean | null>; // Additional cancellation context
     created_at: Date;
     processed_at?: Date;
   };
@@ -357,7 +367,7 @@ export type UserProfile = {
     request_id: string;              // Unique identifier for tracking this specific request
     request_type: string;            // Type of request (chat, integration, etc.)
     status: string;                  // pending, processing, completed, failed, cancelled
-    metadata: Record<string, any>;   // Additional request context and data
+    metadata: Record<string, string | number | boolean | null>;   // Additional request context and data
     image_url?: string;              // Optional image URL for chat requests with image attachments
     created_at: Date;
     updated_at: Date;

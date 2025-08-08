@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth/get-user'
-import { createServerClient } from '@/lib/supabase/server'
+import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Invalid UBP max value' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = await createSupabaseAppServerClient()
     
     const { error } = await supabase
       .from('user_profile')
