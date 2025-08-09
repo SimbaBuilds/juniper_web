@@ -2,6 +2,7 @@ import { getUser } from '@/lib/auth/get-user'
 import { fetchUserProfile } from '@/lib/services'
 import SubscriptionManager from '@/app/components/subscription/subscription-manager'
 import MaxUbpSetting from '@/app/components/max-ubp-setting'
+import { OVERAGE_PRICE } from '@/app/lib/constants'
 
 export default async function AccountPage() {
   const user = await getUser()
@@ -121,6 +122,13 @@ export default async function AccountPage() {
             </p>
             <p className="text-sm text-muted-foreground">searches this month</p>
           </div>
+        </div>
+        
+        {/* Overage Pricing Notice */}
+        <div className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Request and usage based service overage is ${OVERAGE_PRICE} per use over limits
+          </p>
         </div>
       </div>
 

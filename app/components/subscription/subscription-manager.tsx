@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import PricingCard from '../pricing/pricing-card'
 import { CreditCard, ExternalLink } from 'lucide-react'
 import { UserProfile } from '@/lib/utils/supabase/tables'
+import { FREE_TIER_REQUESTS_LIMIT, FREE_TIER_USAGE_LIMIT, PRO_TIER_USAGE_LIMIT, PRO_TIER_REQUESTS_LIMIT } from '@/app/lib/constants'
 
 interface UsageData {
   tier: 'free' | 'pro'
@@ -126,13 +127,13 @@ export default function SubscriptionManager({ userProfile }: SubscriptionManager
   }
 
   const freeTierFeatures = [
-    '40 requests per month',
-    '$1.00 worth of usage based services (Perplexity, SMS, XAI LiveSearch, etc.)'
+    `${FREE_TIER_REQUESTS_LIMIT} requests per month`,
+    `$${FREE_TIER_USAGE_LIMIT} worth of usage based services (Perplexity, SMS, XAI LiveSearch, etc.)`
   ]
 
   const proTierFeatures = [
-    '500 requests per month',
-    '$5 worth of usage based services (XAI LiveSearch, Perplexity, SMS, etc.) - usage based pricing thereafter'
+    `${PRO_TIER_REQUESTS_LIMIT} requests per month`,
+    `$${PRO_TIER_USAGE_LIMIT} worth of usage based services (XAI LiveSearch, Perplexity, SMS, etc.)`
   ]
 
   return (

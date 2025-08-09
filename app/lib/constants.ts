@@ -1,0 +1,7 @@
+export const FREE_TIER_REQUESTS_LIMIT = 40
+export const FREE_TIER_USAGE_LIMIT = 1.00
+
+export const PRO_TIER_REQUESTS_LIMIT = 500
+export const PRO_TIER_USAGE_LIMIT = 5.00
+
+export const OVERAGE_PRICE = 0.05
