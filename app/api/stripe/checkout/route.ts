@@ -58,7 +58,7 @@ export async function POST() {
         .eq('id', user.id);
     }
 
-    // Create checkout session
+    // Create checkout session with both subscription and metered pricing
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -67,6 +67,9 @@ export async function POST() {
         {
           price: process.env.STRIPE_PRO_PRICE_ID,
           quantity: 1,
+        },
+        {
+          price: process.env.STRIPE_UBP_PRICE_ID,
         },
       ],
       success_url: `${getURL()}account?success=true`,
