@@ -136,7 +136,7 @@ export default async function AccountPage() {
       <MaxUbpSetting userProfile={userProfile} />
 
       {/* Account Management */}
-      <div className="bg-card p-6 rounded-lg border border-border">
+      {/* <div className="bg-card p-6 rounded-lg border border-border">
         <h2 className="text-xl font-semibold text-foreground mb-6">Account Management</h2>
         
         <div className="space-y-4">
@@ -161,6 +161,31 @@ export default async function AccountPage() {
               Account deletion must be performed through the mobile app for security reasons
             </p>
           </div>
+        </div>
+      </div> */}
+      
+      {/* Legal Links */}
+      <div className="bg-card p-6 rounded-lg border border-border">
+        <div className="text-center text-sm text-muted-foreground">
+          <p>
+            <a 
+              href="https://www.hightower-ai.com/terms-of-use" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Terms of Use
+            </a>
+            {' '}•{' '}
+            <a 
+              href="https://www.hightower-ai.com/privacy-policy" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Privacy Policy
+            </a>
+          </p>
         </div>
       </div>
     </div>

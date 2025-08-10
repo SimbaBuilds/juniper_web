@@ -7,6 +7,30 @@ export default function SignupPage() {
         Create your account
       </h2>
       <SignupForm />
+      
+      {/* Legal Links */}
+      <div className="mt-8 text-center text-sm text-muted-foreground">
+        <p>
+          By creating an account, you agree to our{' '}
+          <a 
+            href="https://www.hightower-ai.com/terms-of-use" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Terms of Use
+          </a>
+          {' '}and{' '}
+          <a 
+            href="https://www.hightower-ai.com/privacy-policy" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Privacy Policy
+          </a>
+        </p>
+      </div>
     </div>
   )
 }
