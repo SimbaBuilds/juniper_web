@@ -143,6 +143,7 @@ export default function TermsOfUsePage() {
                     <li><strong>Learning:</strong> The AI may learn from your interactions to improve personalized assistance</li>
                     <li><strong>No Medical/Legal Advice:</strong> Juniper does not provide medical, legal, financial, or professional advice</li>
                     <li><strong>Content Monitoring:</strong> We may monitor conversations for safety, security, and service improvement purposes</li>
+                    <li><strong>No Unauthorized Training:</strong> We will not use your data to train or improve Juniper's AI models unless you explicitly authorize us to do so</li>
                   </ul>
                 </section>
 

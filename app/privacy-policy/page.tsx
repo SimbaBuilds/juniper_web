@@ -161,6 +161,7 @@ export default function PrivacyPolicyPage() {
                     <li><strong>Habit Learning:</strong> We analyze usage patterns to suggest automations and improvements</li>
                     <li><strong>Voice Processing:</strong> Audio data is processed by Deepgram and other speech services</li>
                     <li><strong>AI Models:</strong> We use various language models to generate responses and perform tasks</li>
+                    <li><strong>No Unauthorized Training:</strong> We will not use your data to train or improve Juniper's AI models unless you explicitly authorize us to do so</li>
                   </ul>
                 </section>
 
