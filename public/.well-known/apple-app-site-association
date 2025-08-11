@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "2D46F842HA.com.anonymous.MobileJarvisNative",
+        "appID": "2D46F842HA.com.hightowerai.MobileJarvisNative",
         "paths": [
           "/oauth/*/callback"
         ],

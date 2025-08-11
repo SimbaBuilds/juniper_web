@@ -151,7 +151,7 @@ export default function HomePage() {
           <p className="text-lg text-muted-foreground mb-8">
             Connect Juniper with your favorite apps and services
           </p>
-          <Link href="/integrations">
+          <Link href="/integration-descriptions">
             <Button size="lg" variant="outline" className="text-lg px-8 py-3">
               View Integrations
             </Button>
@@ -198,7 +198,7 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold mb-4 text-foreground">Quick Links</h4>
               <div className="space-y-2">
-                <Link href="/integrations" className="block text-muted-foreground hover:text-foreground">
+                <Link href="/integration-descriptions" className="block text-muted-foreground hover:text-foreground">
                   Integrations
                 </Link>
                 <Link href="/privacy-policy" className="block text-muted-foreground hover:text-foreground">
