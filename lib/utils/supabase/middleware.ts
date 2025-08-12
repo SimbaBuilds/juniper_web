@@ -48,13 +48,16 @@ export async function updateSession(request: NextRequest) {
   const authPaths = ['/login', '/signup', '/reset-password']
   const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
   
+  // Special case: update-password should be accessible for users with a valid reset token
+  const isUpdatePasswordPath = request.nextUrl.pathname.startsWith('/update-password')
+  
   // Redirect unauthenticated users away from protected routes
   if (isProtectedPath && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   
-  // Redirect authenticated users away from auth pages
-  if (isAuthPath && user) {
+  // Redirect authenticated users away from auth pages (but not update-password)
+  if (isAuthPath && user && !isUpdatePasswordPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
   

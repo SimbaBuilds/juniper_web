@@ -14,6 +14,9 @@ import { useAuth } from './providers/auth-provider'
 import { ThemeToggle } from './components/theme-toggle'
 import { PublicMobileMenu } from './components/public-mobile-menu'
 import { getPublicServices } from './lib/integrations/constants'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/utils/supabase/client'
 
 const publicServicesCount = getPublicServices().length;
 
@@ -42,6 +45,48 @@ const features = [
 
 export default function HomePage() {
   const { user, loading, signOut } = useAuth()
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    // Check if there's a hash in the URL (mobile app callback)
+    const handleHashCallback = async () => {
+      const hash = window.location.hash
+      if (hash && hash.includes('access_token')) {
+        try {
+          // Parse the hash parameters
+          const params = new URLSearchParams(hash.substring(1))
+          const accessToken = params.get('access_token')
+          const refreshToken = params.get('refresh_token')
+          const type = params.get('type')
+
+          if (accessToken && refreshToken) {
+            // Set the session with the tokens
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+
+            if (!error) {
+              // Clear the hash from the URL
+              window.history.replaceState(null, '', window.location.pathname)
+              
+              // Handle different flow types
+              if (type === 'recovery') {
+                router.push('/update-password')
+              } else {
+                router.push('/dashboard')
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error handling auth callback:', err)
+        }
+      }
+    }
+
+    handleHashCallback()
+  }, [router, supabase.auth])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">

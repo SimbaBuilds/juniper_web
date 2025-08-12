@@ -1,17 +1,26 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/utils/supabase/client'
 import Link from 'next/link'
 
-export function LoginForm() {
+function LoginFormContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    const msg = searchParams.get('message')
+    if (msg) {
+      setMessage(msg)
+    }
+  }, [searchParams])
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,6 +96,10 @@ export function LoginForm() {
           <div className="text-red-600 text-sm">{error}</div>
         )}
 
+        {message && (
+          <div className="text-green-600 text-sm">{message}</div>
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -146,5 +159,13 @@ export function LoginForm() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="text-center">Loading...</div>}>
+      <LoginFormContent />
+    </Suspense>
   )
 }
