@@ -163,7 +163,7 @@ export default function SupportPage() {
           </div>
 
           {/* Quick Help Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {/* <div className="grid md:grid-cols-3 gap-6 mb-12">
             <Card className="text-center border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>
                 <MessageCircle className="h-8 w-8 text-blue-600 mx-auto mb-2" />
@@ -198,7 +198,7 @@ export default function SupportPage() {
                 <Button variant="outline" className="w-full">Check Status</Button>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Troubleshooting Section */}
           <section className="mb-16">
@@ -272,7 +272,7 @@ export default function SupportPage() {
           </section>
 
           {/* Contact Support Section */}
-          <section className="bg-white rounded-lg shadow-lg p-8 text-center">
+          {/* <section className="bg-white rounded-lg shadow-lg p-8 text-center">
             <div className="max-w-2xl mx-auto">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Still Need Help?</h2>
               <p className="text-lg text-gray-600 mb-6">
@@ -290,7 +290,7 @@ export default function SupportPage() {
                 </Button>
               </div>
             </div>
-          </section>
+          </section> */}
 
           {/* Additional Resources */}
           <section className="mt-16">
