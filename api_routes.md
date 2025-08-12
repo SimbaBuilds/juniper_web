@@ -1,21 +1,16 @@
-// WRONG - Creates infinite loop
-  window.location.href = "https://hightower-ai.com/oauth/gmail/c
-  allback?code=test123&state=integration-id-test";
+The Cross-Platform Solution:
 
-  // CORRECT - Just display content, let universal link handle 
-  opening the app
-  // Remove the window.location.href line entirely
+  Your web app needs to handle OAuth callbacks differently for
+  iOS vs Android:
 
-  The web callback page should:
-  1. Display a loading message (no JavaScript redirect)
-  2. Let the universal link system handle opening the app
-  3. Show manual redirect button as fallback only
-
-  Here's the corrected web callback:
-
+  // Web app OAuth callback handler
   export default function OAuthCallback(req, res) {
     const { service } = req.query;
     const { code, state } = req.query;
+
+    // Build the callback URL
+    const callbackUrl = `https://hightower-ai.com/oauth/${servic
+  e}/callback?code=${code}&state=${state}`;
 
     res.send(`
       <!DOCTYPE html>
@@ -25,25 +20,32 @@
   initial-scale=1">
           <title>Redirecting to Juniper...</title>
           <script>
-            // DO NOT redirect with window.location.href
-            // Universal links will automatically open the app
+            // For iOS: Universal Links
+            window.location.href = "${callbackUrl}";
             
-            // Only show manual button after delay
+            // For Android: Fallback if App Link doesn't 
+  auto-open
             setTimeout(function() {
+              // If still here after 2 seconds, show manual 
+  redirect
               
   document.getElementById('manual-redirect').style.display = 
   'block';
             }, 2000);
           </script>
         </head>
-        <body>
-          <h2>Authentication successful!</h2>
-          <p>Please return to the Juniper app...</p>
+        <body style="font-family: Arial, sans-serif; text-align:
+   center; padding: 50px;">
+          <h2>Completing authentication...</h2>
+          <p>You should be redirected to Juniper 
+  automatically.</p>
           
-          <div id="manual-redirect" style="display: none;">
-            <p>If the app didn't open automatically:</p>
-            <a href="mobilejarvisnative://oauth/callback?code=${
-  code}&state=${state}">
+          <div id="manual-redirect" style="display: none; 
+  margin-top: 30px;">
+            <p>If you're not redirected automatically:</p>
+            <a href="${callbackUrl}" style="display: 
+  inline-block; padding: 10px 20px; background: #007AFF; color: 
+  white; text-decoration: none; border-radius: 5px;">
               Open in Juniper
             </a>
           </div>
@@ -51,3 +53,18 @@
       </html>
     `);
   }
+
+  Key Differences:
+
+  iOS (Universal Links):
+  - Requires apple-app-site-association ✅
+  - Uses https:// URLs only
+  - Opens app directly if installed
+
+  Android (App Links):
+  - Requires assetlinks.json ✅
+  - Uses https:// URLs with autoVerify="true"
+  - Opens app directly if verified
+
+  Both platforms need the same web OAuth callback routes to work
+   properly.

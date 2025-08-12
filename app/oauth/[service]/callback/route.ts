@@ -21,16 +21,7 @@ export async function GET(
   
   const callbackUrl = `https://hightower-ai.com/oauth/${service}/callback?${callbackParams.toString()}`;
 
-  // Build the deep link for manual fallback
-  const deepLinkParams = new URLSearchParams();
-  if (code) deepLinkParams.append('code', code);
-  if (state) deepLinkParams.append('state', state);
-  if (error) deepLinkParams.append('error', error);
-  if (errorDescription) deepLinkParams.append('error_description', errorDescription);
-  
-  const deepLink = `mobilejarvisnative://oauth/callback?${deepLinkParams.toString()}`;
-
-  // Return HTML that lets universal links handle automatic opening
+  // Return HTML that handles both iOS Universal Links and Android App Links
   const html = `
     <!DOCTYPE html>
     <html>
@@ -93,11 +84,12 @@ export async function GET(
           }
         </style>
         <script>
-          // DO NOT redirect with window.location.href
-          // Universal links will automatically open the app
+          // For iOS: Universal Links
+          window.location.href = "${callbackUrl}";
           
-          // Only show manual button after delay
+          // For Android: Fallback if App Link doesn't auto-open
           setTimeout(function() {
+            // If still here after 2 seconds, show manual redirect
             document.getElementById('spinner').style.display = 'none';
             document.getElementById('manual-redirect').style.display = 'block';
           }, 2000);
@@ -106,14 +98,14 @@ export async function GET(
       <body>
         <div class="container">
           <div id="spinner" class="spinner"></div>
-          <h2>Authentication successful!</h2>
-          <p>Please return to the Juniper app...</p>
+          <h2>Completing authentication...</h2>
+          <p>You should be redirected to Juniper automatically.</p>
           
           ${error ? `<p class="error">Error: ${errorDescription || error}</p>` : ''}
           
           <div id="manual-redirect" style="display: none;">
-            <p>If the app didn't open automatically:</p>
-            <a href="${deepLink}" class="button">
+            <p>If you're not redirected automatically:</p>
+            <a href="${callbackUrl}" class="button">
               Open in Juniper
             </a>
           </div>
