@@ -15,12 +15,16 @@ interface ChatRequest {
 }
 
 export async function POST(request: NextRequest) {
+ 
   try {
     // Get authenticated user (recommended for server-side validation)
     const supabase = await createSupabaseAppServerClient()
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser()
+   
     
     if (authError || !user) {
+      console.log('Authentication failed - returning 401')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -29,8 +33,15 @@ export async function POST(request: NextRequest) {
 
     // Get session to extract access token for external API
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('Session check result:', { 
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      accessTokenLength: session?.access_token?.length,
+      sessionError: sessionError?.message 
+    })
     
     if (sessionError || !session?.access_token) {
+      console.log('Session validation failed - returning 401')
       return NextResponse.json(
         { error: 'No valid session token' },
         { status: 401 }
@@ -78,6 +89,7 @@ export async function POST(request: NextRequest) {
     // Call Python backend using FormData format (matching React Native)
     const formData = new FormData()
     formData.append('json_data', JSON.stringify(chatRequest))
+    
 
     const response = await fetch(`${PYTHON_BACKEND_URL}/api/chat`, {
       method: 'POST',
@@ -87,19 +99,32 @@ export async function POST(request: NextRequest) {
       body: formData,
     })
 
+
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Python backend error:', errorText)
+      console.error('Python backend error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText
+      })
       throw new Error(`Backend error: ${response.status}`)
     }
 
     const data = await response.json()
+    console.log('Python backend success response:', {
+      hasResponse: !!data.response,
+      responseLength: data.response?.length,
+      timestamp: data.timestamp,
+      settingsUpdated: data.settings_updated,
+      integrationInProgress: data.integration_in_progress
+    })
 
     // Update usage statistics if needed
     if (data.usage_updated) {
       // The Python backend handles usage updates, but we could add additional logic here if needed
     }
 
+    console.log('=== CHAT API REQUEST SUCCESS ===')
     return NextResponse.json({
       response: data.response,
       timestamp: data.timestamp,
@@ -108,7 +133,9 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
+    console.error('=== CHAT API REQUEST FAILED ===')
     console.error('Chat API error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
