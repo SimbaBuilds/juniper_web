@@ -72,12 +72,7 @@ export default function ChatPage() {
   const { status: polledStatus } = useRequestStatusPolling({
     requestId: currentRequestId,
     onStatusChange: (status) => {
-      console.log('[CHAT] Request status changed:', {
-        requestId: currentRequestId,
-        oldStatus: requestStatus,
-        newStatus: status,
-        timestamp: new Date().toISOString()
-      })
+ 
       setRequestStatus(status)
       if (finalStates.includes(status)) {
         console.log('[CHAT] Request reached final state, clearing tracking:', {
