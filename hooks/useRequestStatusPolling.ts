@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '../lib/utils/supabase/client';
 
 export interface UseRequestStatusPollingOptions {
@@ -23,27 +23,27 @@ export const useRequestStatusPolling = (
   const [isPolling, setIsPolling] = useState(false);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const previousRequestIdRef = useRef<string | null>(null);
 
   // Final states that should stop polling
   const finalStates = ['completed', 'failed', 'cancelled'];
 
-  const stopPolling = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  useEffect(() => {
+    console.log('[POLLING] useEffect triggered with requestId:', requestId);
+    
+    if (!requestId) {
+      console.log('[POLLING] No requestId, clearing status and stopping polling');
+      setStatus(null);
+      setError(null);
+      setIsPolling(false);
+      return;
     }
-    setIsPolling(false);
-  }, []);
 
-  const startPolling = useCallback(async () => {
-    if (!requestId) return;
-
+    console.log('[POLLING] Starting polling for requestId:', requestId);
     setIsPolling(true);
-    setError(null);
 
     const pollStatus = async () => {
       try {
+        console.log('[POLLING] Polling status for requestId:', requestId);
         const supabase = createClient();
         
         const { data, error } = await supabase
@@ -54,77 +54,63 @@ export const useRequestStatusPolling = (
 
         if (error) {
           if (error.code === 'PGRST116') {
-            // No rows returned - request not found
-            console.log(`Request ${requestId} not found, continuing to poll...`);
+            // No rows returned - request not found, continue polling
+            console.log('[POLLING] Request not found in database, continuing to poll...');
             return;
           }
           throw error;
         }
 
         const currentStatus = data?.status;
+        console.log('[POLLING] Received status:', currentStatus, 'for requestId:', requestId);
         
-        if (currentStatus !== null) {
+        if (currentStatus) {
           setStatus(currentStatus);
+          setError(null);
           
           // Call status change callback if provided
           if (onStatusChange) {
+            console.log('[POLLING] Calling onStatusChange with status:', currentStatus);
             onStatusChange(currentStatus);
           }
 
-          // Stop polling if we've reached a final state
+          // Stop polling when request reaches a final state
           if (finalStates.includes(currentStatus)) {
-            console.log(`Request ${requestId} reached final state: ${currentStatus}`);
-            stopPolling();
+            console.log('[POLLING] Final status reached:', currentStatus, 'stopping polling');
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+              console.log('[POLLING] Polling interval cleared');
+            }
+            setIsPolling(false);
           }
-        } else {
-          // Request not found in database yet, continue polling
-          console.log(`Request ${requestId} not found, continuing to poll...`);
         }
       } catch (err) {
-        console.error('Error polling request status:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error occurred');
-        stopPolling();
+        console.error('[POLLING] Error polling status for requestId:', requestId, 'error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch request status');
+        setIsPolling(false);
       }
     };
 
-    // Poll immediately, then set up interval
-    await pollStatus();
-    
-    // Only set up interval if we haven't stopped polling (i.e., not in final state)
-    if (isPolling && !finalStates.includes(status || '')) {
-      intervalRef.current = setInterval(pollStatus, intervalMs);
-    }
-  }, [requestId, intervalMs, onStatusChange, isPolling, status, finalStates, stopPolling]);
+    // Initial poll
+    console.log('[POLLING] Starting initial poll');
+    pollStatus();
 
-  useEffect(() => {
-    // Reset state when requestId changes
-    if (requestId !== previousRequestIdRef.current) {
-      setStatus(null);
-      setError(null);
-      stopPolling();
-      previousRequestIdRef.current = requestId;
-    }
+    // Set up interval for subsequent polls
+    console.log('[POLLING] Setting up polling interval:', intervalMs, 'ms');
+    intervalRef.current = setInterval(pollStatus, intervalMs);
 
-    if (requestId) {
-      startPolling();
-    } else {
-      stopPolling();
-    }
-
-    // Cleanup on unmount or requestId change
+    // Cleanup on unmount or when requestId changes
     return () => {
-      stopPolling();
-    };
-  }, [requestId, startPolling, stopPolling]);
-
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
+      console.log('[POLLING] Cleaning up polling for requestId:', requestId);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        console.log('[POLLING] Polling interval cleared in cleanup');
       }
+      setIsPolling(false);
     };
-  }, []);
+  }, [requestId, intervalMs, onStatusChange]);
 
   return {
     status,

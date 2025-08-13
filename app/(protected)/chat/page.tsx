@@ -24,24 +24,90 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isRequestInProgress, setIsRequestInProgress] = useState(false)
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null)
   const [requestStatus, setRequestStatus] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // Define final states that should stop polling and clear tracking
+  const finalStates = ['completed', 'failed', 'cancelled'];
+  
+  // Define all active states where cancel button should be shown
+  const activeStates = ['pending', 'thinking', 'searching', 'processing', 'configuring', 
+                        'retrieving', 'storing', 'integrating', 'pinging'];
+
+  // Helper function to get status message
+  const getStatusMessage = (status: string | null): string => {
+    switch (status) {
+      case 'pending':
+        return 'Starting request...';
+      case 'thinking':
+        return 'Thinking...';
+      case 'searching':
+        return 'Searching...';
+      case 'processing':
+        return 'Processing...';
+      case 'configuring':
+        return 'Configuring...';
+      case 'retrieving':
+        return 'Retrieving...';
+      case 'storing':
+        return 'Storing...';
+      case 'integrating':
+        return 'Integrating... This can take up to 2 minutes.';
+      case 'pinging':
+        return 'Pinging... This can take a few moments.';
+      case 'failed':
+        return 'Request failed';
+      case 'cancelled':
+        return 'Request cancelled';
+      default:
+        return 'Processing...';
+    }
+  };
+
   // Integrate polling hook
   const { status: polledStatus } = useRequestStatusPolling({
     requestId: currentRequestId,
     onStatusChange: (status) => {
+      console.log('[CHAT] Request status changed:', {
+        requestId: currentRequestId,
+        oldStatus: requestStatus,
+        newStatus: status,
+        timestamp: new Date().toISOString()
+      })
       setRequestStatus(status)
-      if (['completed', 'failed', 'cancelled'].includes(status)) {
+      if (finalStates.includes(status)) {
+        console.log('[CHAT] Request reached final state, clearing tracking:', {
+          requestId: currentRequestId,
+          finalStatus: status
+        })
+        // Clear request tracking immediately
         setCurrentRequestId(null)
         setIsLoading(false)
+        setIsRequestInProgress(false)
+        setRequestStatus(null)
         abortControllerRef.current = null
       }
     }
   })
+
+  // Debug logging for cancel button display - only log when relevant values change
+  useEffect(() => {
+    if (isLoading || isRequestInProgress || currentRequestId || requestStatus) {
+      console.log('[CHAT] Cancel button display conditions:', {
+        isLoading,
+        isRequestInProgress,
+        currentRequestId,
+        requestStatus,
+        isActiveState: requestStatus ? activeStates.includes(requestStatus) : false,
+        shouldShowCancelButton: isRequestInProgress,
+        timestamp: new Date().toISOString()
+      })
+    }
+  }, [isLoading, isRequestInProgress, currentRequestId, requestStatus])
 
   // Get current user on mount
   useEffect(() => {
@@ -88,7 +154,16 @@ export default function ChatPage() {
   }, [messages, resetAutoRefreshTimer])
 
   const handleCancelRequest = async () => {
-    if (!currentRequestId) return
+    console.log('[CHAT] Cancel request initiated:', {
+      currentRequestId,
+      currentStatus: requestStatus,
+      hasAbortController: !!abortControllerRef.current
+    })
+    
+    if (!currentRequestId) {
+      console.log('[CHAT] No request ID to cancel')
+      return
+    }
 
     try {
       // Cancel via API
@@ -103,23 +178,28 @@ export default function ChatPage() {
       })
 
       if (response.ok) {
+        console.log('[CHAT] Cancel API request successful')
+        
         // Also abort the HTTP request
         if (abortControllerRef.current) {
+          console.log('[CHAT] Aborting HTTP request')
           abortControllerRef.current.abort()
         }
         
         setCurrentRequestId(null)
         setIsLoading(false)
+        setIsRequestInProgress(false)
         setRequestStatus(null)
         abortControllerRef.current = null
         
         toast.success('Request cancelled successfully')
       } else {
         const errorData = await response.json()
+        console.error('[CHAT] Cancel API request failed:', errorData)
         toast.error(errorData.error || 'Failed to cancel request')
       }
     } catch (error) {
-      console.error('Error cancelling request:', error)
+      console.error('[CHAT] Error cancelling request:', error)
       toast.error('Failed to cancel request')
     }
   }
@@ -127,6 +207,13 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     const trimmedMessage = inputValue.trim()
     if (!trimmedMessage || isLoading) return
+
+    console.log('[CHAT] Starting to send message:', {
+      messageLength: trimmedMessage.length,
+      currentIsLoading: isLoading,
+      currentRequestId,
+      currentStatus: requestStatus
+    })
 
     const userMessage: Message = {
       role: 'user',
@@ -137,6 +224,15 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMessage])
     setInputValue('')
     setIsLoading(true)
+    setIsRequestInProgress(true)
+    setRequestStatus('pending') // Set initial status
+
+    console.log('[CHAT] Message state updated, creating AbortController')
+
+    // Generate request ID immediately (like React Native does)
+    const requestId = `web-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    setCurrentRequestId(requestId)
+    console.log('[CHAT] Generated request ID:', requestId)
 
     // Create AbortController for this request
     abortControllerRef.current = new AbortController()
@@ -150,6 +246,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: trimmedMessage,
           history: [...messages, userMessage],
+          request_id: requestId,
         }),
         signal: abortControllerRef.current.signal,
       })
@@ -160,11 +257,7 @@ export default function ChatPage() {
 
       const data = await response.json()
       
-      // Set the request ID from the response to start polling
-      if (data.request_id) {
-        setCurrentRequestId(data.request_id)
-        setRequestStatus('processing')
-      }
+      console.log('[CHAT] Request completed successfully with request ID:', requestId)
       
       const assistantMessage: Message = {
         role: 'assistant',
@@ -174,10 +267,9 @@ export default function ChatPage() {
 
       setMessages(prev => [...prev, assistantMessage])
       
-      // Clear request tracking on successful completion
-      setCurrentRequestId(null)
-      setRequestStatus(null)
-      abortControllerRef.current = null
+      // Don't clear request tracking here - let polling handle it
+      console.log('[CHAT] Request completed, response received. Polling will handle cleanup.')
+      // The polling hook will clear everything when it detects a final state
       
     } catch (error) {
       // Check if error was due to cancellation
@@ -192,9 +284,9 @@ export default function ChatPage() {
       // Clear request tracking on error
       setCurrentRequestId(null)
       setRequestStatus(null)
-      abortControllerRef.current = null
-    } finally {
       setIsLoading(false)
+      setIsRequestInProgress(false)
+      abortControllerRef.current = null
     }
   }
 
@@ -312,12 +404,8 @@ export default function ChatPage() {
               {isLoading && (
                 <div className="flex items-center gap-2 text-muted-foreground mb-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>
-                    {requestStatus === 'pending' ? 'Sending...' : 
-                     requestStatus === 'processing' ? 'Thinking...' : 
-                     'Processing...'}
-                  </span>
-                  {currentRequestId && requestStatus === 'processing' && (
+                  <span>{getStatusMessage(requestStatus || (isLoading ? 'pending' : null))}</span>
+                  {isRequestInProgress && (
                     <Button
                       variant="ghost"
                       size="sm"

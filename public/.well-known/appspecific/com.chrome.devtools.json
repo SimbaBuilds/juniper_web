@@ -1,0 +1,106 @@
+{
+  "version": "1.0",
+  "name": "Juniper Web DevTools",
+  "description": "Advanced debugging tools for Juniper Web application",
+  "capabilities": {
+    "customFormatters": true,
+    "customInspectables": true,
+    "customElements": true,
+    "customPanels": true,
+    "customCommands": true,
+    "networkInspection": true,
+    "stateInspection": true
+  },
+  "panels": [
+    {
+      "id": "juniper-overview",
+      "title": "Overview",
+      "icon": "🌲",
+      "description": "Application overview and health metrics"
+    },
+    {
+      "id": "juniper-auth",
+      "title": "Authentication",
+      "icon": "🔐",
+      "description": "User authentication and session management"
+    },
+    {
+      "id": "juniper-integrations",
+      "title": "Integrations",
+      "icon": "🔗",
+      "description": "Third-party service integrations status"
+    },
+    {
+      "id": "juniper-chat",
+      "title": "Chat System",
+      "icon": "💬",
+      "description": "AI chat conversation and state management"
+    },
+    {
+      "id": "juniper-repository",
+      "title": "Repository",
+      "icon": "📚",
+      "description": "Resource repository and tagging system"
+    }
+  ],
+  "commands": [
+    {
+      "name": "inspectUser",
+      "description": "Inspect current user data and permissions",
+      "shortcut": "Ctrl+Shift+U"
+    },
+    {
+      "name": "inspectIntegrations",
+      "description": "Inspect integration configurations and status",
+      "shortcut": "Ctrl+Shift+I"
+    },
+    {
+      "name": "inspectChat",
+      "description": "Inspect chat conversation state and history",
+      "shortcut": "Ctrl+Shift+C"
+    },
+    {
+      "name": "inspectRepository",
+      "description": "Inspect resource repository and tags",
+      "shortcut": "Ctrl+Shift+R"
+    },
+    {
+      "name": "clearCache",
+      "description": "Clear application cache and local storage",
+      "shortcut": "Ctrl+Shift+L"
+    },
+    {
+      "name": "exportState",
+      "description": "Export current application state for debugging",
+      "shortcut": "Ctrl+Shift+E"
+    }
+  ],
+  "formatters": [
+    {
+      "name": "juniperUser",
+      "description": "Format user objects for better readability"
+    },
+    {
+      "name": "juniperIntegration",
+      "description": "Format integration objects with status indicators"
+    },
+    {
+      "name": "juniperResource",
+      "description": "Format repository resources with metadata"
+    }
+  ],
+  "inspectables": [
+    {
+      "name": "juniperAuthState",
+      "description": "Inspect authentication state and user session"
+    },
+    {
+      "name": "juniperChatState",
+      "description": "Inspect chat conversation state and context"
+    },
+    {
+      "name": "juniperIntegrationState",
+      "description": "Inspect integration states and configurations"
+    }
+  ]
+}
