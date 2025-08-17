@@ -28,6 +28,63 @@ function getStatusText(status: IntegrationStatus['status']) {
   }
 }
 
+function getServiceCategory(serviceName: string): IntegrationStatus['category'] {
+  const name = serviceName.toLowerCase();
+  
+  // Health and Wellness
+  if (['oura', 'fitbit'].includes(name)) {
+    return 'Health and Wellness';
+  }
+  
+  // Email
+  if (['gmail', 'microsoft outlook email', 'microsoft outlook mail', 'microsoft email'].includes(name)) {
+    return 'Email';
+  }
+  
+  // Communications
+  if (['slack', 'microsoft teams', 'twilio', 'textbelt'].includes(name)) {
+    return 'Team Collaboration';
+  }
+  
+  // Productivity and Task Management
+  if (['notion', 'todoist', 'any.do'].includes(name)) {
+    return 'Task Management';
+  }
+  
+  // Calendar
+  if (['google calendar', 'microsoft outlook calendar', 'microsoft calendar'].includes(name)) {
+    return 'Calendar';
+  }
+  
+  // Video Conferencing
+  if (['google meet'].includes(name)) {
+    return 'Video Conferencing';
+  }
+  
+  // Research
+  if (['research', 'ai', 'search', 'perplexity'].includes(name)) {
+    return 'Search';
+  }
+  
+  // Cloud Storage
+  if (['dropbox'].includes(name)) {
+    return 'Cloud Storage';
+  }
+  
+  // Cloud Text Documents
+  if (['google docs', 'microsoft word online'].includes(name)) {
+    return 'Cloud Text Documents';
+  }
+  
+  // Cloud Spreadsheets
+  if (['google sheets', 'microsoft excel online'].includes(name)) {
+    return 'Cloud Spreadsheets';
+  }
+  
+  // Default category for uncategorized services
+  return 'Other';
+}
+
 function mapDatabaseIntegrationToDisplay(dbIntegration: { 
   status: string; 
   services?: { 
@@ -50,22 +107,14 @@ function mapDatabaseIntegrationToDisplay(dbIntegration: {
     'failed': 'disconnected'
   }
   
-  // Extract service type from tags
-  const serviceTypeTags = [
-    dbIntegration.services?.tag_1,
-    dbIntegration.services?.tag_2,
-    dbIntegration.services?.tag_3,
-    dbIntegration.services?.tag_4,
-    dbIntegration.services?.tag_5
-  ].filter(tag => tag && tag.type === 'service_type')
-  
-  const serviceType = serviceTypeTags.length > 0 ? serviceTypeTags[0]!.name : 'Other'
+  const serviceName = dbIntegration.services?.service_name || 'Unknown Service';
+  const category = getServiceCategory(serviceName);
   
   return {
-    name: (dbIntegration.services?.service_name || 'Unknown Service') as IntegrationStatus['name'],
+    name: serviceName as IntegrationStatus['name'],
     status: statusMap[dbIntegration.status] || 'disconnected',
     lastConnected: dbIntegration.last_used ? new Date(dbIntegration.last_used).toLocaleDateString() : undefined,
-    category: serviceType as IntegrationStatus['category'],
+    category: category,
     description: dbIntegration.services?.description || 'Service integration',
     public: dbIntegration.services?.public !== false,
     isSystemIntegration: dbIntegration.services?.type === 'system'
@@ -92,14 +141,28 @@ export default async function IntegrationsPage() {
     return acc
   }, {} as Record<string, typeof publicIntegrations>)
 
-  // Convert to the format expected by the template
-  const integrationsCategorized = Object.entries(integrationsByCategory)
-    .map(([category, integrations]) => ({
-      category: category as keyof typeof SERVICE_CATEGORIES,
-      integrations: integrations
+  // Define the order of categories (Health and Wellness first like in React Native)
+  const categoryOrder = [
+    'Health and Wellness',
+    'Email',
+    'Team Collaboration', 
+    'Task Management',
+    'Calendar',
+    'Video Conferencing',
+    'Cloud Storage',
+    'Cloud Text Documents',
+    'Cloud Spreadsheets',
+    'Search',
+    'Other'
+  ];
+
+  // Convert to the format expected by the template with ordered categories
+  const integrationsCategorized = categoryOrder
+    .map(categoryName => ({
+      category: categoryName as keyof typeof SERVICE_CATEGORIES,
+      integrations: integrationsByCategory[categoryName] || []
     }))
-    .filter(group => group.integrations.length > 0)
-    .sort((a, b) => a.category.localeCompare(b.category)); // Sort categories alphabetically
+    .filter(group => group.integrations.length > 0);
 
   return (
     <div className="space-y-8">
@@ -113,7 +176,7 @@ export default async function IntegrationsPage() {
       {/* Prominent mobile app integration message */}
       <div className="bg-primary/10 border-2 border-primary rounded-lg p-6">
         <p className="text-lg font-semibold text-foreground text-center">
-          Integrate with the services below in our mobile app
+          Integrate with additional services in our mobile app
         </p>
       </div>
 

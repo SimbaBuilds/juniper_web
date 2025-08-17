@@ -150,6 +150,7 @@ export async function fetchIntegrations(userId?: string) {
         service_name,
         description,
         type,
+        public,
         tag_1_id,
         tag_2_id,
         tag_3_id,

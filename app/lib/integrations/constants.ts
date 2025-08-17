@@ -16,10 +16,13 @@ export const SERVICES = [
   { name: 'Textbelt', public: false },
   { name: 'Twilio', public: false },
   { name: 'Google Meet', public: true },
-  { name: 'Twitter/X', public: true }
+  { name: 'Twitter/X', public: true },
+  { name: 'Fitbit', public: true },
+  { name: 'Oura', public: true }
 ] as const;
 
 export const SERVICE_CATEGORIES = {
+  'Health and Wellness': ['Fitbit', 'Oura'],
   'Cloud Spreadsheets': ['Google Sheets', 'Microsoft Excel Online'],
   'Search': ['Perplexity'],
   'Email': ['Gmail', 'Microsoft Email'],
