@@ -1,0 +1,68 @@
+# SAST Scan Exclusions - Sensitive Files and Directories
+# This file lists patterns to exclude when creating a secure package for SAST scanning
+
+# Environment and secrets
+.env*
+*.env
+**/secrets/**
+**/credentials/**
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+config/secrets.*
+
+# Build artifacts and dependencies
+node_modules/
+.next/
+.vercel/
+build/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+
+# Version control
+.git/
+.svn/
+.hg/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# React Native reference (appears to be external reference code)
+react_native_reference/
+
+# Documentation and planning files (may contain sensitive info)
+IMPLEMENTATION_PLAN.md
+debug.md
+delete_account.md
+chat_func.md
+api_routes.md
+*.md
+
+# Package manager files with potential lock info
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
