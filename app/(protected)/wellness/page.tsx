@@ -47,6 +47,11 @@ interface FilterPrefs {
   showActivityDistribution: boolean
   showDailySteps: boolean
   showDailyCalories: boolean
+  showSummaryStats: boolean
+  showSleepCard: boolean
+  showActivityCard: boolean
+  showStepsCard: boolean
+  showReadinessCard: boolean
 }
 
 const CHART_CONFIG = {
@@ -83,7 +88,12 @@ export default function WellnessPage() {
     showHealthScoresTrend: true,
     showActivityDistribution: true,
     showDailySteps: true,
-    showDailyCalories: true
+    showDailyCalories: true,
+    showSummaryStats: true,
+    showSleepCard: true,
+    showActivityCard: true,
+    showStepsCard: true,
+    showReadinessCard: true
   })
 
   // Load preferences from localStorage
@@ -241,138 +251,202 @@ export default function WellnessPage() {
           <Filter className="h-4 w-4" />
           Dashboard Settings
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs">Time Range</Label>
-            <Select 
-              value={filterPrefs.timeRange} 
-              onValueChange={(value) => updateFilterPref('timeRange', value)}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Controls - Time Range and Sort */}
+          <div className="flex gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Time Range</Label>
+              <Select 
+                value={filterPrefs.timeRange} 
+                onValueChange={(value) => updateFilterPref('timeRange', value)}
+              >
+                <SelectTrigger className="h-8 w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Sort By</Label>
+              <Select 
+                value={filterPrefs.sortBy} 
+                onValueChange={(value) => updateFilterPref('sortBy', value)}
+              >
+                <SelectTrigger className="h-8 w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="sleep_score">Sleep Score</SelectItem>
+                  <SelectItem value="activity_score">Activity Score</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs">Sort By</Label>
-            <Select 
-              value={filterPrefs.sortBy} 
-              onValueChange={(value) => updateFilterPref('sortBy', value)}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="sleep_score">Sleep Score</SelectItem>
-                <SelectItem value="activity_score">Activity Score</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-health-scores"
-              checked={filterPrefs.showHealthScoresTrend}
-              onCheckedChange={(checked) => updateFilterPref('showHealthScoresTrend', checked)}
-            />
-            <Label htmlFor="show-health-scores" className="text-xs">Health Scores</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-activity-dist"
-              checked={filterPrefs.showActivityDistribution}
-              onCheckedChange={(checked) => updateFilterPref('showActivityDistribution', checked)}
-            />
-            <Label htmlFor="show-activity-dist" className="text-xs">Activity Chart</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-steps"
-              checked={filterPrefs.showDailySteps}
-              onCheckedChange={(checked) => updateFilterPref('showDailySteps', checked)}
-            />
-            <Label htmlFor="show-steps" className="text-xs">Steps Chart</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-calories"
-              checked={filterPrefs.showDailyCalories}
-              onCheckedChange={(checked) => updateFilterPref('showDailyCalories', checked)}
-            />
-            <Label htmlFor="show-calories" className="text-xs">Calories Chart</Label>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-resources"
-              checked={filterPrefs.showResources}
-              onCheckedChange={(checked) => updateFilterPref('showResources', checked)}
-            />
-            <Label htmlFor="show-resources" className="text-xs">Show Resources Section</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-automations"
-              checked={filterPrefs.showAutomations}
-              onCheckedChange={(checked) => updateFilterPref('showAutomations', checked)}
-            />
-            <Label htmlFor="show-automations" className="text-xs">Show Automations Section</Label>
+
+          {/* Toggle Groups */}
+          <div className="flex-1 space-y-3">
+            {/* Chart Toggles */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-health-scores"
+                  checked={filterPrefs.showHealthScoresTrend}
+                  onCheckedChange={(checked) => updateFilterPref('showHealthScoresTrend', checked)}
+                />
+                <Label htmlFor="show-health-scores" className="text-xs">Health Scores</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-activity-dist"
+                  checked={filterPrefs.showActivityDistribution}
+                  onCheckedChange={(checked) => updateFilterPref('showActivityDistribution', checked)}
+                />
+                <Label htmlFor="show-activity-dist" className="text-xs">Activity Chart</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-steps"
+                  checked={filterPrefs.showDailySteps}
+                  onCheckedChange={(checked) => updateFilterPref('showDailySteps', checked)}
+                />
+                <Label htmlFor="show-steps" className="text-xs">Steps Chart</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-calories"
+                  checked={filterPrefs.showDailyCalories}
+                  onCheckedChange={(checked) => updateFilterPref('showDailyCalories', checked)}
+                />
+                <Label htmlFor="show-calories" className="text-xs">Calories Chart</Label>
+              </div>
+            </div>
+
+            {/* Summary Card Toggles */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-summary-stats"
+                  checked={filterPrefs.showSummaryStats}
+                  onCheckedChange={(checked) => updateFilterPref('showSummaryStats', checked)}
+                />
+                <Label htmlFor="show-summary-stats" className="text-xs">All Summary</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-sleep-card"
+                  checked={filterPrefs.showSleepCard}
+                  onCheckedChange={(checked) => updateFilterPref('showSleepCard', checked)}
+                />
+                <Label htmlFor="show-sleep-card" className="text-xs">Sleep Card</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-activity-card"
+                  checked={filterPrefs.showActivityCard}
+                  onCheckedChange={(checked) => updateFilterPref('showActivityCard', checked)}
+                />
+                <Label htmlFor="show-activity-card" className="text-xs">Activity Card</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-steps-card"
+                  checked={filterPrefs.showStepsCard}
+                  onCheckedChange={(checked) => updateFilterPref('showStepsCard', checked)}
+                />
+                <Label htmlFor="show-steps-card" className="text-xs">Steps Card</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-readiness-card"
+                  checked={filterPrefs.showReadinessCard}
+                  onCheckedChange={(checked) => updateFilterPref('showReadinessCard', checked)}
+                />
+                <Label htmlFor="show-readiness-card" className="text-xs">Readiness Card</Label>
+              </div>
+            </div>
+
+            {/* Section Toggles */}
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-resources"
+                  checked={filterPrefs.showResources}
+                  onCheckedChange={(checked) => updateFilterPref('showResources', checked)}
+                />
+                <Label htmlFor="show-resources" className="text-xs">Resources</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-automations"
+                  checked={filterPrefs.showAutomations}
+                  onCheckedChange={(checked) => updateFilterPref('showAutomations', checked)}
+                />
+                <Label htmlFor="show-automations" className="text-xs">Automations</Label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
 
       {/* Summary Stats */}
-      {summaryStats && (
+      {summaryStats && filterPrefs.showSummaryStats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Sleep Score</CardTitle>
-              <Moon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summaryStats.avgSleepScore}</div>
-              <p className="text-xs text-muted-foreground">out of 100</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Activity Score</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summaryStats.avgActivityScore}</div>
-              <p className="text-xs text-muted-foreground">out of 100</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Steps</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{summaryStats.totalSteps.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">steps taken</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Readiness</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {healthData.some(d => d.readiness_score && d.readiness_score > 0) ? summaryStats.avgReadiness : 'N/A'}
-              </div>
-              <p className="text-xs text-muted-foreground">readiness score</p>
-            </CardContent>
-          </Card>
+          {filterPrefs.showSleepCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Sleep Score</CardTitle>
+                <Moon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summaryStats.avgSleepScore}</div>
+                <p className="text-xs text-muted-foreground">out of 100</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showActivityCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Activity Score</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summaryStats.avgActivityScore}</div>
+                <p className="text-xs text-muted-foreground">out of 100</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showStepsCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Steps</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{summaryStats.totalSteps.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">steps taken</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showReadinessCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Readiness</CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthData.some(d => d.readiness_score && d.readiness_score > 0) ? summaryStats.avgReadiness : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground">readiness score</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -393,9 +467,9 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Line type="monotone" dataKey="sleep_score" stroke="hsl(var(--chart-1))" strokeWidth={2} name="Sleep Score" />
-                      <Line type="monotone" dataKey="activity_score" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Activity Score" />
-                      <Line type="monotone" dataKey="readiness_score" stroke="hsl(var(--chart-3))" strokeWidth={2} name="Readiness Score" />
+                      <Line type="monotone" dataKey="sleep_score" stroke="#6366f1" strokeWidth={2} name="Sleep Score" />
+                      <Line type="monotone" dataKey="activity_score" stroke="#f59e0b" strokeWidth={2} name="Activity Score" />
+                      <Line type="monotone" dataKey="readiness_score" stroke="#ef4444" strokeWidth={2} name="Readiness Score" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -449,7 +523,7 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="steps" fill="hsl(var(--chart-1))" name="Steps" />
+                      <Bar dataKey="steps" fill="#3b82f6" name="Steps" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -471,7 +545,7 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="calories" fill="hsl(var(--chart-2))" name="Calories" />
+                      <Bar dataKey="calories" fill="#10b981" name="Calories" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
