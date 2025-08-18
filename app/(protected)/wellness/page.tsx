@@ -52,6 +52,17 @@ interface FilterPrefs {
   showActivityCard: boolean
   showStepsCard: boolean
   showReadinessCard: boolean
+  showAvgStepsCard: boolean
+  showAvgStressCard: boolean
+  showAvgHeartRateCard: boolean
+  showAvgHrvCard: boolean
+  // Trend chart metric toggles
+  showSleepTrend: boolean
+  showActivityTrend: boolean
+  showReadinessTrend: boolean
+  showStressTrend: boolean
+  showHeartRateTrend: boolean
+  showHrvTrend: boolean
 }
 
 const CHART_CONFIG = {
@@ -98,7 +109,18 @@ export default function WellnessPage() {
     showSleepCard: true,
     showActivityCard: true,
     showStepsCard: true,
-    showReadinessCard: true
+    showReadinessCard: true,
+    showAvgStepsCard: true,
+    showAvgStressCard: true,
+    showAvgHeartRateCard: true,
+    showAvgHrvCard: true,
+    // Trend chart metric toggles
+    showSleepTrend: true,
+    showActivityTrend: true,
+    showReadinessTrend: true,
+    showStressTrend: true,
+    showHeartRateTrend: true,
+    showHrvTrend: true
   })
 
   // Detect dark mode
@@ -228,7 +250,11 @@ export default function WellnessPage() {
     avgSleepScore: Math.round(healthData.reduce((sum, d) => sum + (d.sleep_score || 0), 0) / healthData.length),
     avgActivityScore: Math.round(healthData.reduce((sum, d) => sum + (d.activity_score || 0), 0) / healthData.length),
     totalSteps: healthData.reduce((sum, d) => sum + (d.total_steps || 0), 0),
-    avgReadiness: Math.round(healthData.reduce((sum, d) => sum + (d.readiness_score || 0), 0) / Math.max(healthData.filter(d => d.readiness_score && d.readiness_score > 0).length, 1))
+    avgReadiness: Math.round(healthData.reduce((sum, d) => sum + (d.readiness_score || 0), 0) / Math.max(healthData.filter(d => d.readiness_score && d.readiness_score > 0).length, 1)),
+    avgSteps: Math.round(healthData.reduce((sum, d) => sum + (d.total_steps || 0), 0) / Math.max(healthData.filter(d => d.total_steps && d.total_steps > 0).length, 1)),
+    avgStressLevel: Math.round(healthData.reduce((sum, d) => sum + (d.stress_level || 0), 0) / Math.max(healthData.filter(d => d.stress_level && d.stress_level > 0).length, 1)),
+    avgHeartRate: Math.round(healthData.reduce((sum, d) => sum + (d.heart_rate_avg || 0), 0) / Math.max(healthData.filter(d => d.heart_rate_avg && d.heart_rate_avg > 0).length, 1)),
+    avgHrv: Math.round(healthData.reduce((sum, d) => sum + (d.hrv_avg || 0), 0) / Math.max(healthData.filter(d => d.hrv_avg && d.hrv_avg > 0).length, 1))
   } : null
 
   // Prepare chart data
@@ -238,6 +264,8 @@ export default function WellnessPage() {
     activity_score: d.activity_score || 0,
     readiness_score: d.readiness_score || 0,
     stress_level: d.stress_level || 0,
+    heart_rate_avg: d.heart_rate_avg || 0,
+    hrv_avg: d.hrv_avg || 0,
     steps: d.total_steps || 0,
     calories: d.calories_burned || 0
   }))
@@ -350,7 +378,7 @@ export default function WellnessPage() {
             </div>
 
             {/* Summary Card Toggles */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="show-summary-stats"
@@ -391,6 +419,38 @@ export default function WellnessPage() {
                 />
                 <Label htmlFor="show-readiness-card" className="text-xs">Readiness Card</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-avg-steps-card"
+                  checked={filterPrefs.showAvgStepsCard}
+                  onCheckedChange={(checked) => updateFilterPref('showAvgStepsCard', checked)}
+                />
+                <Label htmlFor="show-avg-steps-card" className="text-xs">Avg Steps</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-avg-stress-card"
+                  checked={filterPrefs.showAvgStressCard}
+                  onCheckedChange={(checked) => updateFilterPref('showAvgStressCard', checked)}
+                />
+                <Label htmlFor="show-avg-stress-card" className="text-xs">Avg Stress</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-avg-hr-card"
+                  checked={filterPrefs.showAvgHeartRateCard}
+                  onCheckedChange={(checked) => updateFilterPref('showAvgHeartRateCard', checked)}
+                />
+                <Label htmlFor="show-avg-hr-card" className="text-xs">Avg HR</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-avg-hrv-card"
+                  checked={filterPrefs.showAvgHrvCard}
+                  onCheckedChange={(checked) => updateFilterPref('showAvgHrvCard', checked)}
+                />
+                <Label htmlFor="show-avg-hrv-card" className="text-xs">Avg HRV</Label>
+              </div>
             </div>
 
             {/* Section Toggles */}
@@ -419,7 +479,7 @@ export default function WellnessPage() {
 
       {/* Summary Stats */}
       {summaryStats && filterPrefs.showSummaryStats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filterPrefs.showSleepCard && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -470,18 +530,126 @@ export default function WellnessPage() {
               </CardContent>
             </Card>
           )}
+          {filterPrefs.showAvgStepsCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Steps</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthData.some(d => d.total_steps && d.total_steps > 0) ? summaryStats.avgSteps.toLocaleString() : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground">steps per day</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showAvgStressCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Stress Level</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthData.some(d => d.stress_level && d.stress_level > 0) ? summaryStats.avgStressLevel : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground">stress level</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showAvgHeartRateCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Heart Rate</CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthData.some(d => d.heart_rate_avg && d.heart_rate_avg > 0) ? summaryStats.avgHeartRate : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground">bpm</p>
+              </CardContent>
+            </Card>
+          )}
+          {filterPrefs.showAvgHrvCard && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average HRV</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {healthData.some(d => d.hrv_avg && d.hrv_avg > 0) ? summaryStats.avgHrv : 'N/A'}
+                </div>
+                <p className="text-xs text-muted-foreground">ms</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
       {/* Charts */}
       {chartData.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Health Scores Trend */}
+        <div className="space-y-4">
+          {/* Trends Chart - Full Width */}
           {filterPrefs.showHealthScoresTrend && (
             <Card className="pb-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Health Scores Trend</CardTitle>
-                <CardDescription className="text-sm">Sleep, Activity, and Readiness scores over time</CardDescription>
+                <CardTitle className="text-lg">Trends</CardTitle>
+                <CardDescription className="text-sm">Health metrics over time</CardDescription>
+                
+                {/* Metric Toggles */}
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="sleep-trend"
+                      checked={filterPrefs.showSleepTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showSleepTrend', checked)}
+                    />
+                    <Label htmlFor="sleep-trend" className="text-xs">Sleep</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="activity-trend"
+                      checked={filterPrefs.showActivityTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showActivityTrend', checked)}
+                    />
+                    <Label htmlFor="activity-trend" className="text-xs">Activity</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="readiness-trend"
+                      checked={filterPrefs.showReadinessTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showReadinessTrend', checked)}
+                    />
+                    <Label htmlFor="readiness-trend" className="text-xs">Readiness</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="stress-trend"
+                      checked={filterPrefs.showStressTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showStressTrend', checked)}
+                    />
+                    <Label htmlFor="stress-trend" className="text-xs">Stress</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="hr-trend"
+                      checked={filterPrefs.showHeartRateTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showHeartRateTrend', checked)}
+                    />
+                    <Label htmlFor="hr-trend" className="text-xs">Heart Rate</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="hrv-trend"
+                      checked={filterPrefs.showHrvTrend}
+                      onCheckedChange={(checked) => updateFilterPref('showHrvTrend', checked)}
+                    />
+                    <Label htmlFor="hrv-trend" className="text-xs">HRV</Label>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="h-[400px] w-full">
@@ -490,33 +658,69 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sleep_score" 
-                        stroke={isDarkMode ? "#60a5fa" : "#1e40af"} 
-                        strokeWidth={2} 
-                        name="Sleep Score" 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="activity_score" 
-                        stroke={isDarkMode ? "#bbf7d0" : "#166534"} 
-                        strokeWidth={2} 
-                        name="Activity Score" 
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="readiness_score" 
-                        stroke={isDarkMode ? "#fbbf24" : "#f59e0b"} 
-                        strokeWidth={2} 
-                        name="Readiness Score" 
-                      />
+                      {filterPrefs.showSleepTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="sleep_score" 
+                          stroke={isDarkMode ? "#60a5fa" : "#1e40af"} 
+                          strokeWidth={2} 
+                          name="Sleep Score" 
+                        />
+                      )}
+                      {filterPrefs.showActivityTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="activity_score" 
+                          stroke={isDarkMode ? "#bbf7d0" : "#166534"} 
+                          strokeWidth={2} 
+                          name="Activity Score" 
+                        />
+                      )}
+                      {filterPrefs.showReadinessTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="readiness_score" 
+                          stroke={isDarkMode ? "#fbbf24" : "#f59e0b"} 
+                          strokeWidth={2} 
+                          name="Readiness Score" 
+                        />
+                      )}
+                      {filterPrefs.showStressTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="stress_level" 
+                          stroke={isDarkMode ? "#f87171" : "#ef4444"} 
+                          strokeWidth={2} 
+                          name="Stress Level" 
+                        />
+                      )}
+                      {filterPrefs.showHeartRateTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="heart_rate_avg" 
+                          stroke={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
+                          strokeWidth={2} 
+                          name="Heart Rate" 
+                        />
+                      )}
+                      {filterPrefs.showHrvTrend && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="hrv_avg" 
+                          stroke={isDarkMode ? "#fb7185" : "#ec4899"} 
+                          strokeWidth={2} 
+                          name="HRV" 
+                        />
+                      )}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Other Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* Activity Distribution */}
           {filterPrefs.showActivityDistribution && (
@@ -586,7 +790,12 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="steps" fill={isDarkMode ? "#60a5fa" : "#1e40af"} name="Steps" />
+                      <Bar 
+                        dataKey="steps" 
+                        fill={isDarkMode ? "#60a5fa" : "#1e40af"} 
+                        name="Steps"
+                        radius={[8, 8, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -608,13 +817,19 @@ export default function WellnessPage() {
                       <XAxis dataKey="date" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="calories" fill={isDarkMode ? "#bbf7d0" : "#166534"} name="Calories" />
+                      <Bar 
+                        dataKey="calories" 
+                        fill={isDarkMode ? "#bbf7d0" : "#166534"} 
+                        name="Calories"
+                        radius={[8, 8, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
           )}
+          </div>
         </div>
       )}
 
