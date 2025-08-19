@@ -177,6 +177,13 @@ export default function WellnessPage() {
         const daysBack = parseInt(filterPrefs.timeRange)
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         const startDate = new Date(Date.now() - (daysBack + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        
+        console.log('Date debugging:')
+        console.log('Current time:', new Date().toISOString())
+        console.log('Yesterday (upper bound):', yesterday)
+        console.log('Start date (lower bound):', startDate)
+        console.log('Days back:', daysBack)
+        
         const { data: metricsData, error: metricsError } = await supabase
           .from('health_metrics_daily')
           .select('*')
@@ -188,6 +195,11 @@ export default function WellnessPage() {
         if (metricsError) {
           console.error('Error fetching health metrics:', metricsError)
         } else {
+          console.log('Fetched metrics data:', metricsData?.length, 'records')
+          if (metricsData && metricsData.length > 0) {
+            console.log('First record date:', metricsData[0].date)
+            console.log('Last record date:', metricsData[metricsData.length - 1].date)
+          }
           setHealthData(metricsData || [])
         }
 
@@ -554,7 +566,7 @@ export default function WellnessPage() {
                       {filterPrefs.showReadinessCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Readiness</CardTitle>
+                  <CardTitle className="text-xs font-medium">Avg Readiness</CardTitle>
                   <Heart className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
