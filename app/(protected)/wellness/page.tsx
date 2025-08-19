@@ -172,13 +172,16 @@ export default function WellnessPage() {
         
         setUser(user)
 
-        // Fetch health metrics data
+        // Fetch health metrics data (excluding current day to avoid showing zeros)
         const daysBack = parseInt(filterPrefs.timeRange)
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const startDate = new Date(Date.now() - (daysBack + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         const { data: metricsData, error: metricsError } = await supabase
           .from('health_metrics_daily')
           .select('*')
           .eq('user_id', user.id)
-          .gte('date', new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .gte('date', startDate)
+          .lte('date', yesterday)
           .order('date', { ascending: true })
         
         if (metricsError) {
@@ -320,6 +323,7 @@ export default function WellnessPage() {
                   <SelectItem value="90">Last 90 days</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">*data updates daily at 2am UTC</p>
             </div>
             <div className="space-y-2">
               <Label className="text-xs">Sort By</Label>
