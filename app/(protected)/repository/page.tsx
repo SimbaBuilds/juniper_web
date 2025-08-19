@@ -257,7 +257,7 @@ export default function RepositoryPage() {
           </div>
           <div>
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-medium">Tip:</span> Use tags to improve retrieval (e.g. add the "email" tag to a resource to make sure Juniper has access to it every time it does something with email).
+            <span className="font-medium">Tips:</span> - Use tags to improve retrieval (e.g. add the "email" tag to a resource to make sure Juniper has access to it every time it does something with email). - “Memories” are more likely to come up in casual conversation while “References”, “Samples”,  and “Notes” can be assigned to specific workflows.
             </p>
           </div>
         </div>

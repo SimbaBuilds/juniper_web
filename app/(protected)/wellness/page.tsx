@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/utils/supabase/client'
-import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3 } from 'lucide-react'
+import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -96,6 +96,7 @@ export default function WellnessPage() {
   const [healthData, setHealthData] = useState<HealthMetric[]>([])
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [loading, setLoading] = useState(true)
+  const [settingsExpanded, setSettingsExpanded] = useState(false)
   const [filterPrefs, setFilterPrefs] = useState<FilterPrefs>({
     timeRange: '30',
     showResources: true,
@@ -301,295 +302,325 @@ export default function WellnessPage() {
 
       {/* Filter Controls */}
       <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-        <h3 className="font-medium text-sm flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Dashboard Settings
-        </h3>
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Controls - Time Range and Sort */}
-          <div className="flex gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Time Range</Label>
-              <Select 
-                value={filterPrefs.timeRange} 
-                onValueChange={(value) => updateFilterPref('timeRange', value)}
-              >
-                <SelectTrigger className="h-8 w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">*data updates daily at 2am UTC</p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Sort By</Label>
-              <Select 
-                value={filterPrefs.sortBy} 
-                onValueChange={(value) => updateFilterPref('sortBy', value)}
-              >
-                <SelectTrigger className="h-8 w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Date</SelectItem>
-                  <SelectItem value="sleep_score">Sleep Score</SelectItem>
-                  <SelectItem value="activity_score">Activity Score</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-sm flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Dashboard Settings
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSettingsExpanded(!settingsExpanded)}
+            className="h-8 px-2"
+          >
+            {settingsExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Hide Advanced
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1" />
+                Show Advanced
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {/* Always visible controls */}
+        <div className="flex gap-4">
+          <div className="space-y-2">
+            <Label className="text-xs">Time Range</Label>
+            <Select 
+              value={filterPrefs.timeRange} 
+              onValueChange={(value) => updateFilterPref('timeRange', value)}
+            >
+              <SelectTrigger className="h-8 w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">*data updates daily at 2am UTC</p>
           </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Sort By</Label>
+            <Select 
+              value={filterPrefs.sortBy} 
+              onValueChange={(value) => updateFilterPref('sortBy', value)}
+            >
+              <SelectTrigger className="h-8 w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="sleep_score">Sleep Score</SelectItem>
+                <SelectItem value="activity_score">Activity Score</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          {/* Toggle Groups */}
-          <div className="flex-1 space-y-3">
+        {/* Expandable toggle groups */}
+        {settingsExpanded && (
+          <div className="space-y-4 pt-4 border-t">
             {/* Chart Toggles */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-health-scores"
-                  checked={filterPrefs.showHealthScoresTrend}
-                  onCheckedChange={(checked) => updateFilterPref('showHealthScoresTrend', checked)}
-                />
-                <Label htmlFor="show-health-scores" className="text-xs">Health Scores</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-activity-dist"
-                  checked={filterPrefs.showActivityDistribution}
-                  onCheckedChange={(checked) => updateFilterPref('showActivityDistribution', checked)}
-                />
-                <Label htmlFor="show-activity-dist" className="text-xs">Activity Chart</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-steps"
-                  checked={filterPrefs.showDailySteps}
-                  onCheckedChange={(checked) => updateFilterPref('showDailySteps', checked)}
-                />
-                <Label htmlFor="show-steps" className="text-xs">Steps Chart</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-calories"
-                  checked={filterPrefs.showDailyCalories}
-                  onCheckedChange={(checked) => updateFilterPref('showDailyCalories', checked)}
-                />
-                <Label htmlFor="show-calories" className="text-xs">Calories Chart</Label>
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Charts</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-health-scores"
+                    checked={filterPrefs.showHealthScoresTrend}
+                    onCheckedChange={(checked) => updateFilterPref('showHealthScoresTrend', checked)}
+                  />
+                  <Label htmlFor="show-health-scores" className="text-xs">Health Scores</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-activity-dist"
+                    checked={filterPrefs.showActivityDistribution}
+                    onCheckedChange={(checked) => updateFilterPref('showActivityDistribution', checked)}
+                  />
+                  <Label htmlFor="show-activity-dist" className="text-xs">Activity Chart</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-steps"
+                    checked={filterPrefs.showDailySteps}
+                    onCheckedChange={(checked) => updateFilterPref('showDailySteps', checked)}
+                  />
+                  <Label htmlFor="show-steps" className="text-xs">Steps Chart</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-calories"
+                    checked={filterPrefs.showDailyCalories}
+                    onCheckedChange={(checked) => updateFilterPref('showDailyCalories', checked)}
+                  />
+                  <Label htmlFor="show-calories" className="text-xs">Calories Chart</Label>
+                </div>
               </div>
             </div>
 
             {/* Summary Card Toggles */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-summary-stats"
-                  checked={filterPrefs.showSummaryStats}
-                  onCheckedChange={(checked) => updateFilterPref('showSummaryStats', checked)}
-                />
-                <Label htmlFor="show-summary-stats" className="text-xs">All Summary</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-sleep-card"
-                  checked={filterPrefs.showSleepCard}
-                  onCheckedChange={(checked) => updateFilterPref('showSleepCard', checked)}
-                />
-                <Label htmlFor="show-sleep-card" className="text-xs">Sleep Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-activity-card"
-                  checked={filterPrefs.showActivityCard}
-                  onCheckedChange={(checked) => updateFilterPref('showActivityCard', checked)}
-                />
-                <Label htmlFor="show-activity-card" className="text-xs">Activity Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-steps-card"
-                  checked={filterPrefs.showStepsCard}
-                  onCheckedChange={(checked) => updateFilterPref('showStepsCard', checked)}
-                />
-                <Label htmlFor="show-steps-card" className="text-xs">Steps Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-readiness-card"
-                  checked={filterPrefs.showReadinessCard}
-                  onCheckedChange={(checked) => updateFilterPref('showReadinessCard', checked)}
-                />
-                <Label htmlFor="show-readiness-card" className="text-xs">Readiness Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-avg-steps-card"
-                  checked={filterPrefs.showAvgStepsCard}
-                  onCheckedChange={(checked) => updateFilterPref('showAvgStepsCard', checked)}
-                />
-                <Label htmlFor="show-avg-steps-card" className="text-xs">Avg Steps</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-avg-stress-card"
-                  checked={filterPrefs.showAvgStressCard}
-                  onCheckedChange={(checked) => updateFilterPref('showAvgStressCard', checked)}
-                />
-                <Label htmlFor="show-avg-stress-card" className="text-xs">Avg Stress</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-avg-hr-card"
-                  checked={filterPrefs.showAvgHeartRateCard}
-                  onCheckedChange={(checked) => updateFilterPref('showAvgHeartRateCard', checked)}
-                />
-                <Label htmlFor="show-avg-hr-card" className="text-xs">Avg HR</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-avg-hrv-card"
-                  checked={filterPrefs.showAvgHrvCard}
-                  onCheckedChange={(checked) => updateFilterPref('showAvgHrvCard', checked)}
-                />
-                <Label htmlFor="show-avg-hrv-card" className="text-xs">Avg HRV</Label>
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Summary Cards</h4>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-summary-stats"
+                    checked={filterPrefs.showSummaryStats}
+                    onCheckedChange={(checked) => updateFilterPref('showSummaryStats', checked)}
+                  />
+                  <Label htmlFor="show-summary-stats" className="text-xs">All Summary</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-sleep-card"
+                    checked={filterPrefs.showSleepCard}
+                    onCheckedChange={(checked) => updateFilterPref('showSleepCard', checked)}
+                  />
+                  <Label htmlFor="show-sleep-card" className="text-xs">Sleep Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-activity-card"
+                    checked={filterPrefs.showActivityCard}
+                    onCheckedChange={(checked) => updateFilterPref('showActivityCard', checked)}
+                  />
+                  <Label htmlFor="show-activity-card" className="text-xs">Activity Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-steps-card"
+                    checked={filterPrefs.showStepsCard}
+                    onCheckedChange={(checked) => updateFilterPref('showStepsCard', checked)}
+                  />
+                  <Label htmlFor="show-steps-card" className="text-xs">Steps Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-readiness-card"
+                    checked={filterPrefs.showReadinessCard}
+                    onCheckedChange={(checked) => updateFilterPref('showReadinessCard', checked)}
+                  />
+                  <Label htmlFor="show-readiness-card" className="text-xs">Readiness Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-avg-steps-card"
+                    checked={filterPrefs.showAvgStepsCard}
+                    onCheckedChange={(checked) => updateFilterPref('showAvgStepsCard', checked)}
+                  />
+                  <Label htmlFor="show-avg-steps-card" className="text-xs">Avg Steps</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-avg-stress-card"
+                    checked={filterPrefs.showAvgStressCard}
+                    onCheckedChange={(checked) => updateFilterPref('showAvgStressCard', checked)}
+                  />
+                  <Label htmlFor="show-avg-stress-card" className="text-xs">Avg Stress</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-avg-hr-card"
+                    checked={filterPrefs.showAvgHeartRateCard}
+                    onCheckedChange={(checked) => updateFilterPref('showAvgHeartRateCard', checked)}
+                  />
+                  <Label htmlFor="show-avg-hr-card" className="text-xs">Avg HR</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-avg-hrv-card"
+                    checked={filterPrefs.showAvgHrvCard}
+                    onCheckedChange={(checked) => updateFilterPref('showAvgHrvCard', checked)}
+                  />
+                  <Label htmlFor="show-avg-hrv-card" className="text-xs">Avg HRV</Label>
+                </div>
               </div>
             </div>
 
             {/* Section Toggles */}
-            <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-resources"
-                  checked={filterPrefs.showResources}
-                  onCheckedChange={(checked) => updateFilterPref('showResources', checked)}
-                />
-                <Label htmlFor="show-resources" className="text-xs">Resources</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="show-automations"
-                  checked={filterPrefs.showAutomations}
-                  onCheckedChange={(checked) => updateFilterPref('showAutomations', checked)}
-                />
-                <Label htmlFor="show-automations" className="text-xs">Automations</Label>
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Sections</h4>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-resources"
+                    checked={filterPrefs.showResources}
+                    onCheckedChange={(checked) => updateFilterPref('showResources', checked)}
+                  />
+                  <Label htmlFor="show-resources" className="text-xs">Resources</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-automations"
+                    checked={filterPrefs.showAutomations}
+                    onCheckedChange={(checked) => updateFilterPref('showAutomations', checked)}
+                  />
+                  <Label htmlFor="show-automations" className="text-xs">Automations</Label>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
 
       {/* Summary Stats */}
       {summaryStats && filterPrefs.showSummaryStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filterPrefs.showSleepCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Sleep Score</CardTitle>
-                <Moon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summaryStats.avgSleepScore}</div>
-                <p className="text-xs text-muted-foreground">out of 100</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showActivityCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Activity Score</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summaryStats.avgActivityScore}</div>
-                <p className="text-xs text-muted-foreground">out of 100</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showStepsCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Steps</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{summaryStats.totalSteps.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">steps taken</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showReadinessCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Readiness</CardTitle>
-                <Heart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {healthData.some(d => d.readiness_score && d.readiness_score > 0) ? summaryStats.avgReadiness : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">readiness score</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showAvgStepsCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Steps</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {healthData.some(d => d.total_steps && d.total_steps > 0) ? summaryStats.avgSteps.toLocaleString() : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">steps per day</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showAvgStressCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Stress Level</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {healthData.some(d => d.stress_level && d.stress_level > 0) ? summaryStats.avgStressLevel : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">stress level</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showAvgHeartRateCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Heart Rate</CardTitle>
-                <Heart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {healthData.some(d => d.heart_rate_avg && d.heart_rate_avg > 0) ? summaryStats.avgHeartRate : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">bpm</p>
-              </CardContent>
-            </Card>
-          )}
-          {filterPrefs.showAvgHrvCard && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average HRV</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {healthData.some(d => d.hrv_avg && d.hrv_avg > 0) ? summaryStats.avgHrv : 'N/A'}
-                </div>
-                <p className="text-xs text-muted-foreground">ms</p>
-              </CardContent>
-            </Card>
-          )}
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                      {filterPrefs.showSleepCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Sleep Score</CardTitle>
+                  <Moon className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">{summaryStats.avgSleepScore}</div>
+                  <p className="text-xs text-muted-foreground">/100</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showActivityCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Activity Score</CardTitle>
+                  <Activity className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">{summaryStats.avgActivityScore}</div>
+                  <p className="text-xs text-muted-foreground">/100</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showStepsCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Total Steps</CardTitle>
+                  <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">{summaryStats.totalSteps.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">steps</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showReadinessCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Readiness</CardTitle>
+                  <Heart className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">
+                    {healthData.some(d => d.readiness_score && d.readiness_score > 0) ? summaryStats.avgReadiness : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">score</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showAvgStepsCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Avg Steps</CardTitle>
+                  <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">
+                    {healthData.some(d => d.total_steps && d.total_steps > 0) ? summaryStats.avgSteps.toLocaleString() : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">per day</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showAvgStressCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Avg Stress</CardTitle>
+                  <Activity className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">
+                    {healthData.some(d => d.stress_level && d.stress_level > 0) ? summaryStats.avgStressLevel : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">level</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showAvgHeartRateCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Avg HR</CardTitle>
+                  <Heart className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">
+                    {healthData.some(d => d.heart_rate_avg && d.heart_rate_avg > 0) ? summaryStats.avgHeartRate : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">bpm</p>
+                </CardContent>
+              </Card>
+            )}
+                      {filterPrefs.showAvgHrvCard && (
+              <Card className="p-3">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
+                  <CardTitle className="text-xs font-medium">Avg HRV</CardTitle>
+                  <Activity className="h-3 w-3 text-muted-foreground" />
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <div className="text-lg font-bold">
+                    {healthData.some(d => d.hrv_avg && d.hrv_avg > 0) ? summaryStats.avgHrv : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">ms</p>
+                </CardContent>
+              </Card>
+            )}
         </div>
       )}
 
