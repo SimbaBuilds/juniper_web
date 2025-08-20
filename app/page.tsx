@@ -132,7 +132,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-16 text-center">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-5xl font-bold text-foreground mb-6">
-          An AI Personal Assistant for 
+          An AI Assistant for 
  
             <span style={{color: 'var(--muted-blue)'}}> Wellness and Productivity</span>
           </h2>
