@@ -11,10 +11,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const integrationService = new IntegrationService();
-    const integrations = await integrationService.getUserIntegrations(user.id);
+    console.log('Fetching integrations for user:', user.id);
 
-    return NextResponse.json({ integrations });
+    // Use the exact same query as React Native (lines 601-610 in supabase.ts)
+    const { data: integrations, error: integrationsError } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (integrationsError) {
+      console.error('Error fetching integrations:', integrationsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch integrations' },
+        { status: 500 }
+      );
+    }
+
+    console.log('Found integrations:', integrations?.length || 0);
+    console.log('Integrations data:', integrations);
+
+    return NextResponse.json({ integrations: integrations || [] });
 
   } catch (error) {
     console.error('Error fetching integrations:', error);

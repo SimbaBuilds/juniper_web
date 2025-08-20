@@ -1,16 +1,21 @@
- ⨯ ./app/api/integrations/route.ts:2:1
-Export createClient doesn't exist in target module
-  1 | import { NextRequest, NextResponse } from 'next/server';
-> 2 | import { createClient } from '@/lib/utils/supabase/server';
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  3 | import { IntegrationService } from '@/app/lib/integrations/IntegrationService';
-  4 |
-  5 | export async function GET(request: NextRequest) {
-
-The export createClient was not found in module [project]/lib/utils/supabase/server.ts [app-route] (ecmascript).
-Did you mean to import createSupabaseAppServerClient?
-All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
-
-
- ✓ Compiled /_error in 396ms
- GET /api/integrations 500 in 728ms
+System services found: Array(2)
+IntegrationsClient.tsx:223 Database integrations: 0
+IntegrationsClient.tsx:224 Active integrations: 0
+IntegrationsClient.tsx:229 Available OAuth services: 15 Array(15)
+IntegrationsClient.tsx:284 Service Fitbit: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Gmail: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Google Calendar: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Google Docs: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Google Sheets: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Microsoft Excel Online: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Microsoft Outlook Calendar: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Microsoft Outlook Mail: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Microsoft Teams: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Microsoft Word Online: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Notion: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Oura: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Slack: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Textbelt: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:284 Service Todoist: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:335 OAuth Service Google Meet: integration= undefined is_active= undefined computed isActive= false
+IntegrationsClient.tsx:354 Final service results: 18 Array(18)

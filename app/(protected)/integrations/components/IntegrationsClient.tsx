@@ -220,6 +220,8 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
 
       console.log('Services loaded from database:', allServices.length);
       console.log('System services found:', allServices.filter(s => s.type === 'system').map(s => s.service_name));
+      console.log('Database integrations:', dbIntegrations.length);
+      console.log('Active integrations:', dbIntegrations.filter((int: any) => int.is_active).length);
       
       // Get ALL OAuth services from config (regardless of client ID configuration)
       const { OAUTH_CONFIG } = await import('@/app/lib/integrations/oauth/OAuthConfig');
@@ -263,29 +265,33 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
             type: service.type
           });
         } else {
-          // Handle regular user integrations
+          // Handle regular user integrations (match exactly like React Native)
           const integration = dbIntegrations.find(
-            (int: any) => int.service_name?.toLowerCase() === service.service_name?.toLowerCase()
+            (int: any) => int.service_id === service.id
           );
           
-          // Follow React Native pattern for status mapping
-          const isActive = integration ? (integration.status === 'active') : false;
+          // Use is_active field exactly like React Native (line 304 in RN)
+          const isActive = integration?.is_active;
           let isPendingSetup = false;
           
           // Check for pending setup status (like React Native does for Twilio)
-          if (integration && !isActive && integration.status === 'pending') {
-            isPendingSetup = true;
+          if (integration && !isActive && 
+              ['twilio'].includes(service.service_name.toLowerCase())) {
+            // For Twilio, check if setup is pending
+            isPendingSetup = true; // Simplified - React Native has more complex logic here
           }
+          
+          console.log(`Service ${service.service_name}: integration=`, integration?.id, 'is_active=', integration?.is_active, 'computed isActive=', !!isActive);
           
           serviceResults.push({
             id: service.id,
             service_name: service.service_name,
             tags: service.tagNames || [],
             description: service.description,
-            isActive,
-            isConnected: isActive,
+            isActive: !!isActive,  // Exactly like React Native line 324
+            isConnected: !!isActive,  // Exactly like React Native line 325
             integration_id: integration?.id,
-            status: integration?.status || 'disconnected',
+            status: integration?.status,
             isPendingSetup,
             isSystemIntegration: false,
             public: service.public,
@@ -304,7 +310,8 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
         );
         
         if (!existingService) {
-          // Try to find integration by service name
+          // For OAuth services not in database, try to find integration by service name
+          // (This is fallback logic for services that exist as integrations but not as services)
           const dbIntegration = dbIntegrations.find(
             (int: any) => {
               const integrationServiceName = int.service_name?.toLowerCase();
@@ -317,20 +324,23 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
             }
           );
           
-          const isActive = dbIntegration ? (dbIntegration.status === 'active') : false;
+          // Use is_active field like React Native
+          const isActive = dbIntegration?.is_active;
           let isPendingSetup = false;
           
           if (dbIntegration && !isActive && dbIntegration.status === 'pending') {
             isPendingSetup = true;
           }
           
+          console.log(`OAuth Service ${descriptor?.displayName || serviceName}: integration=`, dbIntegration?.id, 'is_active=', dbIntegration?.is_active, 'computed isActive=', !!isActive);
+          
           serviceResults.push({
             id: dbIntegration?.id || `oauth-${serviceName}`,
             service_name: descriptor?.displayName || serviceName,
             tags: [],
             description: descriptor?.description || 'OAuth service integration',
-            isActive,
-            isConnected: isActive,
+            isActive: !!isActive,  // Exactly like React Native line 324
+            isConnected: !!isActive,  // Exactly like React Native line 325
             integration_id: dbIntegration?.id,
             status: dbIntegration?.status || 'disconnected',
             isPendingSetup,
