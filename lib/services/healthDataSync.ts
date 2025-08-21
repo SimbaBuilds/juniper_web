@@ -65,9 +65,24 @@ export class HealthDataSyncService {
     serviceName?: string
   ): Promise<SyncResult> {
     try {
+      console.log(`🔍 [HealthDataSyncService] syncHealthData called with:`, {
+        action,
+        userId,
+        days,
+        serviceName
+      });
+      
+      console.log(`🔍 [HealthDataSyncService] Getting session from supabase client`);
       const { data: { session } } = await this.supabase.auth.getSession()
       
+      console.log(`🔍 [HealthDataSyncService] Session obtained:`, {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        accessTokenLength: session?.access_token?.length || 0
+      });
+      
       if (!session?.access_token) {
+        console.error(`🔍 [HealthDataSyncService] No authentication token available`);
         return {
           success: false,
           error: 'No authentication token available'
@@ -75,29 +90,46 @@ export class HealthDataSyncService {
       }
 
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      console.log(`🔍 [HealthDataSyncService] Supabase URL:`, supabaseUrl);
+      
+      const requestBody = {
+        action,
+        user_id: userId,
+        ...(days && { days }),
+        ...(serviceName && { service_name: serviceName })
+      };
+      
+      console.log(`🔍 [HealthDataSyncService] Request body:`, requestBody);
+      console.log(`🔍 [HealthDataSyncService] Making fetch request to:`, `${supabaseUrl}/functions/v1/health-data-sync`);
+      
       const response = await fetch(`${supabaseUrl}/functions/v1/health-data-sync`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          action,
-          user_id: userId,
-          ...(days && { days }),
-          ...(serviceName && { service_name: serviceName })
-        })
+        body: JSON.stringify(requestBody)
       })
 
+      console.log(`🔍 [HealthDataSyncService] Response status:`, response.status);
+      console.log(`🔍 [HealthDataSyncService] Response ok:`, response.ok);
+      
       const result = await response.json()
+      console.log(`🔍 [HealthDataSyncService] Response body:`, result);
 
       if (response.ok) {
+        console.log(`🔍 [HealthDataSyncService] Success! Returning:`, {
+          success: true,
+          days_processed: result.days_processed,
+          latency_ms: result.latency_ms
+        });
         return {
           success: true,
           days_processed: result.days_processed,
           latency_ms: result.latency_ms
         }
       } else {
+        console.error(`🔍 [HealthDataSyncService] Error response:`, result);
         return {
           success: false,
           error: result.error || 'Health sync failed'

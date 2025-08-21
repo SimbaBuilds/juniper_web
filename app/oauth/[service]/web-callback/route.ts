@@ -48,11 +48,27 @@ export async function GET(
     }
 
     // Handle OAuth callback
+    console.log('🔍 [web-callback] Creating IntegrationService with supabase client');
     const integrationService = new IntegrationService(supabase);
+    
+    console.log('🔍 [web-callback] Calling handleOAuthCallback with:', {
+      service,
+      hasCode: !!code,
+      hasState: !!state,
+      hasSupabase: !!supabase
+    });
+    
     const result = await integrationService.handleOAuthCallback(service, code, state || undefined, supabase);
 
+    console.log('🔍 [web-callback] handleOAuthCallback result:', {
+      success: result.success,
+      error: result.error,
+      hasIntegration: !!result.integration
+    });
+
     if (!result.success) {
-      console.error(`Integration failed for ${service}:`, result.error);
+      console.error(`🔍 [web-callback] Integration failed for ${service}:`, result.error);
+      console.error('🔍 [web-callback] Full error details:', JSON.stringify(result, null, 2));
       return NextResponse.redirect(
         new URL(`/integrations?error=${encodeURIComponent(result.error || 'integration_failed')}&service=${service}`, request.url)
       );

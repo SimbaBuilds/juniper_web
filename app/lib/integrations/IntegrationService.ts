@@ -556,8 +556,16 @@ export class IntegrationService {
     supabase?: any
   ): Promise<IntegrationResult> {
     try {
+      console.log('🔍 [IntegrationService] handleOAuthCallback called with:', {
+        serviceName,
+        hasCode: !!code,
+        hasState: !!state,
+        hasSupabase: !!supabase
+      });
+
       // If supabase is provided, call exchange logic directly
       if (supabase) {
+        console.log('🔍 [IntegrationService] Using direct exchange logic with supabase client');
         return await this.exchangeOAuthCode(serviceName, code, state, supabase);
       }
 
@@ -594,9 +602,12 @@ export class IntegrationService {
     supabase?: any
   ): Promise<IntegrationResult> {
     try {
+      console.log('🔍 [IntegrationService] exchangeOAuthCode called for:', serviceName);
+      
       // Import getOAuthConfig
       const { getOAuthConfig } = await import('@/app/lib/integrations/oauth/OAuthConfig');
       
+      console.log('🔍 [IntegrationService] Getting authenticated user from supabase');
       // Get authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
@@ -675,10 +686,13 @@ export class IntegrationService {
       if (serviceName === 'oura' || serviceName === 'fitbit') {
         // Use capitalized service names like React Native
         const capitalizedServiceName = serviceName === 'oura' ? 'Oura' : 'Fitbit';
+        console.log(`🔍 [IntegrationService] Scheduling health data sync for ${capitalizedServiceName}`);
+        
         // Run completely non-blocking to avoid any OAuth callback failures
         setTimeout(() => {
+          console.log(`🔍 [IntegrationService] Starting health data sync for ${capitalizedServiceName}`);
           this.triggerHealthDataSync(user.id, capitalizedServiceName).catch(error => {
-            console.warn(`Health data sync failed for ${capitalizedServiceName}, but OAuth completed:`, error);
+            console.error(`🔍 [IntegrationService] Health data sync failed for ${capitalizedServiceName}:`, error);
           });
         }, 0);
       }
@@ -778,12 +792,23 @@ export class IntegrationService {
 
   private async triggerHealthDataSync(userId: string, serviceName: string): Promise<void> {
     try {
-      console.log(`Triggering health data sync for ${serviceName}`);
+      console.log(`🔍 [IntegrationService] triggerHealthDataSync called with userId: ${userId}, serviceName: ${serviceName}`);
       
       // Use the proper HealthDataSyncService that calls edge function directly with user tokens (like React Native)
       // Pass the supabase client to maintain the correct session context
+      console.log(`🔍 [IntegrationService] Creating HealthDataSyncService with supabase client:`, !!this.supabase);
       const healthDataSync = new HealthDataSyncService(this.supabase);
+      
+      console.log(`🔍 [IntegrationService] Calling syncHealthData with params:`, {
+        action: 'backfill',
+        userId,
+        days: 7,
+        serviceName
+      });
+      
       const result = await healthDataSync.syncHealthData('backfill', userId, 7, serviceName);
+      
+      console.log(`🔍 [IntegrationService] syncHealthData result:`, result);
 
       if (!result.success) {
         console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, result.error);
