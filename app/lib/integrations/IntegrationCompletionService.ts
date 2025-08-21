@@ -86,7 +86,7 @@ export class IntegrationCompletionService {
       
       const message = `Let's complete the integration for ${serviceName}`;
       
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
