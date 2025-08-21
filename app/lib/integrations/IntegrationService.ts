@@ -260,6 +260,81 @@ export class IntegrationService {
     }
   }
 
+  async disconnectIntegration(integrationId: string, serviceName: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`🔌 Disconnecting ${serviceName} integration...`);
+
+      // For now, we don't have individual auth services like React Native, so we'll handle cleanup directly
+      // In the future, we could implement specific disconnect logic per service here
+
+      // Update integration status to inactive (like React Native)
+      const { error: updateError } = await this.supabase
+        .from('integrations')
+        .update({
+          status: 'inactive',
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', integrationId);
+
+      if (updateError) {
+        console.error('Failed to update integration status:', updateError);
+        return { success: false, error: updateError.message };
+      }
+
+      // First, verify we can actually see and access this integration record
+      console.log(`🔍 Verifying integration record exists and is accessible...`);
+      const { data: verifyData, error: verifyError } = await this.supabase
+        .from('integrations')
+        .select('id, user_id, status, is_active')
+        .eq('id', integrationId)
+        .single();
+
+      console.log(`🔍 Verification result:`, { data: verifyData, error: verifyError });
+
+      if (verifyError || !verifyData) {
+        console.error(`❌ Cannot access integration record:`, verifyError);
+        return { success: false, error: 'Integration record not found or not accessible' };
+      }
+
+      // Delete the integration record from Supabase (matching React Native exactly)
+      console.log(`🗑️ Attempting to delete integration with ID: ${integrationId}`);
+      
+      const { data: deleteData, error: deleteError, count } = await this.supabase
+        .from('integrations')
+        .delete()
+        .eq('id', integrationId)
+        .select();
+
+      console.log(`🗑️ Delete operation result:`, { 
+        data: deleteData, 
+        error: deleteError, 
+        count, 
+        deletedRecords: deleteData?.length || 0 
+      });
+
+      if (deleteError) {
+        console.error('Failed to delete integration by ID:', deleteError);
+        return { success: false, error: deleteError.message };
+      }
+
+      if (!deleteData || deleteData.length === 0) {
+        console.error(`⚠️ No records were deleted for integration ID: ${integrationId}. This suggests RLS policy may be blocking the delete operation.`);
+        return { success: false, error: 'Delete operation blocked - possibly by database security policies' };
+      }
+
+      console.log(`✅ ${serviceName} integration disconnected and removed successfully (deleted ${deleteData.length} record(s))`);
+      return { success: true };
+
+    } catch (error) {
+      console.error(`❌ Error disconnecting ${serviceName}:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
   async deleteIntegrationById(integrationId: string): Promise<boolean> {
     try {
       const { error } = await this.supabase
@@ -652,8 +727,9 @@ export class IntegrationService {
           },
           additionalFields: {
             bot_id: tokens.bot_user_id,
-            workspace_name: tokens.team_name,
-            workspace_id: tokens.team_id
+            // Use exact field names from React Native: team.name and team.id
+            workspace_name: tokens.team?.name,
+            workspace_id: tokens.team?.id
           }
         };
         

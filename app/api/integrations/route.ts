@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Found integrations:', integrations?.length || 0);
-    console.log('Integrations data:', integrations);
 
     return NextResponse.json({ integrations: integrations || [] });
 
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const { action, serviceName, integrationId } = await request.json();
 
-    const integrationService = new IntegrationService();
+    const integrationService = new IntegrationService(supabase);
 
     switch (action) {
       case 'initiate_oauth':
@@ -62,9 +61,38 @@ export async function POST(request: NextRequest) {
 
       case 'disconnect':
         if (integrationId) {
-          // Disconnect by integration ID
-          const success = await integrationService.deleteIntegrationById(integrationId);
-          return NextResponse.json({ success });
+          console.log(`🔌 API: Starting disconnect for integration ID: ${integrationId}`);
+          
+          // First, get the service name from the integration
+          const integration = await supabase
+            .from('integrations')
+            .select('service_id')
+            .eq('id', integrationId)
+            .single();
+
+          console.log(`🔍 API: Integration lookup result:`, integration);
+
+          let serviceDisplayName = 'Unknown Service';
+          if (integration.data?.service_id) {
+            const serviceResult = await supabase
+              .from('services')
+              .select('service_name')
+              .eq('id', integration.data.service_id)
+              .single();
+            
+            console.log(`🔍 API: Service lookup result:`, serviceResult);
+            
+            if (serviceResult.data?.service_name) {
+              serviceDisplayName = serviceResult.data.service_name;
+            }
+          }
+
+          console.log(`🏷️ API: Using service name: ${serviceDisplayName}`);
+
+          // Use the proper disconnectIntegration method (matching React Native)
+          const result = await integrationService.disconnectIntegration(integrationId, serviceDisplayName);
+          console.log(`🔚 API: Disconnect result:`, result);
+          return NextResponse.json(result);
         } else if (serviceName) {
           // Disconnect by service name (legacy)
           const success = await integrationService.deleteIntegration(user.id, serviceName);
