@@ -57,7 +57,8 @@ export class HealthDataSyncService {
   async syncHealthData(
     action: 'backfill' | 'aggregate',
     userId: string,
-    days?: number
+    days?: number,
+    serviceName?: string
   ): Promise<SyncResult> {
     try {
       const { data: { session } } = await this.supabase.auth.getSession()
@@ -79,7 +80,8 @@ export class HealthDataSyncService {
         body: JSON.stringify({
           action,
           user_id: userId,
-          ...(days && { days })
+          ...(days && { days }),
+          ...(serviceName && { service_name: serviceName })
         })
       })
 

@@ -782,7 +782,7 @@ export class IntegrationService {
       
       // Use the proper HealthDataSyncService that calls edge function directly with user tokens (like React Native)
       const healthDataSync = new HealthDataSyncService();
-      const result = await healthDataSync.syncHealthData('backfill', userId, 7);
+      const result = await healthDataSync.syncHealthData('backfill', userId, 7, serviceName);
 
       if (!result.success) {
         console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, result.error);
