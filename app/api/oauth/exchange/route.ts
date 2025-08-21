@@ -114,11 +114,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Trigger health data sync for health services
+    // Trigger health data sync for health services (non-blocking)
     if (serviceName === 'oura' || serviceName === 'fitbit') {
       // Use capitalized service names like React Native
       const capitalizedServiceName = serviceName === 'oura' ? 'Oura' : 'Fitbit';
-      triggerHealthDataSync(user.id, capitalizedServiceName);
+      // Run completely non-blocking to avoid any OAuth callback failures
+      setTimeout(() => {
+        triggerHealthDataSync(user.id, capitalizedServiceName).catch(error => {
+          console.warn(`Health data sync failed for ${capitalizedServiceName}, but OAuth completed:`, error);
+        });
+      }, 0);
     }
 
     return NextResponse.json({
@@ -139,24 +144,15 @@ async function triggerHealthDataSync(userId: string, serviceName: string): Promi
   try {
     console.log(`Triggering health data sync for ${serviceName}`);
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/integrations/health-data-sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'backfill',
-        user_id: userId,
-        service_name: serviceName,
-        days: 7
-      }),
-    });
+    // Import and use the proper HealthDataSyncService that calls edge function directly with user tokens (like React Native)
+    const { HealthDataSyncService } = await import('@/lib/services/healthDataSync');
+    const healthDataSync = new HealthDataSyncService();
+    const result = await healthDataSync.syncHealthData('backfill', userId, 7);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, errorText);
+    if (!result.success) {
+      console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, result.error);
     } else {
-      console.log('Health data sync triggered successfully');
+      console.log(`Health data sync triggered successfully for ${serviceName}, processed ${result.days_processed} days`);
     }
 
     // For Fitbit, also set up webhooks (non-blocking)

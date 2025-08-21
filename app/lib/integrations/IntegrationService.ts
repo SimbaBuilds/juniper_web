@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/utils/supabase/client';
 import { BaseOAuthService, TokenData } from './oauth/BaseOAuthService';
 import { getOAuthConfig, getServiceDescriptor } from './oauth/OAuthConfig';
+import { HealthDataSyncService } from '@/lib/services/healthDataSync';
 
 export interface Integration {
   id: string;
@@ -670,11 +671,16 @@ export class IntegrationService {
         return { success: false, error: integrationResult.error };
       }
 
-      // Trigger health data sync for health services
+      // Trigger health data sync for health services (non-blocking)
       if (serviceName === 'oura' || serviceName === 'fitbit') {
         // Use capitalized service names like React Native
         const capitalizedServiceName = serviceName === 'oura' ? 'Oura' : 'Fitbit';
-        this.triggerHealthDataSync(user.id, capitalizedServiceName);
+        // Run completely non-blocking to avoid any OAuth callback failures
+        setTimeout(() => {
+          this.triggerHealthDataSync(user.id, capitalizedServiceName).catch(error => {
+            console.warn(`Health data sync failed for ${capitalizedServiceName}, but OAuth completed:`, error);
+          });
+        }, 0);
       }
 
       return { success: true, integration: integrationResult.integration };
@@ -774,24 +780,14 @@ export class IntegrationService {
     try {
       console.log(`Triggering health data sync for ${serviceName}`);
       
-      const response = await fetch('/api/integrations/health-data-sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'backfill',
-          user_id: userId,
-          service_name: serviceName,
-          days: 7
-        }),
-      });
+      // Use the proper HealthDataSyncService that calls edge function directly with user tokens (like React Native)
+      const healthDataSync = new HealthDataSyncService();
+      const result = await healthDataSync.syncHealthData('backfill', userId, 7);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, errorText);
+      if (!result.success) {
+        console.warn(`Health data sync failed for ${serviceName}, but continuing OAuth flow:`, result.error);
       } else {
-        console.log('Health data sync triggered successfully');
+        console.log(`Health data sync triggered successfully for ${serviceName}, processed ${result.days_processed} days`);
       }
 
       // For Fitbit, also set up webhooks (non-blocking)
