@@ -757,7 +757,7 @@ export type UserProfile = {
     total_steps?: number;
     resilience_score?: number;
     calories_burned?: number;
-    heart_rate_avg?: number;
+    resting_hr?: number;
     hrv_avg?: number;
     native_scores: Record<string, any>;
     normalized_scores: Record<string, any>;
@@ -768,7 +768,7 @@ export type UserProfile = {
   export const healthMetricsDailyFields = [
     'user_id', 'date', 'sleep_score', 'activity_score', 'readiness_score',
     'stress_level', 'recovery_score', 'total_steps', 'calories_burned',
-    'heart_rate_avg', 'hrv_avg', 'native_scores', 'normalized_scores', 'created_at', 'updated_at'
+    'resting_hr', 'hrv_avg', 'native_scores', 'normalized_scores', 'created_at', 'updated_at'
   ] as const;
   export type HealthMetricsDailyField = (typeof healthMetricsDailyFields)[number];
 

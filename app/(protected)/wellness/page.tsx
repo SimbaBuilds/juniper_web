@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/utils/supabase/client'
-import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp } from 'lucide-react'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
+import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -21,7 +22,7 @@ interface HealthMetric {
   recovery_score: number | null
   total_steps: number | null
   calories_burned: number | null
-  heart_rate_avg: number | null
+  resting_hr: number | null
   hrv_avg: number | null
   resilience_score: number | null
   created_at: string
@@ -296,7 +297,7 @@ export default function WellnessPage() {
     avgReadiness: Math.round(healthData.reduce((sum, d) => sum + (d.readiness_score || 0), 0) / Math.max(healthData.filter(d => d.readiness_score && d.readiness_score > 0).length, 1)),
     avgSteps: Math.round(healthData.reduce((sum, d) => sum + (d.total_steps || 0), 0) / Math.max(healthData.filter(d => d.total_steps && d.total_steps > 0).length, 1)),
     avgStressLevel: Math.round(healthData.reduce((sum, d) => sum + (d.stress_level || 0), 0) / Math.max(healthData.filter(d => d.stress_level && d.stress_level > 0).length, 1)),
-    avgHeartRate: Math.round(healthData.reduce((sum, d) => sum + (d.heart_rate_avg || 0), 0) / Math.max(healthData.filter(d => d.heart_rate_avg && d.heart_rate_avg > 0).length, 1)),
+    avgRestingHr: Math.round(healthData.reduce((sum, d) => sum + (d.resting_hr || 0), 0) / Math.max(healthData.filter(d => d.resting_hr && d.resting_hr > 0).length, 1)),
     avgHrv: Math.round(healthData.reduce((sum, d) => sum + (d.hrv_avg || 0), 0) / Math.max(healthData.filter(d => d.hrv_avg && d.hrv_avg > 0).length, 1))
   } : null
 
@@ -307,7 +308,7 @@ export default function WellnessPage() {
     activity_score: d.activity_score || 0,
     readiness_score: d.readiness_score || 0,
     stress_level: d.stress_level || 0,
-    heart_rate_avg: d.heart_rate_avg || 0,
+    resting_hr: d.resting_hr || 0,
     hrv_avg: d.hrv_avg || 0,
     resilience_score: d.resilience_score || 0,
     steps: d.total_steps || 0,
@@ -553,7 +554,19 @@ export default function WellnessPage() {
                       {filterPrefs.showSleepCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Sleep</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Sleep
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your sleep quality score based on duration, efficiency, and sleep stages. Higher scores indicate better sleep quality and recovery.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <Moon className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -565,7 +578,19 @@ export default function WellnessPage() {
                       {filterPrefs.showActivityCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Activity Score</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Activity Score
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your daily activity level based on movement, exercise intensity, and calories burned. Higher scores indicate more active days.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <Activity className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -577,7 +602,19 @@ export default function WellnessPage() {
                       {filterPrefs.showStepsCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Resilience</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Resilience
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your body's ability to handle stress and recover from challenges. Higher scores indicate better stress management and adaptability.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <TrendingUp className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -605,7 +642,19 @@ export default function WellnessPage() {
                       {filterPrefs.showAvgStepsCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Steps</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Steps
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your average daily step count from your wearable device. Most health guidelines recommend 8,000-10,000 steps per day.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <TrendingUp className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -619,7 +668,19 @@ export default function WellnessPage() {
                       {filterPrefs.showAvgStressCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Stress</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Stress
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your stress level based on heart rate variability and other physiological markers. Lower values indicate less stress.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <Activity className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -633,12 +694,24 @@ export default function WellnessPage() {
                       {filterPrefs.showAvgHeartRateCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Avg HR</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    Resting HR
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Your resting heart rate measured during sleep or rest periods. Lower values typically indicate better cardiovascular fitness.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <Heart className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
                   <div className="text-lg font-bold">
-                    {healthData.some(d => d.heart_rate_avg && d.heart_rate_avg > 0) ? summaryStats.avgHeartRate : 'N/A'}
+                    {healthData.some(d => d.resting_hr && d.resting_hr > 0) ? summaryStats.avgRestingHr : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">bpm</p>
                 </CardContent>
@@ -647,7 +720,19 @@ export default function WellnessPage() {
                       {filterPrefs.showAvgHrvCard && (
               <Card className="p-3">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-0 pt-0">
-                  <CardTitle className="text-xs font-medium">Avg HRV</CardTitle>
+                  <CardTitle className="text-xs font-medium flex items-center gap-1">
+                    HRV
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs text-xs">
+                          Heart Rate Variability measures the variation in time between heartbeats. Higher values typically indicate better recovery and stress resilience.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                   <Activity className="h-3 w-3 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
@@ -731,7 +816,7 @@ export default function WellnessPage() {
                       checked={filterPrefs.showHeartRateTrend}
                       onCheckedChange={(checked) => updateFilterPref('showHeartRateTrend', checked)}
                     />
-                    <Label htmlFor="hr-trend" className="text-xs">Heart Rate</Label>
+                    <Label htmlFor="hr-trend" className="text-xs">Resting HR</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -757,7 +842,7 @@ export default function WellnessPage() {
                     <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip />
+                      <RechartsTooltip />
                       {filterPrefs.showSleepTrend && (
                         <Line 
                           type="monotone" 
@@ -797,10 +882,10 @@ export default function WellnessPage() {
                       {filterPrefs.showHeartRateTrend && (
                         <Line 
                           type="monotone" 
-                          dataKey="heart_rate_avg" 
+                          dataKey="resting_hr" 
                           stroke={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
                           strokeWidth={2} 
-                          name="Heart Rate" 
+                          name="Resting HR" 
                         />
                       )}
                       {filterPrefs.showHrvTrend && (
@@ -877,7 +962,7 @@ export default function WellnessPage() {
                           return <Cell key={`cell-${index}`} fill={colorPalette[index % colorPalette.length]} />
                         })}
                       </Pie>
-                      <Tooltip />
+                      <RechartsTooltip />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -898,7 +983,7 @@ export default function WellnessPage() {
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Bar 
                         dataKey="steps" 
                         fill={isDarkMode ? "#60a5fa" : "#1e40af"} 
@@ -925,7 +1010,7 @@ export default function WellnessPage() {
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <XAxis dataKey="date" />
                       <YAxis />
-                      <Tooltip />
+                      <RechartsTooltip />
                       <Bar 
                         dataKey="calories" 
                         fill={isDarkMode ? "#bbf7d0" : "#166534"} 

@@ -310,6 +310,22 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
     loadServicesWithStatus();
   }, [userId]);
 
+  // Handle reconnection success message
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reconnectedService = urlParams.get('reconnected');
+    
+    if (reconnectedService) {
+      // Clear the URL parameter
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('reconnected');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Show success message
+      toast.success(`${reconnectedService} reconnected successfully!`);
+    }
+  }, []);
+
   const categorizedServices = organizeServicesByCategory(services);
   const systemIntegrations = getSystemIntegrations(services);
 

@@ -74,13 +74,25 @@ export async function GET(
       );
     }
 
-    console.log(`Integration successful for ${service}, redirecting to chat for completion`);
+    console.log(`Integration successful for ${service}, determining redirect destination`);
 
-    // Redirect to chat page with integration completion metadata
-    const chatUrl = new URL('/chat', request.url);
-    chatUrl.searchParams.set('integration_completed', service);
-    chatUrl.searchParams.set('service_name', service);
-    return NextResponse.redirect(chatUrl);
+    // Check if this is a reconnection by looking for reconnect parameter in state
+    const isReconnection = state && state.includes('reconnect=true');
+    
+    if (isReconnection) {
+      console.log(`Reconnection flow detected for ${service}, redirecting to integrations`);
+      // Redirect back to integrations page for reconnections
+      const integrationsUrl = new URL('/integrations', request.url);
+      integrationsUrl.searchParams.set('reconnected', service);
+      return NextResponse.redirect(integrationsUrl);
+    } else {
+      console.log(`New connection flow detected for ${service}, redirecting to chat for completion`);
+      // Redirect to chat page with integration completion metadata for new connections
+      const chatUrl = new URL('/chat', request.url);
+      chatUrl.searchParams.set('integration_completed', service);
+      chatUrl.searchParams.set('service_name', service);
+      return NextResponse.redirect(chatUrl);
+    }
 
   } catch (error) {
     console.error('OAuth callback error:', error);

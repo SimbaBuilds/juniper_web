@@ -396,8 +396,8 @@ export class IntegrationService {
         throw new Error(`Failed to update integration status: ${updateError.message}`);
       }
 
-      // Start OAuth flow with existing integration ID (skip completion message for reconnect)
-      const result = await this.initiateOAuth(internalServiceName);
+      // Start OAuth flow with reconnection flag set
+      const result = await this.initiateOAuthReconnection(internalServiceName);
       
       return result;
 
@@ -479,7 +479,11 @@ export class IntegrationService {
     return new BaseOAuthService(serviceName, config);
   }
 
-  async initiateOAuth(serviceName: string): Promise<{ success: boolean; error?: string }> {
+  async initiateOAuthReconnection(serviceName: string): Promise<{ success: boolean; error?: string }> {
+    return this.initiateOAuth(serviceName, true);
+  }
+
+  async initiateOAuth(serviceName: string, isReconnection: boolean = false): Promise<{ success: boolean; error?: string }> {
     try {
       // Call server-side API to get OAuth URL
       const response = await fetch('/api/oauth/initiate', {
@@ -487,7 +491,7 @@ export class IntegrationService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ serviceName }),
+        body: JSON.stringify({ serviceName, isReconnection }),
       });
 
       if (!response.ok) {

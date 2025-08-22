@@ -3,7 +3,7 @@ import { getOAuthConfig } from '@/app/lib/integrations/oauth/OAuthConfig';
 
 export async function POST(request: NextRequest) {
   try {
-    const { serviceName } = await request.json();
+    const { serviceName, isReconnection } = await request.json();
 
     if (!serviceName) {
       return NextResponse.json(
@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
 
     // Generate and add state parameter for security
     const state = generateRandomState();
-    params.append('state', state);
+    // Add reconnection flag to state if this is a reconnection
+    const stateWithFlags = isReconnection ? `${state}&reconnect=true` : state;
+    params.append('state', stateWithFlags);
 
     // Add additional params if specified
     if (config.additionalParams) {
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       authUrl,
-      state,
+      state: stateWithFlags,
       codeVerifier,
       usePKCE: config.usePKCE
     });
