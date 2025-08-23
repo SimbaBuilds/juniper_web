@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   
   // Protected routes that require authentication
-  const protectedPaths = ['/dashboard', '/automations', '/integrations', '/repository', '/account']
+  const protectedPaths = ['/dashboard', '/chat', '/wellness', '/automations', '/integrations', '/repository', '/account']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
   
   // Auth routes that authenticated users shouldn't access
