@@ -9,6 +9,8 @@ export interface UseRequestStatusPollingOptions {
 
 export interface UseRequestStatusPollingReturn {
   status: string | null;
+  userMessage: string | null;
+  totalTurns: number | null;
   error: string | null;
   isPolling: boolean;
 }
@@ -19,6 +21,8 @@ export const useRequestStatusPolling = (
   const { requestId, intervalMs = 5000, onStatusChange } = options;
   
   const [status, setStatus] = useState<string | null>(null);
+  const [userMessage, setUserMessage] = useState<string | null>(null);
+  const [totalTurns, setTotalTurns] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   
@@ -31,6 +35,8 @@ export const useRequestStatusPolling = (
     
     if (!requestId) {
       setStatus(null);
+      setUserMessage(null);
+      setTotalTurns(null);
       setError(null);
       setIsPolling(false);
       return;
@@ -48,7 +54,7 @@ export const useRequestStatusPolling = (
             
             const { data, error } = await supabase
               .from('requests')
-              .select('status')
+              .select('status, user_message, total_turns')
               .eq('request_id', requestId)
               .single();
 
@@ -61,9 +67,13 @@ export const useRequestStatusPolling = (
             }
 
             const currentStatus = data?.status;
+            const currentUserMessage = data?.user_message;
+            const currentTotalTurns = data?.total_turns;
             
             if (currentStatus) {
               setStatus(currentStatus);
+              setUserMessage(currentUserMessage || null);
+              setTotalTurns(currentTotalTurns || null);
               setError(null);
               
               // Call status change callback if provided
@@ -108,6 +118,8 @@ export const useRequestStatusPolling = (
 
   return {
     status,
+    userMessage,
+    totalTurns,
     error,
     isPolling
   };

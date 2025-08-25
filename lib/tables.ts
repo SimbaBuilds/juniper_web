@@ -315,6 +315,8 @@ export type UserProfile = {
     image_url?: string;              // Optional image URL for chat requests with image attachments
     created_at: Date;
     updated_at: Date;
+    user_message?: string;
+    total_turns?: number;
   };
 
   export const requestFields = [
