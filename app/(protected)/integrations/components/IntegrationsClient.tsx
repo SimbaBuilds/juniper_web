@@ -644,7 +644,7 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Integrations</h1>
         <p className="text-muted-foreground">
-          Connect your accounts to enable Juniper to perform tasks across your services.  Note: integrations below can take up to 3 minutes each to complete.
+          Connect your accounts to enable Juniper to perform tasks across your services.  Integrations below can take up to 3 minutes each to complete.
         </p>
       </div>
 
