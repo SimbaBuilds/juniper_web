@@ -165,7 +165,7 @@ export default async function AccountPage() {
         <div className="text-center text-sm text-muted-foreground">
           <p>
             <a 
-              href="https://www.hightower-ai.com/terms-of-use" 
+              href="https://www.juniperassistant.com/terms-of-use" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-primary hover:underline"
@@ -174,7 +174,7 @@ export default async function AccountPage() {
             </a>
             {' '}•{' '}
             <a 
-              href="https://www.hightower-ai.com/privacy-policy" 
+              href="https://www.juniperassistant.com/privacy-policy" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-primary hover:underline"

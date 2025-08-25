@@ -13,7 +13,7 @@ export default function SignupPage() {
         <p>
           By creating an account, you agree to our{' '}
           <a 
-            href="https://www.hightower-ai.com/terms-of-use" 
+            href="https://www.juniperassistant.com/terms-of-use" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-primary hover:underline"
@@ -22,7 +22,7 @@ export default function SignupPage() {
           </a>
           {' '}and{' '}
           <a 
-            href="https://www.hightower-ai.com/privacy-policy" 
+            href="https://www.juniperassistant.com/privacy-policy" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-primary hover:underline"
