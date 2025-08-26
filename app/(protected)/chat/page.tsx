@@ -116,14 +116,7 @@ export default function ChatPage() {
     if (hasCheckedForNewUser) return
     
     try {
-      // First check localStorage
-      const hasHistory = localStorage.getItem('has_conversation_history')
-      if (hasHistory === 'true') {
-        setHasCheckedForNewUser(true)
-        return
-      }
-      
-      // If no localStorage flag, check database
+      // Check database for conversations
       const supabase = createClient()
       const { data: conversations, error } = await supabase
         .from('conversations')
@@ -139,9 +132,6 @@ export default function ChatPage() {
       // If no conversations found, show onboarding message
       if (!conversations || conversations.length === 0) {
         setShowOnboardingMessage(true)
-      } else {
-        // User has conversations, set localStorage flag
-        localStorage.setItem('has_conversation_history', 'true')
       }
       
       setHasCheckedForNewUser(true)
@@ -390,8 +380,7 @@ export default function ChatPage() {
     setInputValue('')
     setSelectedImageUrl(null) // Clear selected image
     
-    // Mark that user has conversation history and hide onboarding message
-    localStorage.setItem('has_conversation_history', 'true')
+    // Hide onboarding message when user sends first message
     setShowOnboardingMessage(false)
     
     setIsLoading(true)
@@ -505,11 +494,6 @@ export default function ChatPage() {
 
     // Clear messages
     setMessages([])
-    
-    // Mark that user has conversation history (since we just saved one)
-    if (messages.length > 0) {
-      localStorage.setItem('has_conversation_history', 'true')
-    }
     
     if (!isAutoRefresh) {
       toast.success('Chat cleared. Your conversation has been saved.')
