@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
 import { createClient } from '@/lib/utils/supabase/client'
-import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -10,6 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
 
 interface HealthMetric {
   id: string
@@ -99,6 +103,12 @@ export default function WellnessPage() {
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsExpanded, setSettingsExpanded] = useState(false)
+  const [advancedExpanded, setAdvancedExpanded] = useState(false)
+  const [manualEntryDate, setManualEntryDate] = useState<Date>()
+  const [manualEntryMetric, setManualEntryMetric] = useState('')
+  const [manualEntryValue, setManualEntryValue] = useState('')
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [filterPrefs, setFilterPrefs] = useState<FilterPrefs>({
     timeRange: '30',
     showResources: true,
@@ -263,6 +273,92 @@ export default function WellnessPage() {
     setFilterPrefs(prev => ({ ...prev, [key]: value }))
   }
 
+  // Available metrics for manual entry
+  const availableMetrics = [
+    { value: 'sleep_score', label: 'Sleep Score (0-100)' },
+    { value: 'activity_score', label: 'Activity Score (0-100)' },
+    { value: 'readiness_score', label: 'Readiness Score (0-100)' },
+    { value: 'stress_level', label: 'Stress Level (0-100)' },
+    { value: 'recovery_score', label: 'Recovery Score (0-100)' },
+    { value: 'total_steps', label: 'Total Steps' },
+    { value: 'calories_burned', label: 'Calories Burned' },
+    { value: 'resting_hr', label: 'Resting Heart Rate (bpm)' },
+    { value: 'hrv_avg', label: 'HRV Average (ms)' },
+    { value: 'resilience_score', label: 'Resilience Score (0-100)' }
+  ]
+
+  const handleManualEntry = async () => {
+    if (!user || !manualEntryDate || !manualEntryMetric || !manualEntryValue) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    const value = parseFloat(manualEntryValue)
+    if (isNaN(value)) {
+      alert('Please enter a valid number')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const supabase = createClient()
+      const dateStr = format(manualEntryDate, 'yyyy-MM-dd')
+      
+      // Check if record exists for this date
+      const { data: existingRecord } = await supabase
+        .from('health_metrics_daily')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', dateStr)
+        .maybeSingle()
+
+      if (existingRecord) {
+        // Update existing record
+        const { error } = await supabase
+          .from('health_metrics_daily')
+          .update({ 
+            [manualEntryMetric]: value, 
+            updated_at: new Date().toISOString(),
+            // Initialize other required fields if they don't exist
+            native_scores: existingRecord.native_scores || {},
+            normalized_scores: existingRecord.normalized_scores || {}
+          })
+          .eq('user_id', user.id)
+          .eq('date', dateStr)
+        
+        if (error) throw error
+      } else {
+        // Create new record with all required fields
+        const { error } = await supabase
+          .from('health_metrics_daily')
+          .insert({
+            user_id: user.id,
+            date: dateStr,
+            [manualEntryMetric]: value,
+            native_scores: {},
+            normalized_scores: {},
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+        
+        if (error) throw error
+      }
+      
+      // Clear the form
+      setManualEntryDate(undefined)
+      setManualEntryMetric('')
+      setManualEntryValue('')
+      
+      // Reload data to reflect changes
+      window.location.reload()
+    } catch (error) {
+      console.error('Error saving manual entry:', error)
+      alert('Failed to save entry. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const selectAllTrends = () => {
     setFilterPrefs(prev => ({
       ...prev,
@@ -411,8 +507,121 @@ export default function WellnessPage() {
         {/* Expandable toggle groups */}
         {settingsExpanded && (
           <div className="space-y-4 pt-4 border-t">
+            {/* Advanced Section */}
+            <div className="bg-muted/30 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Manual Data Entry
+                </h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAdvancedExpanded(!advancedExpanded)}
+                  className="h-7 px-2 text-xs"
+                >
+                  {advancedExpanded ? (
+                    <>
+                      <ChevronUp className="h-3 w-3 mr-1" />
+                      Hide
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Advanced
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {advancedExpanded && (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground">
+                    Manually add health metric values for specific dates
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Date Picker */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Date</Label>
+                      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full h-8 justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-3 w-3" />
+                            {manualEntryDate ? format(manualEntryDate, "MMM d, yyyy") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={manualEntryDate}
+                            onSelect={(date) => {
+                              setManualEntryDate(date)
+                              setIsDatePickerOpen(false)
+                            }}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Metric Selector */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Metric</Label>
+                      <Select value={manualEntryMetric} onValueChange={setManualEntryMetric}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Select metric" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableMetrics.map((metric) => (
+                            <SelectItem key={metric.value} value={metric.value}>
+                              {metric.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Value Input */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Value</Label>
+                      <Input
+                        type="number"
+                        placeholder="Enter value"
+                        value={manualEntryValue}
+                        onChange={(e) => setManualEntryValue(e.target.value)}
+                        className="h-8"
+                        step="0.01"
+                      />
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="space-y-2">
+                      <Label className="text-xs opacity-0">Action</Label>
+                      <Button
+                        onClick={handleManualEntry}
+                        disabled={isSaving || !manualEntryDate || !manualEntryMetric || !manualEntryValue}
+                        className="h-8 w-full"
+                        size="sm"
+                      >
+                        {isSaving ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-foreground mr-2" />
+                        ) : (
+                          <Save className="h-3 w-3 mr-2" />
+                        )}
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             {/* Chart Toggles */}
-            <div>
+            <div className="border-t pt-4">
               <h4 className="text-sm font-medium mb-3 text-muted-foreground">Charts</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex items-center space-x-2">
