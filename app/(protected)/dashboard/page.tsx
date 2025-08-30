@@ -43,11 +43,11 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">Connected services</p>
         </div>
         
-        <div className="bg-card p-6 rounded-lg border border-border">
+        {/* <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Automations</h3>
           <div className="text-number-lg mb-1">{dashboardStats.activeAutomationsCount}</div>
           <p className="text-sm text-muted-foreground">Active workflows</p>
-        </div>
+        </div> */}
         
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Repository Items</h3>
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
           </a>
         </div>
 
-        <div className="bg-card p-6 rounded-lg border border-border">
+        {/* <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Automations</h3>
           <div className="space-y-3">
             {dashboardStats.recentAutomations.length > 0 ? (
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
           <a href="/automations" className="text-primary hover:underline text-sm mt-4 inline-block">
             View all automations →
           </a>
-        </div>
+        </div> */}
       </div>
 
       {/* Quick Actions */}
@@ -114,10 +114,10 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">View and configure your connected services</p>
         </a>
         
-        <a href="/automations" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
+        {/* <a href="/automations" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
           <h3 className="text-lg font-semibold text-foreground mb-2">View Automations</h3>
           <p className="text-sm text-muted-foreground">Check your automated workflows</p>
-        </a>
+        </a> */}
         
         <a href="/repository" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
           <h3 className="text-lg font-semibold text-foreground mb-2">Browse Repository</h3>
