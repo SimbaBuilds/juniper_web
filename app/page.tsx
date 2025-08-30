@@ -137,8 +137,9 @@ export default function HomePage() {
             <span style={{color: 'var(--muted-blue)'}}> Wellness and Productivity</span>
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Connect all your favorite apps and services with voice-controlled intelligence. 
-            Juniper integrates seamlessly with multiple platforms to streamline your workflow.
+            Add intelligence to your interactions with your wearable devices.
+            Connect productivity services like Gmail, Slack, and Notion.
+            Live your best life.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (
