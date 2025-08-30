@@ -711,7 +711,7 @@ export default function ChatPage() {
           </div>
           <div>
             <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-medium">Tip:</span> iOS and Android apps with voice options coming soon!  For now, feel free to add this page to your home screen.
+              <span className="font-medium">Tip:</span> iOS and Android apps with voice options coming soon!  For now, feel free to add this page to your mobile home screen.
             </p>
           </div>
         </div>
