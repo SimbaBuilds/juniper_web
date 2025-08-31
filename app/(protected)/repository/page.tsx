@@ -258,7 +258,7 @@ export default function RepositoryPage() {
           <div>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
               <li>• Use tags to improve retrieval. For example: add the Email tag to a resource to make sure Juniper has access to it every time it does something with email.</li>
-              <li>• Memories are more likely to come up in casual conversation while "References", "Samples", and "Notes" can be assigned to specific workflows.</li>
+              <li>• Memories are more likely to come up in casual conversation while References, Samples, and Notes are usually assigned to specific workflows and services.</li>
             </ul>
           </div>
         </div>
