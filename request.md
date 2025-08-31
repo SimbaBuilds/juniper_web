@@ -1,6 +1,2 @@
-Implement UI for user manual entry to health_daily metrics. Specs:
-
-- It should be in the expandable "Advanced" section
-- User should be able to select a data and a metric, input a value, and click save.
-
-You can use database interaction logic from the repository page.
+1. Please update the manual data entry functionality to allow users to add values for multiple metrics at once
+2. Please indicate the color of each metric in the trends chart by putting a color filled box to the right of each metric’s toggle label

@@ -105,8 +105,7 @@ export default function WellnessPage() {
   const [settingsExpanded, setSettingsExpanded] = useState(false)
   const [advancedExpanded, setAdvancedExpanded] = useState(false)
   const [manualEntryDate, setManualEntryDate] = useState<Date>()
-  const [manualEntryMetric, setManualEntryMetric] = useState('')
-  const [manualEntryValue, setManualEntryValue] = useState('')
+  const [manualEntryValues, setManualEntryValues] = useState<Record<string, string>>({})
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [filterPrefs, setFilterPrefs] = useState<FilterPrefs>({
@@ -288,15 +287,28 @@ export default function WellnessPage() {
   ]
 
   const handleManualEntry = async () => {
-    if (!user || !manualEntryDate || !manualEntryMetric || !manualEntryValue) {
-      alert('Please fill in all fields')
+    if (!user || !manualEntryDate) {
+      alert('Please select a date')
       return
     }
 
-    const value = parseFloat(manualEntryValue)
-    if (isNaN(value)) {
-      alert('Please enter a valid number')
+    // Get only non-empty values
+    const validEntries = Object.entries(manualEntryValues).filter(([_, value]) => value.trim() !== '')
+    
+    if (validEntries.length === 0) {
+      alert('Please enter at least one metric value')
       return
+    }
+
+    // Validate all values are numbers
+    const parsedEntries: Record<string, number> = {}
+    for (const [metric, value] of validEntries) {
+      const numValue = parseFloat(value)
+      if (isNaN(numValue)) {
+        alert(`Please enter a valid number for ${availableMetrics.find(m => m.value === metric)?.label}`)
+        return
+      }
+      parsedEntries[metric] = numValue
     }
 
     setIsSaving(true)
@@ -313,11 +325,11 @@ export default function WellnessPage() {
         .maybeSingle()
 
       if (existingRecord) {
-        // Update existing record
+        // Update existing record with new values
         const { error } = await supabase
           .from('health_metrics_daily')
           .update({ 
-            [manualEntryMetric]: value, 
+            ...parsedEntries,
             updated_at: new Date().toISOString(),
             // Initialize other required fields if they don't exist
             native_scores: existingRecord.native_scores || {},
@@ -334,7 +346,7 @@ export default function WellnessPage() {
           .insert({
             user_id: user.id,
             date: dateStr,
-            [manualEntryMetric]: value,
+            ...parsedEntries,
             native_scores: {},
             normalized_scores: {},
             created_at: new Date().toISOString(),
@@ -346,8 +358,7 @@ export default function WellnessPage() {
       
       // Clear the form
       setManualEntryDate(undefined)
-      setManualEntryMetric('')
-      setManualEntryValue('')
+      setManualEntryValues({})
       
       // Reload data to reflect changes
       window.location.reload()
@@ -540,7 +551,7 @@ export default function WellnessPage() {
                     Manually add health metric values for specific dates
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-4">
                     {/* Date Picker */}
                     <div className="space-y-2">
                       <Label className="text-xs">Date</Label>
@@ -569,43 +580,32 @@ export default function WellnessPage() {
                       </Popover>
                     </div>
 
-                    {/* Metric Selector */}
-                    <div className="space-y-2">
-                      <Label className="text-xs">Metric</Label>
-                      <Select value={manualEntryMetric} onValueChange={setManualEntryMetric}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Select metric" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableMetrics.map((metric) => (
-                            <SelectItem key={metric.value} value={metric.value}>
-                              {metric.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Value Input */}
-                    <div className="space-y-2">
-                      <Label className="text-xs">Value</Label>
-                      <Input
-                        type="number"
-                        placeholder="Enter value"
-                        value={manualEntryValue}
-                        onChange={(e) => setManualEntryValue(e.target.value)}
-                        className="h-8"
-                        step="0.01"
-                      />
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {availableMetrics.map((metric) => (
+                        <div key={metric.value} className="space-y-2">
+                          <Label className="text-xs">{metric.label}</Label>
+                          <Input
+                            type="number"
+                            placeholder="Enter value"
+                            value={manualEntryValues[metric.value] || ''}
+                            onChange={(e) => setManualEntryValues(prev => ({
+                              ...prev,
+                              [metric.value]: e.target.value
+                            }))}
+                            className="h-8"
+                            step="0.01"
+                          />
+                        </div>
+                      ))}
                     </div>
 
                     {/* Save Button */}
-                    <div className="space-y-2">
-                      <Label className="text-xs opacity-0">Action</Label>
+                    <div className="flex justify-end">
                       <Button
                         onClick={handleManualEntry}
-                        disabled={isSaving || !manualEntryDate || !manualEntryMetric || !manualEntryValue}
-                        className="h-8 w-full"
+                        disabled={isSaving || !manualEntryDate || Object.values(manualEntryValues).every(v => !v.trim())}
+                        className="h-8"
                         size="sm"
                       >
                         {isSaving ? (
@@ -613,7 +613,7 @@ export default function WellnessPage() {
                         ) : (
                           <Save className="h-3 w-3 mr-2" />
                         )}
-                        Save
+                        Save All Metrics
                       </Button>
                     </div>
                   </div>
@@ -993,7 +993,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showSleepTrend}
                       onCheckedChange={(checked) => updateFilterPref('showSleepTrend', checked)}
                     />
-                    <Label htmlFor="sleep-trend" className="text-xs">Sleep</Label>
+                    <Label htmlFor="sleep-trend" className="text-xs flex items-center gap-1">
+                      Sleep
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#60a5fa" : "#1e40af" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1001,7 +1007,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showActivityTrend}
                       onCheckedChange={(checked) => updateFilterPref('showActivityTrend', checked)}
                     />
-                    <Label htmlFor="activity-trend" className="text-xs">Activity</Label>
+                    <Label htmlFor="activity-trend" className="text-xs flex items-center gap-1">
+                      Activity
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#bbf7d0" : "#166534" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1009,7 +1021,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showReadinessTrend}
                       onCheckedChange={(checked) => updateFilterPref('showReadinessTrend', checked)}
                     />
-                    <Label htmlFor="readiness-trend" className="text-xs">Avg Readiness</Label>
+                    <Label htmlFor="readiness-trend" className="text-xs flex items-center gap-1">
+                      Avg Readiness
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#fbbf24" : "#f59e0b" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1017,7 +1035,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showStressTrend}
                       onCheckedChange={(checked) => updateFilterPref('showStressTrend', checked)}
                     />
-                    <Label htmlFor="stress-trend" className="text-xs">Stress</Label>
+                    <Label htmlFor="stress-trend" className="text-xs flex items-center gap-1">
+                      Stress
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#f87171" : "#ef4444" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1025,7 +1049,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showHeartRateTrend}
                       onCheckedChange={(checked) => updateFilterPref('showHeartRateTrend', checked)}
                     />
-                    <Label htmlFor="hr-trend" className="text-xs">Resting HR</Label>
+                    <Label htmlFor="hr-trend" className="text-xs flex items-center gap-1">
+                      Resting HR
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#a78bfa" : "#8b5cf6" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1033,7 +1063,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showHrvTrend}
                       onCheckedChange={(checked) => updateFilterPref('showHrvTrend', checked)}
                     />
-                    <Label htmlFor="hrv-trend" className="text-xs">HRV</Label>
+                    <Label htmlFor="hrv-trend" className="text-xs flex items-center gap-1">
+                      HRV
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#fb7185" : "#ec4899" }}
+                      />
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -1041,7 +1077,13 @@ export default function WellnessPage() {
                       checked={filterPrefs.showResilienceTrend}
                       onCheckedChange={(checked) => updateFilterPref('showResilienceTrend', checked)}
                     />
-                    <Label htmlFor="resilience-trend" className="text-xs">Resilience</Label>
+                    <Label htmlFor="resilience-trend" className="text-xs flex items-center gap-1">
+                      Resilience
+                      <div 
+                        className="w-3 h-3 rounded-sm" 
+                        style={{ backgroundColor: isDarkMode ? "#fbbf24" : "#f59e0b" }}
+                      />
+                    </Label>
                   </div>
                 </div>
               </CardHeader>
