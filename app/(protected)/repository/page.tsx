@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { RESOURCE_TYPES } from '@/app/lib/repository/types'
 import { Resource, Tag } from '@/lib/tables'
-import { ResourceModal } from '@/app/components/repository/resource-modal'
 import { AddResourceSection } from '@/app/components/repository/add-resource-section'
+import { EditResourceSection } from '@/app/components/repository/edit-resource-section'
 import { Pencil, Trash2, Tags } from 'lucide-react'
 import { createClient } from '@/lib/utils/supabase/client'
 import { createResourceWithTags, updateResourceWithTags } from '@/lib/client-services'
@@ -32,8 +32,7 @@ export default function RepositoryPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [selectedResource, setSelectedResource] = useState<ResourceWithTags | null>(null)
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -139,8 +138,11 @@ export default function RepositoryPage() {
   }
 
   const handleEditResource = (resource: ResourceWithTags) => {
-    setSelectedResource(resource)
-    setShowModal(true)
+    setEditingResourceId(resource.id)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingResourceId(null)
   }
 
   const handleDeleteResource = async (resourceId: string) => {
@@ -163,42 +165,40 @@ export default function RepositoryPage() {
   }
 
   const handleSaveResource = async (resourceData: Partial<Resource>, tagIds: string[]) => {
-    if (!user) return
+    if (!user || !resourceData.id) return
     
     try {
-      if (selectedResource) {
-        await updateResourceWithTags(selectedResource.id, resourceData, tagIds)
+      await updateResourceWithTags(resourceData.id, resourceData, tagIds)
+      
+      // Fetch the updated resource with tags for display
+      const supabase = createClient()
+      const { data: resourceWithTags } = await supabase
+        .from('resources')
+        .select(`
+          *,
+          tag_1:tags!resources_tag_1_id_fkey(id, name, type),
+          tag_2:tags!resources_tag_2_id_fkey(id, name, type),
+          tag_3:tags!resources_tag_3_id_fkey(id, name, type),
+          tag_4:tags!resources_tag_4_id_fkey(id, name, type),
+          tag_5:tags!resources_tag_5_id_fkey(id, name, type)
+        `)
+        .eq('id', resourceData.id)
+        .single()
+      
+      if (resourceWithTags) {
+        const tags = [
+          resourceWithTags.tag_1,
+          resourceWithTags.tag_2,
+          resourceWithTags.tag_3,
+          resourceWithTags.tag_4,
+          resourceWithTags.tag_5
+        ].filter(Boolean)
         
-        // Fetch the updated resource with tags for display
-        const supabase = createClient()
-        const { data: resourceWithTags } = await supabase
-          .from('resources')
-          .select(`
-            *,
-            tag_1:tags!resources_tag_1_id_fkey(id, name, type),
-            tag_2:tags!resources_tag_2_id_fkey(id, name, type),
-            tag_3:tags!resources_tag_3_id_fkey(id, name, type),
-            tag_4:tags!resources_tag_4_id_fkey(id, name, type),
-            tag_5:tags!resources_tag_5_id_fkey(id, name, type)
-          `)
-          .eq('id', selectedResource.id)
-          .single()
-        
-        if (resourceWithTags) {
-          const tags = [
-            resourceWithTags.tag_1,
-            resourceWithTags.tag_2,
-            resourceWithTags.tag_3,
-            resourceWithTags.tag_4,
-            resourceWithTags.tag_5
-          ].filter(Boolean)
-          
-          setResources(prev => prev.map(r => 
-            r.id === selectedResource.id ? { ...resourceWithTags, tags } : r
-          ))
-        }
+        setResources(prev => prev.map(r => 
+          r.id === resourceData.id ? { ...resourceWithTags, tags } : r
+        ))
       }
-      setShowModal(false)
+      setEditingResourceId(null)
     } catch (error) {
       console.error('Error saving resource:', error)
       alert('Failed to save resource')
@@ -270,89 +270,15 @@ export default function RepositoryPage() {
           <h2 className="text-2xl font-semibold text-foreground">Expiring Resources (<span className="text-number">{expiringResources.length}</span>)</h2>
           <div className="space-y-4">
             {expiringResources.map((resource) => (
-              <div key={resource.id} className="bg-card p-6 rounded-lg border border-border">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{resource.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      {/* <span>Relevance Score: <span className="text-number">{resource.relevance_score}</span>%</span> */}
-                      <span>Last accessed: {formatLastAccessed(new Date(resource.last_accessed))}</span>
-                      {resource.auto_committed && (
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs dark:bg-blue-900 dark:text-blue-200">
-                          Auto-committed
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEditResource(resource)}
-                      className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                      title="Edit Resource"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteResource(resource.id)}
-                      className="p-2 text-muted-foreground hover:text-red-500 hover:bg-accent rounded-md transition-colors"
-                      title="Delete Resource"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-foreground">
-                    {resource.content.length > 200 
-                      ? `${resource.content.substring(0, 200)}...`
-                      : resource.content
-                    }
-                  </p>
-                </div>
-
-                {resource.instructions && (
-                  <div className="mb-4 p-3 bg-accent rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium">Instructions:</span> {resource.instructions}
-                    </p>
-                  </div>
-                )}
-
-                {resource.tags && resource.tags.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Tags className="h-4 w-4 text-muted-foreground" />
-                    {resource.tags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Resources by Type */}
-      <div className="space-y-8">
-        {RESOURCE_TYPES.map((type) => {
-          const typeResources = resourcesByType[type.value] || []
-          if (typeResources.length === 0) return null
-
-          return (
-            <div key={type.value} className="space-y-4">
-              <h2 className="text-2xl font-semibold text-foreground">
-                {type.label} (<span className="text-number">{typeResources.length}</span>)
-              </h2>
-              
-              <div className="space-y-4">
-                {typeResources.map((resource) => (
-                  <div key={resource.id} className="bg-card p-6 rounded-lg border border-border">
+              <div key={resource.id} className="space-y-4">
+                {editingResourceId === resource.id ? (
+                  <EditResourceSection
+                    resource={resource}
+                    onSave={handleSaveResource}
+                    onCancel={handleCancelEdit}
+                  />
+                ) : (
+                  <div className="bg-card p-6 rounded-lg border border-border">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-foreground mb-2">{resource.title}</h3>
@@ -415,6 +341,100 @@ export default function RepositoryPage() {
                       </div>
                     )}
                   </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Resources by Type */}
+      <div className="space-y-8">
+        {RESOURCE_TYPES.map((type) => {
+          const typeResources = resourcesByType[type.value] || []
+          if (typeResources.length === 0) return null
+
+          return (
+            <div key={type.value} className="space-y-4">
+              <h2 className="text-2xl font-semibold text-foreground">
+                {type.label} (<span className="text-number">{typeResources.length}</span>)
+              </h2>
+              
+              <div className="space-y-4">
+                {typeResources.map((resource) => (
+                  <div key={resource.id} className="space-y-4">
+                    {editingResourceId === resource.id ? (
+                      <EditResourceSection
+                        resource={resource}
+                        onSave={handleSaveResource}
+                        onCancel={handleCancelEdit}
+                      />
+                    ) : (
+                      <div className="bg-card p-6 rounded-lg border border-border">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-foreground mb-2">{resource.title}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              {/* <span>Relevance Score: <span className="text-number">{resource.relevance_score}</span>%</span> */}
+                              <span>Last accessed: {formatLastAccessed(new Date(resource.last_accessed))}</span>
+                              {resource.auto_committed && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs dark:bg-blue-900 dark:text-blue-200">
+                                  Auto-committed
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditResource(resource)}
+                              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
+                              title="Edit Resource"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteResource(resource.id)}
+                              className="p-2 text-muted-foreground hover:text-red-500 hover:bg-accent rounded-md transition-colors"
+                              title="Delete Resource"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <p className="text-foreground">
+                            {resource.content.length > 200 
+                              ? `${resource.content.substring(0, 200)}...`
+                              : resource.content
+                            }
+                          </p>
+                        </div>
+
+                        {resource.instructions && (
+                          <div className="mb-4 p-3 bg-accent rounded-md">
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Instructions:</span> {resource.instructions}
+                            </p>
+                          </div>
+                        )}
+
+                        {resource.tags && resource.tags.length > 0 && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Tags className="h-4 w-4 text-muted-foreground" />
+                            {resource.tags.map((tag) => (
+                              <span
+                                key={tag.id}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -433,14 +453,6 @@ export default function RepositoryPage() {
       )}
 
 
-      {/* Resource Modal */}
-      <ResourceModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSave={handleSaveResource}
-        resource={selectedResource}
-        mode="edit"
-      />
     </div>
   )
 }
