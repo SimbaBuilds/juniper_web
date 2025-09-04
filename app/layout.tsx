@@ -17,21 +17,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Juniper - AI General Assistant for Health, Wellness, and Productivity",
+    default: "Juniper: An AI Assistant for Wellness and Productivity",
     template: "%s | Juniper"
   },
   description: "Connect all your favorite apps and services with voice-controlled intelligence. Juniper integrates seamlessly with over a dozen platforms to streamline your workflow.",
   keywords: ["mobile assistant", "AI", "integrations", "voice control", "productivity", "automation"],
   authors: [{ name: "Juniper Team" }],
   openGraph: {
-    title: "Juniper - AI General Assistant for Health, Wellness, and Productivity",
+    title: "Juniper: An AI Assistant for Wellness and Productivity",
     description: "Connect all your favorite apps and services with voice-controlled intelligence.",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Juniper - AI General Assistant for Health, Wellness, and Productivity",
+    title: "Juniper: An AI Assistant for Wellness and Productivity",
     description: "Connect all your favorite apps and services with voice-controlled intelligence.",
   },
   robots: {
