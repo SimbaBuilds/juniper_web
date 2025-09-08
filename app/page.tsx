@@ -123,17 +123,14 @@ export default function HomePage() {
             <Brain className="h-8 w-8" style={{color: 'var(--muted-blue)'}} />
             <Link href="/" className="text-2xl font-bold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</Link>
           </div>
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/integration-descriptions" className="text-foreground hover:text-primary transition-colors">
-              Integrations
-            </Link>
-            <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
-              Blog
-            </Link>
-          </div>
           <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-6">
+              <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
+                Blog
+              </Link>
+              <Link href="/integration-descriptions" className="text-foreground hover:text-primary transition-colors">
+                Integrations
+              </Link>
               {loading ? (
                 <div className="text-muted-foreground">Loading...</div>
               ) : user ? (
@@ -156,6 +153,7 @@ export default function HomePage() {
                   </Link>
                 </>
               )}
+              <ThemeToggle />
             </div>
             <PublicMobileMenu user={user} loading={loading} />
           </div>
@@ -173,7 +171,7 @@ export default function HomePage() {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Add intelligence to your interactions with your wearable devices.
             Connect productivity services like Gmail, Slack, and Notion.
-            Live your best life.
+            Live well.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (

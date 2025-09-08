@@ -107,7 +107,7 @@ export default function BlogPage() {
             Juniper <span style={{color: 'var(--muted-blue)'}}>Blog</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Insights, updates, and stories about AI-powered productivity and wellness
+            Insights, updates, and stories about AI-powered wellness and productivity
           </p>
         </div>
       </section>

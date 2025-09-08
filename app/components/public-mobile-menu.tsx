@@ -36,13 +36,13 @@ export function PublicMobileMenu({ user, loading }: PublicMobileMenuProps) {
         <div className="mt-8 space-y-4 pl-4">
           <div className="space-y-2 pb-4 border-b border-border">
             <SheetClose asChild>
-              <Link href="/integration-descriptions" className="block text-foreground hover:text-primary transition-colors py-2">
-                Integrations
+              <Link href="/blog" className="block text-foreground hover:text-primary transition-colors py-2">
+                Blog
               </Link>
             </SheetClose>
             <SheetClose asChild>
-              <Link href="/blog" className="block text-foreground hover:text-primary transition-colors py-2">
-                Blog
+              <Link href="/integration-descriptions" className="block text-foreground hover:text-primary transition-colors py-2">
+                Integrations
               </Link>
             </SheetClose>
           </div>
