@@ -153,7 +153,7 @@ export default function BlogPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
-                  <p className="text-muted-foreground mb-6 flex-1 line-clamp-3">
+                  <p className="text-muted-foreground mb-6 flex-1 line-clamp-6">
                     {post.excerpt}
                   </p>
                   <Link href={`/blog/${post.slug}`}>
