@@ -64,7 +64,7 @@ function getServiceCategory(serviceName: string): string {
   const name = serviceName.toLowerCase();
   
   // Health and Wellness
-  if (['oura', 'fitbit'].includes(name)) {
+  if (['oura', 'fitbit', 'mychart', 'apple health', 'google fit'].includes(name)) {
     return 'Health and Wellness';
   }
   
@@ -574,6 +574,21 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
       );
     }
 
+    // Special handling for Apple Health and Google Fit - mobile app only
+    if (['Apple Health', 'Google Fit'].includes(service.service_name)) {
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={true}
+          className="w-full flex items-center gap-2 cursor-not-allowed opacity-60"
+        >
+          <Phone className="h-4 w-4" />
+          Connect in mobile app only
+        </Button>
+      );
+    }
+
     if (service.isConnected) {
       return (
         <Button
@@ -762,7 +777,24 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
                   {/* Action Button */}
                   {!(service.service_name === 'Textbelt' && showTextbeltForm && !service.isConnected) && (
                     <div className="mt-4">
-                      {service.isConnected ? (
+                      {/* Special handling for Apple Health and Google Fit */}
+                      {['Apple Health', 'Google Fit'].includes(service.service_name) ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-blue-600">
+                            <Phone className="w-3 h-3" />
+                            <span>Mobile App Only</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={true}
+                            className="w-full flex items-center gap-2 cursor-not-allowed opacity-60"
+                          >
+                            <Phone className="h-4 w-4" />
+                            Connect in mobile app only
+                          </Button>
+                        </div>
+                      ) : service.isConnected ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-green-600">
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>

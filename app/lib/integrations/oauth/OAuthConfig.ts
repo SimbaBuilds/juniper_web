@@ -164,6 +164,18 @@ export const OAUTH_CONFIG: Record<string, OAuthServiceConfig> = {
     scopes: ['data:read_write'],
     redirectUri: `${SITE_URL}/oauth/todoist/web-callback`,
   },
+  'mychart': {
+    clientId: process.env.MYCHART_CLIENT_ID || '',
+    clientSecret: process.env.MYCHART_CLIENT_SECRET || '',
+    authorizationUrl: 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize',
+    tokenUrl: 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token',
+    scopes: ['patient/Patient.read', 'patient/Observation.read', 'patient/AllergyIntolerance.read', 'patient/Condition.read', 'patient/MedicationRequest.read', 'patient/Immunization.read', 'patient/DiagnosticReport.read', 'patient/DocumentReference.read', 'fhirUser', 'offline_access'],
+    redirectUri: `${SITE_URL}/oauth/mychart/web-callback`,
+    additionalParams: {
+      aud: 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/',
+      response_type: 'code',
+    },
+  },
 };
 
 export const SERVICE_DESCRIPTORS: Record<string, ServiceDescriptor> = {
@@ -257,6 +269,12 @@ export const SERVICE_DESCRIPTORS: Record<string, ServiceDescriptor> = {
     category: 'Task Management',
     iconName: 'check-square',
   },
+  'mychart': {
+    displayName: 'MyChart',
+    description: 'Access your Epic MyChart health records and medical data',
+    category: 'Health and Wellness',
+    iconName: 'activity',
+  },
 };
 
 export function getOAuthConfig(serviceName: string): OAuthServiceConfig | null {
@@ -273,6 +291,7 @@ export function getOAuthConfig(serviceName: string): OAuthServiceConfig | null {
     'microsoft-outlook-mail': 'microsoft_outlook_mail',
     'outlook-mail': 'microsoft_outlook_mail',
     'microsoft-teams': 'microsoft_teams',
+    'my-chart': 'mychart',
   };
   
   const configKey = serviceNameMap[serviceName] || serviceName;
@@ -293,6 +312,7 @@ export function getServiceDescriptor(serviceName: string): ServiceDescriptor | n
     'microsoft-outlook-mail': 'microsoft_outlook_mail',
     'outlook-mail': 'microsoft_outlook_mail',
     'microsoft-teams': 'microsoft_teams',
+    'my-chart': 'mychart',
   };
   
   const configKey = serviceNameMap[serviceName] || serviceName;

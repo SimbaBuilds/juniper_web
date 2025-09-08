@@ -46,7 +46,7 @@ export default function IntegrationDescriptions() {
     const name = serviceName.toLowerCase();
     
     // Health and Wellness
-    if (['oura', 'fitbit'].includes(name)) {
+    if (['oura', 'fitbit', 'mychart', 'apple health', 'google fit'].includes(name)) {
       return 'Health and Wellness';
     }
     
@@ -103,6 +103,9 @@ export default function IntegrationDescriptions() {
     
     if (name === 'fitbit') return <Activity className="w-6 h-6" />;
     if (name === 'oura') return <Heart className="w-6 h-6" />;
+    if (name === 'mychart') return <Heart className="w-6 h-6" />;
+    if (name === 'apple health') return <Heart className="w-6 h-6" />;
+    if (name === 'google fit') return <Activity className="w-6 h-6" />;
     if (['gmail', 'microsoft outlook email', 'microsoft outlook mail'].includes(name)) return <Mail className="w-6 h-6" />;
     if (['google calendar', 'microsoft outlook calendar'].includes(name)) return <Calendar className="w-6 h-6" />;
     if (['slack', 'microsoft teams', 'twilio', 'textbelt'].includes(name)) return <MessageSquare className="w-6 h-6" />;
