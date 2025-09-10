@@ -1,8 +1,6 @@
-It is currently September 2025.
-In the Epic MyChart project creation UI, I had to specify smartv1 or smartv2 -- I chose Smart v2 because smart v1 is apparently being phased out.  I also chose R4 since it is newer.  
+https://fhir.epic.com/interconnect-fhir-oauth/oauth2/authorize?client_id=683e1f54-0f02-476d-8850-142b90cb97af&redirect_uri=http%3A%2F%2Flocalhost%3A3001%2Foauth%2Fmychart%2Fweb-callback&response_type=code&scope=patient%2FPatient.rs+patient%2FObservation.rs+patient%2FAllergyIntolerance.rs+patient%2FCondition.rs+patient%2FImmunization.rs+patient%2FDiagnosticReport.rs+patient%2FMedicationRequest.rs+patient%2FProcedure.rs+patient%2FAdverseEvent.rs+patient%2FAppointment.rs+patient%2FBodyStructure.rs+patient%2FCarePlan.rs+patient%2FCareTeam.rs+patient%2FCommunication.rs+patient%2FCoverage.rs+patient%2FDevice.rs+patient%2FDeviceRequest.rs+patient%2FEpisodeOfCare.rs+patient%2FExplanationOfBenefit.rs+patient%2FFamilyMemberHistory.rs+patient%2FFlag.rs+patient%2FGoal.rs+patient%2FList.rs+patient%2FMedication.rs+patient%2FNutritionOrder.rs+patient%2FQuestionnaire.rs+patient%2FQuestionnaireResponse.rs+openid+fhirUser+offline_access+launch&state=OVEEXYYXSmO5vG6Ma6xiwHGmXMC83bSMlW9ZclYq04k&aud=https%3A%2F%2Ffhir.epic.com%2Finterconnect-fhir-oauth%2Fapi%2FFHIR%2FR4%2F
+Epic company logo
+OAuth2 Error
+Something went wrong trying to authorize the client. Please try logging in again.
 
-Note in console:
-“SMART v2 is supported starting in Epic version Nov 2024. Customers on prior versions may run into issues depending on how scopes are used for this app.”
-
-
-Please continue researching these topics, provide me with options, and give a recommendation.
+© 2003-2025 Epic Systems Corporation

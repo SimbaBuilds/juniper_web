@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/utils/supabase/client'
 import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus } from 'lucide-react'
@@ -408,29 +408,38 @@ export default function WellnessPage() {
     avgHrv: Math.round(healthData.reduce((sum, d) => sum + (d.hrv_avg || 0), 0) / Math.max(healthData.filter(d => d.hrv_avg && d.hrv_avg > 0).length, 1))
   } : null
 
-  // Prepare chart data
-  const chartData = healthData.map(d => ({
-    date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    sleep_score: d.sleep_score || 0,
-    activity_score: d.activity_score || 0,
-    readiness_score: d.readiness_score || 0,
-    stress_level: d.stress_level || 0,
-    resting_hr: d.resting_hr || 0,
-    hrv_avg: d.hrv_avg || 0,
-    resilience_score: d.resilience_score || 0,
-    steps: d.total_steps || 0,
-    calories: d.calories_burned || 0
-  }))
+  // Prepare chart data - ensure it updates when healthData changes
+  const chartData = React.useMemo(() => {
+    const data = healthData.map(d => ({
+      date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      sleep_score: d.sleep_score || 0,
+      activity_score: d.activity_score || 0,
+      readiness_score: d.readiness_score || 0,
+      stress_level: d.stress_level || 0,
+      resting_hr: d.resting_hr || 0,
+      hrv_avg: d.hrv_avg || 0,
+      resilience_score: d.resilience_score || 0,
+      steps: d.total_steps || 0,
+      calories: d.calories_burned || 0
+    }))
+    
+    console.log('Chart data prepared:', data.length, 'points for timeRange:', filterPrefs.timeRange)
+    console.log('Chart dates:', data.map(d => d.date))
+    console.log('Health data dates:', healthData.map(d => d.date))
+    
+    return data
+  }, [healthData, filterPrefs.timeRange])
 
-  console.log('Chart data prepared:', chartData.length, 'points')
-  console.log('Chart dates:', chartData.map(d => d.date))
-
-  // Activity distribution for pie chart
-  const activityDistribution = healthData.length > 0 ? [
-    { name: 'High Activity', value: healthData.filter(d => (d.activity_score || 0) >= 80).length },
-    { name: 'Medium Activity', value: healthData.filter(d => (d.activity_score || 0) >= 50 && (d.activity_score || 0) < 80).length },
-    { name: 'Low Activity', value: healthData.filter(d => (d.activity_score || 0) < 50).length }
-  ].filter(item => item.value > 0) : []
+  // Activity distribution for pie chart - memoized to update with data changes
+  const activityDistribution = React.useMemo(() => {
+    if (healthData.length === 0) return []
+    
+    return [
+      { name: 'High Activity', value: healthData.filter(d => (d.activity_score || 0) >= 80).length },
+      { name: 'Medium Activity', value: healthData.filter(d => (d.activity_score || 0) >= 50 && (d.activity_score || 0) < 80).length },
+      { name: 'Low Activity', value: healthData.filter(d => (d.activity_score || 0) < 50).length }
+    ].filter(item => item.value > 0)
+  }, [healthData])
 
   if (loading) {
     return (
@@ -1091,7 +1100,11 @@ export default function WellnessPage() {
                 <div className="h-[400px] w-full">
                   {chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <LineChart 
+                        key={`trends-${filterPrefs.timeRange}`}
+                        data={chartData} 
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
                         <XAxis dataKey="date" />
                         <YAxis />
                         <RechartsTooltip />
@@ -1184,7 +1197,10 @@ export default function WellnessPage() {
                 <div className="h-[400px] w-full">
                   {activityDistribution.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart margin={{ top: 20, right: 90, left: 90, bottom: 20 }}>
+                      <PieChart 
+                        key={`activity-dist-${filterPrefs.timeRange}`}
+                        margin={{ top: 20, right: 90, left: 90, bottom: 20 }}
+                      >
                         <Pie
                           data={activityDistribution}
                           cx="50%"
@@ -1244,7 +1260,11 @@ export default function WellnessPage() {
                 <div className="h-[400px] w-full">
                   {chartData.some(d => d.steps > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <BarChart 
+                        key={`steps-${filterPrefs.timeRange}`}
+                        data={chartData} 
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
                         <XAxis dataKey="date" />
                         <YAxis />
                         <RechartsTooltip />
@@ -1277,7 +1297,11 @@ export default function WellnessPage() {
                 <div className="h-[400px] w-full">
                   {chartData.some(d => d.calories > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <BarChart 
+                        key={`calories-${filterPrefs.timeRange}`}
+                        data={chartData} 
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
                         <XAxis dataKey="date" />
                         <YAxis />
                         <RechartsTooltip />
