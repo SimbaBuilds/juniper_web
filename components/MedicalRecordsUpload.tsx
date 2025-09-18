@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { MedicalRecordsStorageService, FileMetadata } from '@/lib/services/MedicalRecordsStorageService'
+import { MedicalRecordsStorageService, FileMetadata } from '@/app/lib/services/MedicalRecordsStorageService'
 import { createClient } from '@/lib/utils/supabase/client'
 
 interface UploadedFile {

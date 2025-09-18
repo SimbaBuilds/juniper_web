@@ -1,38 +1,35 @@
- ✓ Compiled /api/contact in 173ms
-nodemailer object: [Object: null prototype] [Module] {
-  createTransport: [Getter],
-  createTestAccount: [Getter],
-  getTestMessageUrl: [Getter],
-  default: [Getter]
+Session check result: {
+  hasSession: true,
+  hasAccessToken: true,
+  accessTokenLength: 735,
+  sessionError: undefined
 }
-SMTP Error: Error: createTransporter is not a function
-    at POST (app/api/contact/route.ts:26:12)
-  24 |     if (typeof createTransporter !== 'function') {
-  25 |       console.error('nodemailer object:', nodemailer)
-> 26 |       throw new Error('createTransporter is not a function')
-     |            ^
-  27 |     }
-  28 |     
-  29 |     // Create transporter inside the POST function
-Error details: {
-  message: 'createTransporter is not a function',
-  stack: 'Error: createTransporter is not a function\n' +
-    '    at POST (/Users/cameronhightower/Software_Projects/juniper_web/.next/server/chunks/[root-of-the-server]__df9e0b5c._.js:85:19)\n' +
-    '    at async AppRouteRouteModule.do (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:26:34112)\n' +
-    '    at async AppRouteRouteModule.handle (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:26:41338)\n' +
-    '    at async doRender (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:1518:42)\n' +
-    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:1920:28)\n' +
-    '    at async DevServer.renderPageComponent (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:2408:24)\n' +
-    '    at async DevServer.renderToResponseImpl (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:2445:32)\n' +
-    '    at async DevServer.pipeImpl (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:1008:25)\n' +
-    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/next-server.js:305:17)\n' +
-    '    at async DevServer.handleRequestImpl (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/base-server.js:900:17)\n' +
-    '    at async /Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/dev/next-dev-server.js:371:20\n' +
-    '    at async Span.traceAsyncFn (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/trace/trace.js:157:20)\n' +
-    '    at async DevServer.handleRequest (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/dev/next-dev-server.js:368:24)\n' +
-    '    at async invokeRender (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/lib/router-server.js:237:21)\n' +
-    '    at async handleRequest (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/lib/router-server.js:428:24)\n' +
-    '    at async requestHandlerImpl (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/lib/router-server.js:452:13)\n' +
-    '    at async Server.requestListener (/Users/cameronhightower/Software_Projects/juniper_web/node_modules/next/dist/server/lib/start-server.js:158:13)'
+Using request ID: web-medical-1758168422098-uyy2qgg47 (provided by frontend)
+Python backend success response: {
+  success: false,
+  processedCount: 0,
+  failedCount: 1,
+  totalPages: 0,
+  processingTime: 0.40008974075317383
 }
- POST /api/contact 500 in 284ms
+=== MEDICAL RECORDS API REQUEST SUCCESS ===
+ POST /api/process_medical_records 200 in 1204ms
+
+
+Browser:
+🔄 MedicalRecordsStorageService: Starting medical record upload {userId: 'f8ac1669-7e9e-4d9e-bb9d-bebd806ce58e', fileName: 'email_int_screenshot.jpeg', fileSize: 659452, fileType: 'image/jpeg'}
+MedicalRecordsStorageService.ts:58 🔄 MedicalRecordsStorageService: Checking user authentication
+MedicalRecordsStorageService.ts:71 ✅ MedicalRecordsStorageService: User authenticated {userId: 'f8ac1669-7e9e-4d9e-bb9d-bebd806ce58e'}
+MedicalRecordsStorageService.ts:75 🔄 MedicalRecordsStorageService: Uploading to path {filePath: 'f8ac1669-7e9e-4d9e-bb9d-bebd806ce58e/medical-records/1758168421146_email_int_screenshot.jpeg'}
+MedicalRecordsStorageService.ts:92 ✅ MedicalRecordsStorageService: Upload successful {data: {…}}
+MedicalRecordsStorageService.ts:95 ✅ MedicalRecordsStorageService: Public URL generated {fileUrl: 'https://ydbabipbxxleeiiysojv.supabase.co/storage/v…l-records/1758168421146_email_int_screenshot.jpeg'}
+turbopack-hot-reloader-common.ts:41 [Fast Refresh] rebuilding
+report-hmr-latency.ts:26 [Fast Refresh] done in 152ms
+
+UI:
+
+Processed 0 files successfully, 1 files failed
+
+Failed files:
+
+email_int_screenshot.jpeg: Failed to download file: 400 Client Error: Bad Request for url: https://ydbabipbxxleeiiysojv.supabase.co/storage/v1/object/public/medical-records/f8ac1669-7e9e-4d9e-bb9d-bebd806ce58e/medical-records/1758168421146_email_int_screenshot.jpeg
