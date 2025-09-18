@@ -91,8 +91,12 @@ export class MedicalRecordsStorageService {
 
       console.log('✅ MedicalRecordsStorageService: Upload successful', { data });
 
-      const fileUrl = MedicalRecordsStorageService.getPublicUrl(filePath);
-      console.log('✅ MedicalRecordsStorageService: Public URL generated', { fileUrl });
+      const fileUrl = await MedicalRecordsStorageService.getSignedUrl(filePath);
+      if (!fileUrl) {
+        return { success: false, error: 'Failed to generate signed URL' };
+      }
+
+      console.log('✅ MedicalRecordsStorageService: Signed URL generated', { fileUrl });
 
       return {
         success: true,
@@ -151,6 +155,19 @@ export class MedicalRecordsStorageService {
       .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }
+
+  static async getSignedUrl(filePath: string): Promise<string | null> {
+    const { data, error } = await this.supabase.storage
+      .from(MedicalRecordsStorageService.BUCKET_NAME)
+      .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+    if (error) {
+      console.error('Failed to create signed URL:', error);
+      return null;
+    }
+
+    return data.signedUrl;
   }
 
   static async deleteFile(filePath: string): Promise<{ success: boolean; error?: string }> {

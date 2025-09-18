@@ -251,7 +251,7 @@ export function MedicalRecordsUpload() {
       <CardContent className="space-y-4">
         <div className="text-sm text-muted-foreground">
           Upload medical documents (PDF, PNG, JPEG, CSV) for Juniper to analyze and use in health-related conversations.
-          Maximum 8 files, 50MB each.
+          Maximum 8 files per upload, 50MB each.
         </div>
 
         {error && (

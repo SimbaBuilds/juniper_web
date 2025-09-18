@@ -165,12 +165,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Python backend success response:', {
+    console.log('Medical records processing result:', {
       success: data.success,
-      processedCount: data.processed_records?.length,
-      failedCount: data.failed_records?.length,
+      message: data.message,
+      processedFiles: data.total_files,
       totalPages: data.total_pages,
-      processingTime: data.processing_time
+      processingTime: data.processing_time,
+      requestId: requestId
     })
 
     try {
@@ -182,7 +183,6 @@ export async function POST(request: NextRequest) {
       console.error('Failed to update request status to completed:', updateError)
     }
 
-    console.log('=== MEDICAL RECORDS API REQUEST SUCCESS ===')
     return NextResponse.json({
       success: data.success,
       message: data.message,
@@ -195,9 +195,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('=== MEDICAL RECORDS API REQUEST FAILED ===')
-    console.error('Medical records API error:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Medical records API error:', error instanceof Error ? error.message : 'Unknown error')
 
     if (typeof requestId !== 'undefined') {
       try {
