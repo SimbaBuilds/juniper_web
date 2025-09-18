@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { MedicalRecordsUpload } from '@/components/MedicalRecordsUpload'
 
 interface HealthMetric {
   id: string
@@ -629,6 +630,21 @@ export default function WellnessPage() {
                 </div>
               )}
             </div>
+
+            {/* Medical Records Upload */}
+            <div className="bg-muted/30 rounded-lg p-4">
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Medical Records
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload medical documents for Juniper to analyze and reference in health conversations
+                </p>
+              </div>
+              <MedicalRecordsUpload />
+            </div>
+
             {/* Chart Toggles */}
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium mb-3 text-muted-foreground">Charts</h4>
