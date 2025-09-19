@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/utils/supabase/client'
-import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus } from 'lucide-react'
+import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus, X, Check, ChevronsUpDown, Search, Edit2 } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Badge } from '@/components/ui/badge'
 import { MedicalRecordsUpload } from '@/components/MedicalRecordsUpload'
 
 interface HealthMetric {
@@ -45,11 +47,27 @@ interface ResourceWithTags {
   created_at: string
 }
 
+interface ChartInstance {
+  id: string
+  name: string
+  selectedMetrics: string[]
+  isExpanded: boolean
+}
+
+interface MetricDefinition {
+  key: string
+  label: string
+  group: string
+  color: {
+    light: string
+    dark: string
+  }
+}
+
 interface FilterPrefs {
   timeRange: string
   showResources: boolean
   sortBy: string
-  showHealthScoresTrend: boolean
   showActivityDistribution: boolean
   showDailySteps: boolean
   showDailyCalories: boolean
@@ -62,39 +80,428 @@ interface FilterPrefs {
   showAvgStressCard: boolean
   showAvgHeartRateCard: boolean
   showAvgHrvCard: boolean
-  // Trend chart metric toggles
-  showSleepTrend: boolean
-  showActivityTrend: boolean
-  showReadinessTrend: boolean
-  showStressTrend: boolean
-  showHeartRateTrend: boolean
-  showHrvTrend: boolean
-  showResilienceTrend: boolean
+  // New trend chart instances
+  trendCharts: ChartInstance[]
 }
 
-const CHART_CONFIG = {
-  sleep_score: {
-    label: "Sleep",
-    color: "hsl(var(--chart-1))"
+// Define all available metrics with their configuration
+const AVAILABLE_METRICS: MetricDefinition[] = [
+  {
+    key: 'sleep_score',
+    label: 'Sleep Score',
+    group: 'Recovery',
+    color: { light: '#1e40af', dark: '#60a5fa' }
   },
-  activity_score: {
-    label: "Activity Score", 
-    color: "hsl(var(--chart-2))"
+  {
+    key: 'activity_score',
+    label: 'Activity Score',
+    group: 'Activity',
+    color: { light: '#166534', dark: '#bbf7d0' }
   },
-  readiness_score: {
-    label: "Readiness Score",
-    color: "hsl(var(--chart-3))"
+  {
+    key: 'readiness_score',
+    label: 'Readiness Score',
+    group: 'Recovery',
+    color: { light: '#f59e0b', dark: '#fbbf24' }
   },
-  stress_level: {
-    label: "Stress Level",
-    color: "hsl(var(--chart-4))"
+  {
+    key: 'stress_level',
+    label: 'Stress Level',
+    group: 'Wellness',
+    color: { light: '#ef4444', dark: '#f87171' }
+  },
+  {
+    key: 'recovery_score',
+    label: 'Recovery Score',
+    group: 'Recovery',
+    color: { light: '#059669', dark: '#10b981' }
+  },
+  {
+    key: 'resting_hr',
+    label: 'Resting Heart Rate',
+    group: 'Vitals',
+    color: { light: '#8b5cf6', dark: '#a78bfa' }
+  },
+  {
+    key: 'hrv_avg',
+    label: 'HRV Average',
+    group: 'Vitals',
+    color: { light: '#ec4899', dark: '#fb7185' }
+  },
+  {
+    key: 'resilience_score',
+    label: 'Resilience Score',
+    group: 'Wellness',
+    color: { light: '#0891b2', dark: '#0ea5e9' }
+  },
+  {
+    key: 'total_steps',
+    label: 'Total Steps',
+    group: 'Activity',
+    color: { light: '#7c3aed', dark: '#8b5cf6' }
+  },
+  {
+    key: 'calories_burned',
+    label: 'Calories Burned',
+    group: 'Activity',
+    color: { light: '#dc2626', dark: '#ef4444' }
   }
+]
+
+// Metric presets for quick selection
+const METRIC_PRESETS = {
+  vitals: ['resting_hr', 'hrv_avg'],
+  activity: ['activity_score', 'total_steps', 'calories_burned'],
+  recovery: ['sleep_score', 'readiness_score', 'recovery_score'],
+  wellness: ['stress_level', 'resilience_score'],
+  all: AVAILABLE_METRICS.map(m => m.key)
 }
 
 // Use theme-aware colors that match repository screen
 const COLORS = {
   light: ['#1e40af', '#166534', '#f59e0b', '#ef4444', '#8b5cf6'], // blue-800, green-800, amber-500, red-500, violet-500
   dark: ['#60a5fa', '#bbf7d0', '#fbbf24', '#f87171', '#a78bfa']   // blue-400, green-200, amber-400, red-400, violet-400
+}
+
+// MetricSelector Component
+interface MetricSelectorProps {
+  selectedMetrics: string[]
+  onSelectionChange: (metrics: string[]) => void
+  isDarkMode: boolean
+}
+
+function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode }: MetricSelectorProps) {
+  const [open, setOpen] = useState(false)
+
+  const toggleMetric = (metricKey: string) => {
+    const newSelection = selectedMetrics.includes(metricKey)
+      ? selectedMetrics.filter(m => m !== metricKey)
+      : [...selectedMetrics, metricKey]
+    onSelectionChange(newSelection)
+  }
+
+  const applyPreset = (presetKey: keyof typeof METRIC_PRESETS) => {
+    onSelectionChange(METRIC_PRESETS[presetKey])
+  }
+
+  const groupedMetrics = AVAILABLE_METRICS.reduce((acc, metric) => {
+    if (!acc[metric.group]) acc[metric.group] = []
+    acc[metric.group].push(metric)
+    return acc
+  }, {} as Record<string, MetricDefinition[]>)
+
+  return (
+    <div className="space-y-3">
+      {/* Preset Buttons */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset('vitals')}
+          className="h-7 px-2 text-xs"
+        >
+          Vitals
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset('activity')}
+          className="h-7 px-2 text-xs"
+        >
+          Activity
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset('recovery')}
+          className="h-7 px-2 text-xs"
+        >
+          Recovery
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset('wellness')}
+          className="h-7 px-2 text-xs"
+        >
+          Wellness
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyPreset('all')}
+          className="h-7 px-2 text-xs"
+        >
+          All
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onSelectionChange([])}
+          className="h-7 px-2 text-xs"
+        >
+          None
+        </Button>
+      </div>
+
+      {/* Multi-select Dropdown */}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            <span className="truncate">
+              {selectedMetrics.length === 0
+                ? "Select metrics..."
+                : `${selectedMetrics.length} metric${selectedMetrics.length !== 1 ? 's' : ''} selected`
+              }
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput placeholder="Search metrics..." />
+            <CommandEmpty>No metrics found.</CommandEmpty>
+            <CommandList>
+              {Object.entries(groupedMetrics).map(([group, metrics]) => (
+                <CommandGroup key={group} heading={group}>
+                  {metrics.map((metric) => (
+                    <CommandItem
+                      key={metric.key}
+                      onSelect={() => toggleMetric(metric.key)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-2 w-full">
+                        <div className="flex items-center space-x-2 flex-1">
+                          <div
+                            className="w-3 h-3 rounded-sm"
+                            style={{ backgroundColor: isDarkMode ? metric.color.dark : metric.color.light }}
+                          />
+                          <span>{metric.label}</span>
+                        </div>
+                        <Check
+                          className={`h-4 w-4 ${selectedMetrics.includes(metric.key) ? "opacity-100" : "opacity-0"}`}
+                        />
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {/* Selected Metrics Display */}
+      {selectedMetrics.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selectedMetrics.map(metricKey => {
+            const metric = AVAILABLE_METRICS.find(m => m.key === metricKey)
+            if (!metric) return null
+            return (
+              <Badge
+                key={metricKey}
+                variant="secondary"
+                className="text-xs flex items-center gap-1"
+              >
+                <div
+                  className="w-2 h-2 rounded-sm"
+                  style={{ backgroundColor: isDarkMode ? metric.color.dark : metric.color.light }}
+                />
+                {metric.label}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => toggleMetric(metricKey)}
+                />
+              </Badge>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// TrendChart Component
+interface TrendChartProps {
+  chart: ChartInstance
+  chartData: any[]
+  isDarkMode: boolean
+  onUpdateChart: (chartId: string, updates: Partial<ChartInstance>) => void
+  onRemoveChart: (chartId: string) => void
+  canRemove: boolean
+  getMetricColor: (metricKey: string, isDark: boolean) => string
+}
+
+function TrendChart({
+  chart,
+  chartData,
+  isDarkMode,
+  onUpdateChart,
+  onRemoveChart,
+  canRemove,
+  getMetricColor
+}: TrendChartProps) {
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [tempName, setTempName] = useState(chart.name)
+
+  const handleNameSave = () => {
+    onUpdateChart(chart.id, { name: tempName })
+    setIsEditingName(false)
+  }
+
+  const handleNameCancel = () => {
+    setTempName(chart.name)
+    setIsEditingName(false)
+  }
+
+  return (
+    <Card className="pb-2">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-1">
+            {isEditingName ? (
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  className="h-8 text-lg font-semibold"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleNameSave()
+                    if (e.key === 'Escape') handleNameCancel()
+                  }}
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={handleNameSave}
+                  className="h-8"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleNameCancel}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-1">
+                <CardTitle className="text-lg">{chart.name}</CardTitle>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsEditingName(true)}
+                  className="h-6 w-6 p-0"
+                >
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onUpdateChart(chart.id, { isExpanded: !chart.isExpanded })}
+              className="h-8 px-2"
+            >
+              {chart.isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Collapse
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Expand
+                </>
+              )}
+            </Button>
+            {canRemove && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemoveChart(chart.id)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <CardDescription className="text-sm">
+          {chart.selectedMetrics.length > 0
+            ? `Showing ${chart.selectedMetrics.length} metric${chart.selectedMetrics.length !== 1 ? 's' : ''}`
+            : 'No metrics selected'
+          }
+        </CardDescription>
+
+        {chart.isExpanded && (
+          <div className="space-y-3 mt-4">
+            <MetricSelector
+              selectedMetrics={chart.selectedMetrics}
+              onSelectionChange={(metrics) => onUpdateChart(chart.id, { selectedMetrics: metrics })}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        )}
+      </CardHeader>
+
+      {chart.isExpanded && (
+        <CardContent className="pt-0">
+          <div className="h-[400px] w-full">
+            {chartData.length > 0 && chart.selectedMetrics.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  {chart.selectedMetrics.map((metricKey) => {
+                    const metric = AVAILABLE_METRICS.find(m => m.key === metricKey)
+                    if (!metric) return null
+
+                    return (
+                      <Line
+                        key={metricKey}
+                        type="monotone"
+                        dataKey={metricKey}
+                        stroke={getMetricColor(metricKey, isDarkMode)}
+                        strokeWidth={2}
+                        name={metric.label}
+                        connectNulls={false}
+                      />
+                    )
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">
+                  {chart.selectedMetrics.length === 0
+                    ? "Select metrics to display trends"
+                    : "No data available for selected metrics"
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
 }
 
 export default function WellnessPage() {
@@ -113,7 +520,6 @@ export default function WellnessPage() {
     timeRange: '30',
     showResources: true,
     sortBy: 'date',
-    showHealthScoresTrend: true,
     showActivityDistribution: true,
     showDailySteps: true,
     showDailyCalories: true,
@@ -126,14 +532,13 @@ export default function WellnessPage() {
     showAvgStressCard: true,
     showAvgHeartRateCard: true,
     showAvgHrvCard: true,
-    // Trend chart metric toggles
-    showSleepTrend: true,
-    showActivityTrend: true,
-    showReadinessTrend: true,
-    showStressTrend: true,
-    showHeartRateTrend: true,
-    showHrvTrend: true,
-    showResilienceTrend: true
+    // Default trend chart instance
+    trendCharts: [{
+      id: '1',
+      name: 'Overall Trends',
+      selectedMetrics: ['sleep_score', 'activity_score', 'readiness_score', 'stress_level'],
+      isExpanded: true
+    }]
   })
 
   // Detect dark mode
@@ -158,7 +563,17 @@ export default function WellnessPage() {
     const saved = localStorage.getItem('wellness-filter-prefs')
     if (saved) {
       try {
-        setFilterPrefs(JSON.parse(saved))
+        const parsedPrefs = JSON.parse(saved)
+        // Ensure trendCharts exists for backward compatibility
+        if (!parsedPrefs.trendCharts) {
+          parsedPrefs.trendCharts = [{
+            id: '1',
+            name: 'Overall Trends',
+            selectedMetrics: ['sleep_score', 'activity_score', 'readiness_score', 'stress_level'],
+            isExpanded: true
+          }]
+        }
+        setFilterPrefs(parsedPrefs)
       } catch (e) {
         console.error('Failed to parse saved preferences:', e)
       }
@@ -273,6 +688,42 @@ export default function WellnessPage() {
     setFilterPrefs(prev => ({ ...prev, [key]: value }))
   }
 
+  // Chart instance management functions
+  const addTrendChart = () => {
+    const newChart: ChartInstance = {
+      id: Date.now().toString(),
+      name: `Trend Chart ${filterPrefs.trendCharts.length + 1}`,
+      selectedMetrics: ['sleep_score', 'activity_score'],
+      isExpanded: true
+    }
+    setFilterPrefs(prev => ({
+      ...prev,
+      trendCharts: [...prev.trendCharts, newChart]
+    }))
+  }
+
+  const removeTrendChart = (chartId: string) => {
+    if (filterPrefs.trendCharts.length <= 1) return // Keep at least one chart
+    setFilterPrefs(prev => ({
+      ...prev,
+      trendCharts: prev.trendCharts.filter(chart => chart.id !== chartId)
+    }))
+  }
+
+  const updateTrendChart = (chartId: string, updates: Partial<ChartInstance>) => {
+    setFilterPrefs(prev => ({
+      ...prev,
+      trendCharts: prev.trendCharts.map(chart =>
+        chart.id === chartId ? { ...chart, ...updates } : chart
+      )
+    }))
+  }
+
+  const getMetricColor = (metricKey: string, isDark: boolean) => {
+    const metric = AVAILABLE_METRICS.find(m => m.key === metricKey)
+    return metric ? (isDark ? metric.color.dark : metric.color.light) : '#999'
+  }
+
   // Available metrics for manual entry
   const availableMetrics = [
     { value: 'sleep_score', label: 'Sleep Score (0-100)' },
@@ -371,31 +822,6 @@ export default function WellnessPage() {
     }
   }
 
-  const selectAllTrends = () => {
-    setFilterPrefs(prev => ({
-      ...prev,
-      showSleepTrend: true,
-      showActivityTrend: true,
-      showReadinessTrend: true,
-      showStressTrend: true,
-      showHeartRateTrend: true,
-      showHrvTrend: true,
-      showResilienceTrend: true
-    }))
-  }
-
-  const selectNoTrends = () => {
-    setFilterPrefs(prev => ({
-      ...prev,
-      showSleepTrend: false,
-      showActivityTrend: false,
-      showReadinessTrend: false,
-      showStressTrend: false,
-      showHeartRateTrend: false,
-      showHrvTrend: false,
-      showResilienceTrend: false
-    }))
-  }
 
   // Calculate summary stats
   const summaryStats = healthData.length > 0 ? {
@@ -647,16 +1073,8 @@ export default function WellnessPage() {
 
             {/* Chart Toggles */}
             <div className="border-t pt-4">
-              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Charts</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-health-scores"
-                    checked={filterPrefs.showHealthScoresTrend}
-                    onCheckedChange={(checked) => updateFilterPref('showHealthScoresTrend', checked)}
-                  />
-                  <Label htmlFor="show-health-scores" className="text-xs">Health Scores</Label>
-                </div>
+              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Other Charts</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="show-activity-dist"
@@ -981,230 +1399,39 @@ export default function WellnessPage() {
       )}
 
       {/* Charts */}
+      {/* Trend Charts Section */}
+      <div className="space-y-4">
+        {/* Add Chart Button */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Trend Charts</h2>
+          <Button
+            onClick={addTrendChart}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Trend Chart
+          </Button>
+        </div>
+
+        {/* Render all trend chart instances */}
+        {filterPrefs.trendCharts.map((chart) => (
+          <TrendChart
+            key={chart.id}
+            chart={chart}
+            chartData={chartData}
+            isDarkMode={isDarkMode}
+            onUpdateChart={updateTrendChart}
+            onRemoveChart={removeTrendChart}
+            canRemove={filterPrefs.trendCharts.length > 1}
+            getMetricColor={getMetricColor}
+          />
+        ))}
+      </div>
+
       {chartData.length > 0 && (
         <div className="space-y-4">
-          {/* Trends Chart - Full Width */}
-          {filterPrefs.showHealthScoresTrend && (
-            <Card className="pb-2">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Trends</CardTitle>
-                <CardDescription className="text-sm">Health metrics over time</CardDescription>
-                
-                {/* Quick Select Buttons */}
-                <div className="flex gap-2 mb-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAllTrends}
-                    className="h-7 px-2 text-xs"
-                  >
-                    All
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectNoTrends}
-                    className="h-7 px-2 text-xs"
-                  >
-                    None
-                  </Button>
-                </div>
-
-                {/* Metric Toggles */}
-                <div className="grid grid-cols-2 md:grid-cols-7 gap-2 mt-3">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="sleep-trend"
-                      checked={filterPrefs.showSleepTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showSleepTrend', checked)}
-                    />
-                    <Label htmlFor="sleep-trend" className="text-xs flex items-center gap-1">
-                      Sleep
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#60a5fa" : "#1e40af" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="activity-trend"
-                      checked={filterPrefs.showActivityTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showActivityTrend', checked)}
-                    />
-                    <Label htmlFor="activity-trend" className="text-xs flex items-center gap-1">
-                      Activity
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#bbf7d0" : "#166534" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="readiness-trend"
-                      checked={filterPrefs.showReadinessTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showReadinessTrend', checked)}
-                    />
-                    <Label htmlFor="readiness-trend" className="text-xs flex items-center gap-1">
-                      Avg Readiness
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#fbbf24" : "#f59e0b" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="stress-trend"
-                      checked={filterPrefs.showStressTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showStressTrend', checked)}
-                    />
-                    <Label htmlFor="stress-trend" className="text-xs flex items-center gap-1">
-                      Stress
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#f87171" : "#ef4444" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="hr-trend"
-                      checked={filterPrefs.showHeartRateTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showHeartRateTrend', checked)}
-                    />
-                    <Label htmlFor="hr-trend" className="text-xs flex items-center gap-1">
-                      Resting HR
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#a78bfa" : "#8b5cf6" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="hrv-trend"
-                      checked={filterPrefs.showHrvTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showHrvTrend', checked)}
-                    />
-                    <Label htmlFor="hrv-trend" className="text-xs flex items-center gap-1">
-                      HRV
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#fb7185" : "#ec4899" }}
-                      />
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="resilience-trend"
-                      checked={filterPrefs.showResilienceTrend}
-                      onCheckedChange={(checked) => updateFilterPref('showResilienceTrend', checked)}
-                    />
-                    <Label htmlFor="resilience-trend" className="text-xs flex items-center gap-1">
-                      Resilience
-                      <div 
-                        className="w-3 h-3 rounded-sm" 
-                        style={{ backgroundColor: isDarkMode ? "#fbbf24" : "#f59e0b" }}
-                      />
-                    </Label>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="h-[400px] w-full">
-                  {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart 
-                        key={`trends-${filterPrefs.timeRange}`}
-                        data={chartData} 
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                      >
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <RechartsTooltip />
-                        {filterPrefs.showSleepTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="sleep_score" 
-                            stroke={isDarkMode ? "#60a5fa" : "#1e40af"} 
-                            strokeWidth={2} 
-                            name="Sleep" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showActivityTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="activity_score" 
-                            stroke={isDarkMode ? "#bbf7d0" : "#166534"} 
-                            strokeWidth={2} 
-                            name="Activity Score" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showReadinessTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="readiness_score" 
-                            stroke={isDarkMode ? "#fbbf24" : "#f59e0b"} 
-                            strokeWidth={2} 
-                            name="Avg Readiness" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showStressTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="stress_level" 
-                            stroke={isDarkMode ? "#f87171" : "#ef4444"} 
-                            strokeWidth={2} 
-                            name="Stress Level" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showHeartRateTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="resting_hr" 
-                            stroke={isDarkMode ? "#a78bfa" : "#8b5cf6"} 
-                            strokeWidth={2} 
-                            name="Resting HR" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showHrvTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="hrv_avg" 
-                            stroke={isDarkMode ? "#fb7185" : "#ec4899"} 
-                            strokeWidth={2} 
-                            name="HRV" 
-                            connectNulls={false}
-                          />
-                        )}
-                        {filterPrefs.showResilienceTrend && (
-                          <Line 
-                            type="monotone" 
-                            dataKey="resilience_score" 
-                            stroke={isDarkMode ? "#fbbf24" : "#f59e0b"} 
-                            strokeWidth={2} 
-                            name="Resilience Score" 
-                            connectNulls={false}
-                          />
-                        )}
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-muted-foreground">No data available for this metric.</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Other Charts Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1281,7 +1508,7 @@ export default function WellnessPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="h-[400px] w-full">
-                  {chartData.some(d => d.steps > 0) ? (
+                  {chartData.some(d => d.steps && d.steps > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart 
                         key={`steps-${filterPrefs.timeRange}`}
@@ -1318,7 +1545,7 @@ export default function WellnessPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="h-[400px] w-full">
-                  {chartData.some(d => d.calories > 0) ? (
+                  {chartData.some(d => d.calories && d.calories > 0) ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart 
                         key={`calories-${filterPrefs.timeRange}`}
