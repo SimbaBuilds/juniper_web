@@ -344,9 +344,12 @@ function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode }: Metr
   const [open, setOpen] = useState(false)
 
   const toggleMetric = (metricKey: string) => {
+    console.log('toggleMetric called with:', metricKey)
+    console.log('selectedMetrics before toggle:', selectedMetrics)
     const newSelection = selectedMetrics.includes(metricKey)
       ? selectedMetrics.filter(m => m !== metricKey)
       : [...selectedMetrics, metricKey]
+    console.log('newSelection:', newSelection)
     onSelectionChange(newSelection)
   }
 
@@ -362,6 +365,11 @@ function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode }: Metr
 
   return (
     <div className="space-y-3">
+      {/* Info text */}
+      <p className="text-xs text-muted-foreground italic">
+        Some metrics may not have data depending on your connected integrations
+      </p>
+
       {/* Preset Buttons */}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -523,10 +531,18 @@ function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode }: Metr
                   style={{ backgroundColor: isDarkMode ? metric.color.dark : metric.color.light }}
                 />
                 {metric.label}
-                <X
-                  className="h-3 w-3 cursor-pointer"
-                  onClick={() => toggleMetric(metricKey)}
-                />
+                <button
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-sm"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('X button clicked for metric:', metricKey)
+                    console.log('Current selectedMetrics:', selectedMetrics)
+                    toggleMetric(metricKey)
+                  }}
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             )
           })}
@@ -918,12 +934,17 @@ export default function WellnessPage() {
   }
 
   const updateTrendChart = (chartId: string, updates: Partial<ChartInstance>) => {
-    setFilterPrefs(prev => ({
-      ...prev,
-      trendCharts: prev.trendCharts.map(chart =>
-        chart.id === chartId ? { ...chart, ...updates } : chart
-      )
-    }))
+    console.log('updateTrendChart called with chartId:', chartId, 'updates:', updates)
+    setFilterPrefs(prev => {
+      const newPrefs = {
+        ...prev,
+        trendCharts: prev.trendCharts.map(chart =>
+          chart.id === chartId ? { ...chart, ...updates } : chart
+        )
+      }
+      console.log('New filterPrefs after update:', newPrefs)
+      return newPrefs
+    })
   }
 
   const getMetricColor = (metricKey: string, isDark: boolean) => {
