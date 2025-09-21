@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { MedicalRecordsExport } from '@/components/MedicalRecordsExport'
 
 interface MedicalRecord {
   id: string
@@ -172,9 +173,17 @@ export function MedicalRecordsList({ refreshTrigger }: MedicalRecordsListProps) 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Your Medical Records ({records.length})</h3>
-        <Button variant="outline" size="sm" onClick={fetchRecords}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <MedicalRecordsExport
+            records={records}
+            onExportStart={() => console.log('Export started')}
+            onExportComplete={() => console.log('Export completed')}
+            onExportError={(error) => console.error('Export error:', error)}
+          />
+          <Button variant="outline" size="sm" onClick={fetchRecords}>
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">

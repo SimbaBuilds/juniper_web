@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { WellnessDataExport } from '@/components/WellnessDataExport'
 
 interface HealthMetric {
   id: string
@@ -1829,31 +1830,23 @@ export default function WellnessPage() {
               )}
             </div>
 
-
-
-
-            {/* Section Toggles */}
-            {/* <div>
-              <h4 className="text-sm font-medium mb-3 text-muted-foreground">Sections</h4>
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-summary-stats"
-                    checked={filterPrefs.showSummaryStats}
-                    onCheckedChange={(checked) => updateFilterPref('showSummaryStats', checked)}
-                  />
-                  <Label htmlFor="show-summary-stats" className="text-xs">Summary Cards</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-resources"
-                    checked={filterPrefs.showResources}
-                    onCheckedChange={(checked) => updateFilterPref('showResources', checked)}
-                  />
-                  <Label htmlFor="show-resources" className="text-xs">Resources</Label>
-                </div>
-              </div>
-            </div> */}
+            {/* Data Export Section */}
+            <WellnessDataExport
+              healthData={summaryHealthData}
+              chartData={chartHealthData}
+              trendCharts={filterPrefs.trendCharts}
+              currentSummaryTimeRange={filterPrefs.summaryTimeRange}
+              currentSelectedMetrics={filterPrefs.selectedSummaryCards || []}
+              onExportStart={() => {
+                console.log('Export started')
+              }}
+              onExportComplete={() => {
+                console.log('Export completed successfully')
+              }}
+              onExportError={(error) => {
+                console.error('Export failed:', error)
+              }}
+            />
           </div>
         )}
       </div>
