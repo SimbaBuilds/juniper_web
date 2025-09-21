@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Download, FileText, ChevronDown, ChevronUp, Calendar, BarChart3, Loader2 } from 'lucide-react'
+import { Download, FileText, Calendar, BarChart3, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -58,7 +58,6 @@ export function WellnessDataExport({
   onExportComplete,
   onExportError
 }: WellnessDataExportProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -142,32 +141,14 @@ export function WellnessDataExport({
 
   return (
     <div className="bg-muted/30 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <div className="mb-4">
+        <h4 className="text-sm font-medium flex items-center gap-2">
           <FileText className="h-4 w-4" />
-          Data Export
+          Export Wellness Data
         </h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="h-7 px-2 text-xs"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="h-3 w-3 mr-1" />
-              Hide
-            </>
-          ) : (
-            <>
-              <ChevronDown className="h-3 w-3 mr-1" />
-            </>
-          )}
-        </Button>
       </div>
 
-      {isExpanded && (
-        <div className="space-y-4">
+      <div className="space-y-4">
           <p className="text-xs text-muted-foreground">
             Export your wellness data and trends to PDF
           </p>
@@ -294,8 +275,7 @@ export function WellnessDataExport({
               </p>
             )}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

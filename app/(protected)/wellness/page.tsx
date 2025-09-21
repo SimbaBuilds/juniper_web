@@ -1140,7 +1140,7 @@ export default function WellnessPage() {
   const [loading, setLoading] = useState(true)
   const [resourcesExpanded, setResourcesExpanded] = useState(true)
   const [manualEntryExpanded, setManualEntryExpanded] = useState(false)
-  const [exportExpanded, setExportExpanded] = useState(false)
+  const [showExport, setShowExport] = useState(false)
   const [manualEntryDate, setManualEntryDate] = useState<Date>()
   const [manualEntryValues, setManualEntryValues] = useState<Record<string, string>>({})
   const [selectedManualMetrics, setSelectedManualMetrics] = useState<string[]>(['sleep_score', 'activity_score', 'readiness_score', 'stress_level', 'recovery_score'])
@@ -1677,7 +1677,7 @@ export default function WellnessPage() {
             Add Data
           </Button>
           <Button
-            onClick={() => setExportExpanded(!exportExpanded)}
+            onClick={() => setShowExport(!showExport)}
             variant="outline"
             size="sm"
             className="flex items-center gap-2"
@@ -1794,40 +1794,23 @@ export default function WellnessPage() {
       )}
 
       {/* Export Section */}
-      {exportExpanded && (
-        <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-sm flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Export Wellness Data
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setExportExpanded(false)}
-              className="h-8 px-2"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <WellnessDataExport
-            healthData={summaryHealthData}
-            chartData={chartHealthData}
-            trendCharts={filterPrefs.trendCharts}
-            currentSummaryTimeRange={filterPrefs.summaryTimeRange}
-            currentSelectedMetrics={filterPrefs.selectedSummaryCards || []}
-            onExportStart={() => {
-              console.log('Export started')
-            }}
-            onExportComplete={() => {
-              console.log('Export completed successfully')
-            }}
-            onExportError={(error) => {
-              console.error('Export failed:', error)
-            }}
-          />
-        </div>
+      {showExport && (
+        <WellnessDataExport
+          healthData={summaryHealthData}
+          chartData={chartHealthData}
+          trendCharts={filterPrefs.trendCharts}
+          currentSummaryTimeRange={filterPrefs.summaryTimeRange}
+          currentSelectedMetrics={filterPrefs.selectedSummaryCards || []}
+          onExportStart={() => {
+            console.log('Export started')
+          }}
+          onExportComplete={() => {
+            console.log('Export completed successfully')
+          }}
+          onExportError={(error) => {
+            console.error('Export failed:', error)
+          }}
+        />
       )}
 
 
