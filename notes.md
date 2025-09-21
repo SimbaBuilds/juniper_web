@@ -1,3 +1,0 @@
-1. In the React Native app, on auth callback, a "Let's complete the integration for <service_name>" message is automatically sent to the back end api and they are navigated to the chat screen.  Please implemetn analogous functionality, using the existing api call infrastructure in this NextJS web application.
-
-2. Are you goign to use a buld edit tool or parser for the integations build out or are you going to rewrite all of the code from scratch?

@@ -1,5 +1,4 @@
-We need to update the manual data entry UI with the new metrics as well.  We need similar metrics selection instead of standing fields.
+Please move the medical records upload UI and messaging to the bottom of the repository page.  
 
-I;d also like the summary metrics selection values to be categorized like the trends chart values.
+To the bottom of the wellness page, please add an “upload medical records” link that navigates to bottom of repository page where the new medical records upload UI is.
 
-Maybe we could standardize this across all 3 metrics selection UIs ( manual entry, summary, and trends)

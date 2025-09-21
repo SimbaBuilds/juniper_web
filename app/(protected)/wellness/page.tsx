@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/utils/supabase/client'
 import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus, X, Check, ChevronsUpDown, Search, Edit2, FileText } from 'lucide-react'
@@ -16,8 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Badge } from '@/components/ui/badge'
-import { MedicalRecordsUpload } from '@/components/MedicalRecordsUpload'
-import { MedicalRecordsList } from '@/components/MedicalRecordsList'
 import { cn } from '@/lib/utils'
 
 interface HealthMetric {
@@ -54,6 +53,7 @@ interface ChartInstance {
   name: string
   selectedMetrics: string[]
   isExpanded: boolean
+  timeRange: string
 }
 
 interface MetricDefinition {
@@ -67,11 +67,11 @@ interface MetricDefinition {
 }
 
 interface FilterPrefs {
-  timeRange: string
   showResources: boolean
   sortBy: string
   showSummaryStats: boolean
   selectedSummaryCards: string[]
+  summaryTimeRange: string
   // New trend chart instances
   trendCharts: ChartInstance[]
 }
@@ -322,6 +322,96 @@ const METRIC_PRESETS = {
   all: AVAILABLE_METRICS.map(m => m.key)
 }
 
+// Integration support data
+const INTEGRATION_SUPPORT = {
+  'apple': {
+    name: 'Apple Health | Apple Watch',
+    metrics: {
+      // Metrics Supported by ALL Integrations
+      'sleep_score': { support: 'full', note: 'Overall sleep quality score (0-100)' },
+      'activity_score': { support: 'full', note: 'Daily activity performance score (0-100)' },
+      'readiness_score': { support: 'full', note: 'Body\'s readiness for physical activity (0-100)' },
+      'total_steps': { support: 'full', note: 'Total steps taken during the day' },
+      'calories_burned': { support: 'full', note: 'Total calories burned' },
+      'resting_hr': { support: 'full', note: 'Resting heart rate (bpm)' },
+
+      // Most Integrations
+      'hrv_avg': { support: 'full', note: 'Average heart rate variability (ms)' },
+      'weight': { support: 'full', note: 'Body weight measurement' },
+      'height': { support: 'full', note: 'Height measurement' },
+      'stress_level': { support: 'indirect', note: 'Derived from HRV and mindfulness minutes' },
+
+      // Variable Support
+      'recovery_score': { support: 'derived', note: 'Calculated from HRV trends and activity patterns' },
+      'resilience_score': { support: 'derived', note: 'Calculated from HRV baseline and trends' }
+    }
+  },
+  'google': {
+    name: 'Google Health Connect | Pixel Watch',
+    metrics: {
+      // Metrics Supported by ALL Integrations
+      'sleep_score': { support: 'full', note: 'Overall sleep quality score (0-100)' },
+      'activity_score': { support: 'full', note: 'Daily activity performance score (0-100)' },
+      'readiness_score': { support: 'full', note: 'Body\'s readiness for physical activity (0-100)' },
+      'total_steps': { support: 'full', note: 'Total steps taken during the day' },
+      'calories_burned': { support: 'full', note: 'Total calories burned' },
+      'resting_hr': { support: 'full', note: 'Resting heart rate (bpm)' },
+
+      // Most Integrations
+      'hrv_avg': { support: 'full', note: 'Average heart rate variability (ms)' },
+      'weight': { support: 'full', note: 'Body weight measurement' },
+      'height': { support: 'full', note: 'Height measurement' },
+      'stress_level': { support: 'full', note: 'Stress tracking from Pixel Watch' },
+
+      // Variable Support
+      'recovery_score': { support: 'derived', note: 'Derived from recovery metrics' },
+      'resilience_score': { support: 'derived', note: 'Derived from stress and recovery patterns' }
+    }
+  },
+  'oura': {
+    name: 'Oura Ring',
+    metrics: {
+      // Metrics Supported by ALL Integrations
+      'sleep_score': { support: 'native', note: 'Overall sleep quality score (0-100)' },
+      'activity_score': { support: 'native', note: 'Daily activity performance score (0-100)' },
+      'readiness_score': { support: 'native', note: 'Body\'s readiness for physical activity (0-100)' },
+      'total_steps': { support: 'full', note: 'Total steps taken during the day' },
+      'calories_burned': { support: 'full', note: 'Total calories burned' },
+      'resting_hr': { support: 'full', note: 'Resting heart rate (bpm)' },
+
+      // Most Integrations
+      'hrv_avg': { support: 'full', note: 'Average heart rate variability (ms)' },
+      'stress_level': { support: 'native', note: 'Daytime stress feature (Gen 3+)' },
+
+      // Variable Support
+      'recovery_score': { support: 'native', note: 'Native Recovery Index as part of Readiness contributors' },
+      'resilience_score': { support: 'native', note: 'Resilience feature for long-term stress adaptation' },
+
+      // Not supported
+      'weight': { support: 'manual', note: 'Manual entry only - no automatic tracking' },
+      'height': { support: 'manual', note: 'Manual entry only - stored in profile' }
+    }
+  },
+  'fitbit': {
+    name: 'Fitbit',
+    metrics: {
+      // Metrics Supported by ALL Integrations
+      'sleep_score': { support: 'full', note: 'Overall sleep quality score (0-100)' },
+      'activity_score': { support: 'full', note: 'Daily activity performance score (0-100)' },
+      'readiness_score': { support: 'full', note: 'Body\'s readiness for physical activity (0-100)' },
+      'total_steps': { support: 'full', note: 'Total steps taken during the day' },
+      'calories_burned': { support: 'full', note: 'Total calories burned' },
+      'resting_hr': { support: 'full', note: 'Resting heart rate (bpm)' },
+
+      // Most Integrations
+      // 'hrv_avg': { support: 'premium', note: 'Requires Premium subscription for HRV data' },
+      'weight': { support: 'full', note: 'Body weight measurement with smart scales' },
+      'height': { support: 'full', note: 'Height measurement' },
+      // 'stress_level': { support: 'premium', note: 'Stress Management Score (Premium feature)' },
+    }
+  }
+}
+
 // Unified MetricsSelector Component
 interface MetricsSelectorProps {
   selectedMetrics: string[]
@@ -329,9 +419,10 @@ interface MetricsSelectorProps {
   isDarkMode?: boolean
   mode: 'manual-entry' | 'summary-cards' | 'trends'
   className?: string
+  onShowIntegrationSupport?: () => void
 }
 
-function MetricsSelector({ selectedMetrics, onSelectionChange, isDarkMode, mode, className }: MetricsSelectorProps) {
+function MetricsSelector({ selectedMetrics, onSelectionChange, isDarkMode, mode, className, onShowIntegrationSupport }: MetricsSelectorProps) {
   const [open, setOpen] = useState(false)
   const metrics = selectedMetrics || []
 
@@ -373,7 +464,7 @@ function MetricsSelector({ selectedMetrics, onSelectionChange, isDarkMode, mode,
         }
       case 'trends':
         return {
-          infoText: 'Some metrics may not have data depending on your connected integrations',
+          infoText: 'See supported metrics by integration',
           placeholder: 'Select metrics...',
           searchPlaceholder: 'Search metrics...',
           emptyText: 'No metrics found.',
@@ -395,9 +486,18 @@ function MetricsSelector({ selectedMetrics, onSelectionChange, isDarkMode, mode,
   return (
     <div className={cn("space-y-3", className)}>
       {/* Info text */}
-      <p className="text-xs text-muted-foreground italic">
-        {displayText.infoText}
-      </p>
+      {mode === 'trends' && onShowIntegrationSupport ? (
+        <button
+          onClick={onShowIntegrationSupport}
+          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 italic underline cursor-pointer"
+        >
+          {displayText.infoText}
+        </button>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">
+          {displayText.infoText}
+        </p>
+      )}
 
       {/* Preset Buttons - show for all modes */}
       <div className="flex flex-wrap gap-2">
@@ -584,16 +684,148 @@ interface MetricSelectorProps {
   selectedMetrics: string[]
   onSelectionChange: (metrics: string[]) => void
   isDarkMode: boolean
+  onShowIntegrationSupport?: () => void
 }
 
-function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode }: MetricSelectorProps) {
+function MetricSelector({ selectedMetrics, onSelectionChange, isDarkMode, onShowIntegrationSupport }: MetricSelectorProps) {
   return (
     <MetricsSelector
       selectedMetrics={selectedMetrics}
       onSelectionChange={onSelectionChange}
       isDarkMode={isDarkMode}
       mode="trends"
+      onShowIntegrationSupport={onShowIntegrationSupport}
     />
+  )
+}
+
+// Integration Support Modal Component
+interface IntegrationSupportModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+function IntegrationSupportModal({ isOpen, onClose }: IntegrationSupportModalProps) {
+  if (!isOpen) return null
+
+  const getSupportIcon = (support: string) => {
+    switch (support) {
+      case 'native':
+        return <Check className="h-4 w-4 text-green-600" />
+      case 'full':
+        return <Check className="h-4 w-4 text-green-600" />
+      case 'derived':
+        return <div className="h-4 w-4 rounded-full bg-yellow-500 flex items-center justify-center">
+          <div className="h-2 w-2 rounded-full bg-white" />
+        </div>
+      case 'premium':
+        return <div className="h-4 w-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">P</div>
+      case 'indirect':
+        return <div className="h-4 w-4 rounded-full bg-orange-500 flex items-center justify-center">
+          <div className="h-1 w-3 bg-white rounded" />
+        </div>
+      case 'manual':
+        return <X className="h-4 w-4 text-gray-500" />
+      default:
+        return <X className="h-4 w-4 text-gray-400" />
+    }
+  }
+
+  const getSupportLabel = (support: string) => {
+    switch (support) {
+      case 'native': return 'Native'
+      case 'full': return 'Full Support'
+      case 'derived': return 'Derived'
+      case 'premium': return 'Premium'
+      case 'indirect': return 'Indirect'
+      case 'manual': return 'Manual Only'
+      default: return 'Not Supported'
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-background rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold">Supported Metrics by Integration</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {/* Legend */}
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+            <h3 className="font-medium mb-3">Legend:</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                <span>Full Support / Native</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-yellow-500 flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-white" />
+                </div>
+                <span>Derived/Calculated</span>
+              </div>
+              {/* <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">P</div>
+                <span>Premium Required</span>
+              </div> */}
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-orange-500 flex items-center justify-center">
+                  <div className="h-1 w-3 bg-white rounded" />
+                </div>
+                <span>Indirect Measurement</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <X className="h-4 w-4 text-gray-500" />
+                <span>Manual Entry Only</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Integration Support Tables */}
+          {Object.entries(INTEGRATION_SUPPORT).map(([key, integration]) => (
+            <div key={key} className="mb-8">
+              <h3 className="text-lg font-semibold mb-4">{integration.name}</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border border-border rounded-lg">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left p-3 border-b border-border">Metric</th>
+                      <th className="text-left p-3 border-b border-border">Support</th>
+                      <th className="text-left p-3 border-b border-border">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(integration.metrics).map(([metricKey, metricInfo]) => {
+                      const metricConfig = AVAILABLE_METRICS.find(m => m.key === metricKey)
+                      return (
+                        <tr key={metricKey} className="border-b border-border/50">
+                          <td className="p-3 font-medium">
+                            {metricConfig?.label || metricKey}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              {getSupportIcon(metricInfo.support)}
+                              <span className="text-sm">{getSupportLabel(metricInfo.support)}</span>
+                            </div>
+                          </td>
+                          <td className="p-3 text-sm text-muted-foreground">
+                            {metricInfo.note}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -606,6 +838,7 @@ interface TrendChartProps {
   onRemoveChart: (chartId: string) => void
   canRemove: boolean
   getMetricColor: (metricKey: string, isDark: boolean) => string
+  onShowIntegrationSupport?: () => void
 }
 
 function TrendChart({
@@ -615,7 +848,8 @@ function TrendChart({
   onUpdateChart,
   onRemoveChart,
   canRemove,
-  getMetricColor
+  getMetricColor,
+  onShowIntegrationSupport
 }: TrendChartProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [tempName, setTempName] = useState(chart.name)
@@ -719,10 +953,29 @@ function TrendChart({
 
         {chart.isExpanded && (
           <div className="space-y-3 mt-4">
+            <div className="flex items-center gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Time Range</Label>
+                <Select
+                  value={chart.timeRange}
+                  onValueChange={(value) => onUpdateChart(chart.id, { timeRange: value })}
+                >
+                  <SelectTrigger className="h-8 w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <MetricSelector
               selectedMetrics={chart.selectedMetrics}
               onSelectionChange={(metrics) => onUpdateChart(chart.id, { selectedMetrics: metrics })}
               isDarkMode={isDarkMode}
+              onShowIntegrationSupport={onShowIntegrationSupport}
             />
           </div>
         )}
@@ -778,7 +1031,8 @@ function TrendChart({
 export default function WellnessPage() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [user, setUser] = useState<{ id: string } | null>(null)
-  const [healthData, setHealthData] = useState<HealthMetric[]>([])
+  const [summaryHealthData, setSummaryHealthData] = useState<HealthMetric[]>([])
+  const [chartHealthData, setChartHealthData] = useState<Record<string, HealthMetric[]>>({})
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsExpanded, setSettingsExpanded] = useState(false)
@@ -788,19 +1042,20 @@ export default function WellnessPage() {
   const [selectedManualMetrics, setSelectedManualMetrics] = useState<string[]>(['sleep_score', 'activity_score', 'readiness_score', 'stress_level', 'recovery_score'])
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [medicalRecordsRefresh, setMedicalRecordsRefresh] = useState(0)
+  const [showIntegrationSupport, setShowIntegrationSupport] = useState(false)
   const [filterPrefs, setFilterPrefs] = useState<FilterPrefs>({
-    timeRange: '30',
     showResources: true,
     sortBy: 'date',
     showSummaryStats: true,
     selectedSummaryCards: ['sleep_score', 'activity_score', 'resilience_score', 'total_steps'],
+    summaryTimeRange: '30',
     // Default trend chart instance
     trendCharts: [{
       id: '1',
       name: 'Overall Trends',
       selectedMetrics: ['sleep_score', 'activity_score', 'readiness_score', 'stress_level'],
-      isExpanded: true
+      isExpanded: true,
+      timeRange: '30'
     }]
   })
 
@@ -833,12 +1088,28 @@ export default function WellnessPage() {
             id: '1',
             name: 'Overall Trends',
             selectedMetrics: ['sleep_score', 'activity_score', 'readiness_score', 'stress_level'],
-            isExpanded: true
+            isExpanded: true,
+            timeRange: '30'
           }]
         }
         // Ensure selectedSummaryCards exists for backward compatibility
         if (!parsedPrefs.selectedSummaryCards) {
           parsedPrefs.selectedSummaryCards = ['sleep_score', 'activity_score', 'resilience_score', 'total_steps']
+        }
+        // Ensure summaryTimeRange exists for backward compatibility
+        if (!parsedPrefs.summaryTimeRange) {
+          parsedPrefs.summaryTimeRange = '30'
+        }
+        // Ensure each chart has timeRange for backward compatibility
+        if (parsedPrefs.trendCharts) {
+          parsedPrefs.trendCharts = parsedPrefs.trendCharts.map(chart => ({
+            ...chart,
+            timeRange: chart.timeRange || '30'
+          }))
+        }
+        // Remove old timeRange property if it exists
+        if (parsedPrefs.timeRange) {
+          delete parsedPrefs.timeRange
         }
         setFilterPrefs(parsedPrefs)
       } catch (e) {
@@ -852,50 +1123,21 @@ export default function WellnessPage() {
     localStorage.setItem('wellness-filter-prefs', JSON.stringify(filterPrefs))
   }, [filterPrefs])
 
+  // Load initial data and resources
   useEffect(() => {
-    async function loadData() {
+    async function loadInitialData() {
       try {
         setLoading(true)
         const supabase = createClient()
-        
+
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         if (userError || !user) {
           console.error('Error getting user:', userError)
           return
         }
-        
+
         setUser(user)
-
-        // Fetch health metrics data (including current day)
-        const daysBack = parseInt(filterPrefs.timeRange)
-        const today = new Date().toISOString().split('T')[0]
-        const startDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-
-        console.log('Date debugging:')
-        console.log('Current time:', new Date().toISOString())
-        console.log('Today (upper bound):', today)
-        console.log('Start date (lower bound):', startDate)
-        console.log('Days back:', daysBack)
-
-        const { data: metricsData, error: metricsError } = await supabase
-          .from('health_metrics_daily')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('date', startDate)
-          .lte('date', today)
-          .order('date', { ascending: true })
-        
-        if (metricsError) {
-          console.error('Error fetching health metrics:', metricsError)
-        } else {
-          console.log('Fetched metrics data:', metricsData?.length, 'records')
-          if (metricsData && metricsData.length > 0) {
-            console.log('First record date:', metricsData[0].date)
-            console.log('Last record date:', metricsData[metricsData.length - 1].date)
-          }
-          setHealthData(metricsData || [])
-        }
 
         // Fetch resources with "Health and Wellness" tag
         const { data: resourcesData, error: resourcesError } = await supabase
@@ -910,7 +1152,7 @@ export default function WellnessPage() {
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-        
+
         if (resourcesError) {
           console.error('Error fetching resources:', resourcesError)
         } else {
@@ -923,7 +1165,7 @@ export default function WellnessPage() {
               resource.tag_4,
               resource.tag_5
             ].filter(Boolean)
-            
+
             return tags.some(tag => tag.name === 'Health and Wellness')
           }).map(resource => {
             const tags = [
@@ -933,35 +1175,120 @@ export default function WellnessPage() {
               resource.tag_4,
               resource.tag_5
             ].filter(Boolean)
-            
+
             return {
               ...resource,
               tags
             }
           }) || []
-          
+
           setResources(healthResources)
         }
       } catch (error) {
-        console.error('Error loading data:', error)
+        console.error('Error loading initial data:', error)
       } finally {
         setLoading(false)
       }
     }
-    loadData()
-  }, [filterPrefs.timeRange])
+    loadInitialData()
+  }, [])
+
+  // Load summary data when summary time range changes
+  useEffect(() => {
+    async function loadSummaryData() {
+      if (!user) return
+
+      try {
+        const data = await fetchHealthDataForRange(filterPrefs.summaryTimeRange)
+        setSummaryHealthData(data)
+      } catch (error) {
+        console.error('Error loading summary data:', error)
+      }
+    }
+
+    loadSummaryData()
+  }, [user, filterPrefs.summaryTimeRange])
+
+  // Load chart data when chart time ranges change
+  useEffect(() => {
+    async function loadChartData() {
+      if (!user) return
+
+      try {
+        const newChartData: Record<string, HealthMetric[]> = {}
+
+        // Get unique time ranges to avoid duplicate fetches
+        const uniqueTimeRanges = [...new Set(filterPrefs.trendCharts.map(chart => chart.timeRange))]
+
+        // Fetch data for each unique time range
+        const dataPromises = uniqueTimeRanges.map(async (timeRange) => {
+          const data = await fetchHealthDataForRange(timeRange)
+          return { timeRange, data }
+        })
+
+        const results = await Promise.all(dataPromises)
+        const dataByTimeRange: Record<string, HealthMetric[]> = {}
+
+        results.forEach(({ timeRange, data }) => {
+          dataByTimeRange[timeRange] = data
+        })
+
+        // Assign data to each chart based on its time range
+        filterPrefs.trendCharts.forEach(chart => {
+          newChartData[chart.id] = dataByTimeRange[chart.timeRange] || []
+        })
+
+        setChartHealthData(newChartData)
+      } catch (error) {
+        console.error('Error loading chart data:', error)
+      }
+    }
+
+    loadChartData()
+  }, [user, filterPrefs.trendCharts])
 
   const updateFilterPref = (key: keyof FilterPrefs, value: any) => {
     setFilterPrefs(prev => ({ ...prev, [key]: value }))
   }
 
   // Chart instance management functions
+  // Helper function to fetch health data for a specific time range
+  const fetchHealthDataForRange = async (timeRange: string): Promise<HealthMetric[]> => {
+    if (!user) return []
+
+    try {
+      const supabase = createClient()
+      const daysBack = parseInt(timeRange)
+      const today = new Date().toISOString().split('T')[0]
+      const startDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+      const { data: metricsData, error: metricsError } = await supabase
+        .from('health_metrics_daily')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startDate)
+        .lte('date', today)
+        .order('date', { ascending: true })
+
+      if (metricsError) {
+        console.error('Error fetching health metrics:', metricsError)
+        return []
+      }
+
+      return metricsData || []
+    } catch (error) {
+      console.error('Error in fetchHealthDataForRange:', error)
+      return []
+    }
+  }
+
   const addTrendChart = () => {
     const newChart: ChartInstance = {
       id: Date.now().toString(),
       name: `Trend Chart ${filterPrefs.trendCharts.length + 1}`,
       selectedMetrics: ['sleep_score', 'activity_score'],
-      isExpanded: true
+      isExpanded: true,
+      timeRange: '30'
     }
     setFilterPrefs(prev => ({
       ...prev,
@@ -1087,14 +1414,14 @@ export default function WellnessPage() {
   }
 
 
-  // Calculate summary stats for all available metrics
+  // Calculate summary stats for all available metrics using summaryHealthData
   const calculateAverage = (key: string) => {
-    const validData = healthData.filter(d => d[key] && d[key] > 0)
+    const validData = summaryHealthData.filter(d => d[key] && d[key] > 0)
     if (validData.length === 0) return null
     return Math.round(validData.reduce((sum, d) => sum + d[key], 0) / validData.length)
   }
 
-  const summaryStats = healthData.length > 0 ? {
+  const summaryStats = summaryHealthData.length > 0 ? {
     // Recovery & Sleep
     sleep_score: calculateAverage('sleep_score'),
     readiness_score: calculateAverage('readiness_score'),
@@ -1148,9 +1475,9 @@ export default function WellnessPage() {
     menstruation_flow: calculateAverage('menstruation_flow')
   } : null
 
-  // Prepare chart data - ensure it updates when healthData changes
-  const chartData = React.useMemo(() => {
-    const data = healthData.map(d => ({
+  // Helper function to prepare chart data for a specific data set
+  const prepareChartData = (healthData: HealthMetric[]) => {
+    return healthData.map(d => ({
       date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       // Recovery & Sleep scores
       sleep_score: (d.sleep_score && d.sleep_score > 0) ? d.sleep_score : null,
@@ -1205,13 +1532,13 @@ export default function WellnessPage() {
       // Women's health
       menstruation_flow: (d.menstruation_flow && d.menstruation_flow > 0) ? d.menstruation_flow : null
     }))
+  }
 
-    console.log('Chart data prepared:', data.length, 'points for timeRange:', filterPrefs.timeRange)
-    console.log('Chart dates:', data.map(d => d.date))
-    console.log('Health data dates:', healthData.map(d => d.date))
-
-    return data
-  }, [healthData, filterPrefs.timeRange])
+  // Prepare chart data for each chart based on its specific data
+  const getChartData = (chartId: string) => {
+    const healthData = chartHealthData[chartId] || []
+    return prepareChartData(healthData)
+  }
 
 
   if (loading) {
@@ -1263,26 +1590,9 @@ export default function WellnessPage() {
         {/* Always visible controls */}
         <div className="flex gap-4">
           <div className="space-y-2">
-            <Label className="text-xs">Time Range</Label>
-            <Select 
-              value={filterPrefs.timeRange} 
-              onValueChange={(value) => updateFilterPref('timeRange', value)}
-            >
-              <SelectTrigger className="h-8 w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">*data updates daily at 2am UTC</p>
-          </div>
-          <div className="space-y-2">
             <Label className="text-xs">Sort By</Label>
-            <Select 
-              value={filterPrefs.sortBy} 
+            <Select
+              value={filterPrefs.sortBy}
               onValueChange={(value) => updateFilterPref('sortBy', value)}
             >
               <SelectTrigger className="h-8 w-32">
@@ -1451,6 +1761,19 @@ export default function WellnessPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Summary Cards</h2>
             <div className="flex items-center gap-2">
+              <Select
+                value={filterPrefs.summaryTimeRange}
+                onValueChange={(value) => updateFilterPref('summaryTimeRange', value)}
+              >
+                <SelectTrigger className="h-8 w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                </SelectContent>
+              </Select>
               <MetricsSelector
                 selectedMetrics={filterPrefs.selectedSummaryCards || []}
                 onSelectionChange={(cards) => updateFilterPref('selectedSummaryCards', cards)}
@@ -1583,19 +1906,20 @@ export default function WellnessPage() {
           <TrendChart
             key={chart.id}
             chart={chart}
-            chartData={chartData}
+            chartData={getChartData(chart.id)}
             isDarkMode={isDarkMode}
             onUpdateChart={updateTrendChart}
             onRemoveChart={removeTrendChart}
             canRemove={filterPrefs.trendCharts.length > 1}
             getMetricColor={getMetricColor}
+            onShowIntegrationSupport={() => setShowIntegrationSupport(true)}
           />
         ))}
       </div>
 
 
       {/* No Data Message - Show when no health data */}
-      {healthData.length === 0 && (
+      {summaryHealthData.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <h3 className="text-lg font-medium text-foreground mb-2">Connect a service to see health metrics</h3>
@@ -1610,35 +1934,30 @@ export default function WellnessPage() {
       )}
 
       {/* Medical Records Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Medical Records
-            </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-muted-foreground text-sm">
-                Provide medical records to Juniper so it can provide valuable insights and conversation around your health data
-              </p>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p className="text-xs">
-                    Upload medical records to Juniper: if you have MyChart, look for a section like "Sharing Hub" or "Download All". Download on mobile or desktop and upload directly in Juniper's wellness page/screen.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Medical Records
+          </CardTitle>
+          <CardDescription>
+            Provide medical records to Juniper so it can provide valuable insights and conversation around your health data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Upload and manage your medical records in the Repository page
+            </p>
+            <Link href="/repository#medical-records">
+              <Button className="w-full">
+                <FileText className="h-4 w-4 mr-2" />
+                Upload Medical Records
+              </Button>
+            </Link>
           </div>
-        </div>
-
-        <MedicalRecordsUpload onUploadComplete={() => setMedicalRecordsRefresh(prev => prev + 1)} />
-
-        <MedicalRecordsList refreshTrigger={medicalRecordsRefresh} />
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Resources Section */}
       {filterPrefs.showResources && (
@@ -1697,6 +2016,12 @@ export default function WellnessPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Integration Support Modal */}
+      <IntegrationSupportModal
+        isOpen={showIntegrationSupport}
+        onClose={() => setShowIntegrationSupport(false)}
+      />
     </div>
   )
 }
