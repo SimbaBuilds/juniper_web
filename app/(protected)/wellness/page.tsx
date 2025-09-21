@@ -1072,7 +1072,7 @@ function TrendChart({
 
       {chart.isExpanded && (
         <CardContent className="pt-0">
-          <div className="h-[400px] w-full">
+          <div className="h-[400px] w-full" data-chart-id={chart.id}>
             {chartData.length > 0 && chart.selectedMetrics.length > 0 ? (() => {
               const { normalizedData, originalRanges } = chart.isNormalized
                 ? normalizeChartData(chartData, chart.selectedMetrics)

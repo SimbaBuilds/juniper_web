@@ -20,9 +20,9 @@ export default async function ProtectedLayout({
               <Link href="/" className="text-xl font-semibold text-foreground hover:text-primary transition-colors cursor-pointer">Juniper</Link>
               <div className="hidden md:flex space-x-6">
                 <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</a>
+                <a href="/integrations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Integrations</a>
                 <a href="/chat" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Chat</a>
                 <a href="/wellness" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Wellness</a>
-                <a href="/integrations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Integrations</a>
                 <a href="/repository" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Repository</a>
                 <a href="/account" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Account</a>
               </div>

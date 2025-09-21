@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import html2canvas from 'html2canvas-pro'
 
 interface HealthMetric {
   id: string
@@ -35,6 +36,11 @@ interface ChartInstance {
   isExpanded: boolean
   timeRange: string
   isNormalized: boolean
+}
+
+interface ChartImage {
+  id: string
+  image: string
 }
 
 interface WellnessDataExportProps {
@@ -79,12 +85,101 @@ export function WellnessDataExport({
     return option ? option.label : `${currentSummaryTimeRange} days`
   }
 
+  const captureCharts = async (): Promise<ChartImage[]> => {
+    const chartImages: ChartImage[] = []
+
+    if (!includeTrendCharts) {
+      console.log('📸 Skipping chart capture - includeTrendCharts is false')
+      return chartImages
+    }
+
+    console.log('📸 Starting chart capture with html2canvas')
+    console.log('📊 Trend charts to capture:', trendCharts.map(c => ({ id: c.id, name: c.name })))
+
+    for (const chart of trendCharts) {
+      try {
+        console.log(`🔍 Looking for chart element with ID: ${chart.id}`)
+
+        // Find the chart element by ID
+        const chartElement = document.querySelector(`[data-chart-id="${chart.id}"]`) as HTMLElement
+
+        if (chartElement) {
+          console.log(`📷 Found chart element: ${chart.name} (ID: ${chart.id})`)
+          console.log('📐 Chart element dimensions:', {
+            width: chartElement.offsetWidth,
+            height: chartElement.offsetHeight,
+            visible: chartElement.offsetParent !== null
+          })
+
+          // Wait a bit for chart to fully render
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // Capture the chart with html2canvas-pro (supports oklch colors)
+          console.log('🎨 Starting html2canvas-pro capture...')
+          const canvas = await html2canvas(chartElement, {
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            scale: 2, // Higher resolution
+            logging: false
+          })
+
+          console.log('🖼️ Canvas created:', {
+            width: canvas.width,
+            height: canvas.height
+          })
+
+          // Convert to base64
+          const imageData = canvas.toDataURL('image/png', 0.9)
+          console.log('📦 Image data size:', imageData.length, 'characters')
+
+          chartImages.push({
+            id: chart.id,
+            image: imageData
+          })
+
+          console.log(`✅ Successfully captured chart: ${chart.name}`)
+        } else {
+          console.warn(`⚠️ Chart element not found for ID: ${chart.id}`)
+          console.log('🔍 Available elements with data-chart-id:',
+            Array.from(document.querySelectorAll('[data-chart-id]')).map(el => el.getAttribute('data-chart-id'))
+          )
+        }
+      } catch (error) {
+        console.error(`❌ Failed to capture chart ${chart.name}:`, error)
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        })
+        // Continue with other charts even if one fails
+      }
+    }
+
+    console.log(`📸 Chart capture completed. Captured ${chartImages.length} out of ${trendCharts.length} charts`)
+    return chartImages
+  }
+
   const handleExport = async () => {
     setIsExporting(true)
     setError(null)
     onExportStart?.()
 
     try {
+      console.log('🚀 Starting export process...')
+
+      // Capture chart images if trend charts are included
+      let chartImages: ChartImage[] = []
+      if (includeTrendCharts) {
+        console.log('📸 Capturing chart images...')
+        chartImages = await captureCharts()
+        console.log('📸 Chart capture result:', {
+          totalCharts: trendCharts.length,
+          capturedCharts: chartImages.length,
+          chartIds: chartImages.map(img => img.id)
+        })
+      }
+
       // Prepare export configuration
       const exportConfig = {
         includeSummary,
@@ -98,10 +193,19 @@ export function WellnessDataExport({
           selectedMetrics: chart.selectedMetrics,
           timeRange: chart.timeRange,
           isNormalized: chart.isNormalized
-        }))
+        })),
+        chartImages // Add captured chart images
       }
 
+      console.log('📊 Export configuration:', {
+        includeSummary: exportConfig.includeSummary,
+        includeTrendCharts: exportConfig.includeTrendCharts,
+        chartCount: exportConfig.trendCharts.length,
+        chartImagesCount: exportConfig.chartImages.length
+      })
+
       // Call the export service
+      console.log('🌐 Sending export request to API...')
       const response = await fetch('/api/wellness/export', {
         method: 'POST',
         headers: {

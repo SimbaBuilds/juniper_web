@@ -64,7 +64,7 @@ function getServiceCategory(serviceName: string): string {
   const name = serviceName.toLowerCase();
   
   // Health and Wellness
-  if (['oura', 'fitbit', 'mychart', 'apple health', 'google fit'].includes(name)) {
+  if (['oura', 'fitbit', 'mychart', 'apple health', 'google health connect'].includes(name)) {
     return 'Health and Wellness';
   }
   

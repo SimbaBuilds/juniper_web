@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
-import { MedicalRecordsExportService } from '@/app/lib/services/MedicalRecordsExportService'
+import { MedicalRecordsPDFService } from '@/app/lib/services/MedicalRecordsPDFService'
+import * as archiver from 'archiver'
+import { PassThrough } from 'stream'
 
 interface ExportRequest {
   recordIds: string[]
@@ -8,7 +10,7 @@ interface ExportRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔄 Medical Records Export API: Starting export request')
+    console.log('🔄 Medical Records Export API: Starting PDF export request')
 
     const supabase = await createSupabaseAppServerClient()
 
@@ -19,17 +21,6 @@ export async function POST(request: NextRequest) {
       console.log('❌ Authentication failed - returning 401')
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Get session for access token
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.access_token) {
-      console.log('❌ Session validation failed - returning 401')
-      return NextResponse.json(
-        { error: 'No valid session token' },
         { status: 401 }
       )
     }
@@ -76,49 +67,99 @@ export async function POST(request: NextRequest) {
     })
 
     try {
-      // Create export using the service
-      const { stream, filename } = await MedicalRecordsExportService.exportRecords(
+      // Handle single record case - return PDF directly
+      if (recordIds.length === 1) {
+        console.log('📄 Generating single PDF for record:', recordIds[0])
+
+        const pdfBuffer = await MedicalRecordsPDFService.generateRecordPDF(
+          user.id,
+          recordIds[0]
+        )
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
+        const filename = `medical-record-${recordIds[0].substring(0, 8)}-${timestamp}.pdf`
+
+        return new Response(pdfBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
+      }
+
+      // Handle multiple records - create ZIP with PDFs
+      console.log('📦 Generating ZIP with multiple PDFs for records:', recordIds)
+
+      const { pdfBuffers, recordTitles } = await MedicalRecordsPDFService.generateMultipleRecordsPDF(
         user.id,
-        recordIds,
-        session.access_token
+        recordIds
       )
 
-      console.log('✅ Export archive created successfully:', { filename })
+      if (pdfBuffers.length === 0) {
+        return NextResponse.json(
+          { error: 'No exportable content found in selected records' },
+          { status: 404 }
+        )
+      }
 
-      // Set response headers for file download
-      const headers = new Headers({
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+      // Create ZIP archive
+      const archive = archiver('zip', { zlib: { level: 9 } })
+      const passThrough = new PassThrough()
+
+      archive.pipe(passThrough)
+
+      // Add each PDF to the archive
+      pdfBuffers.forEach((buffer, index) => {
+        const safeTitle = recordTitles[index]?.replace(/[^a-zA-Z0-9-_]/g, '_') || `record-${index + 1}`
+        const filename = `${safeTitle}.pdf`
+        archive.append(buffer, { name: filename })
+      })
+
+      await archive.finalize()
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
+      const zipFilename = `medical-records-export-${timestamp}.zip`
+
+      console.log('✅ ZIP archive created successfully:', {
+        filename: zipFilename,
+        recordCount: pdfBuffers.length
       })
 
       // Convert PassThrough stream to ReadableStream for response
       const readableStream = new ReadableStream({
         start(controller) {
-          stream.on('data', (chunk) => {
+          passThrough.on('data', (chunk) => {
             controller.enqueue(new Uint8Array(chunk))
           })
 
-          stream.on('end', () => {
+          passThrough.on('end', () => {
             controller.close()
           })
 
-          stream.on('error', (error) => {
+          passThrough.on('error', (error) => {
             console.error('Stream error:', error)
             controller.error(error)
           })
         },
 
         cancel() {
-          stream.destroy()
+          passThrough.destroy()
         }
       })
 
       return new Response(readableStream, {
         status: 200,
-        headers
+        headers: {
+          'Content-Type': 'application/zip',
+          'Content-Disposition': `attachment; filename="${zipFilename}"`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       })
 
     } catch (exportError) {
@@ -127,9 +168,9 @@ export async function POST(request: NextRequest) {
       const errorMessage = exportError instanceof Error ? exportError.message : 'Export failed'
 
       // Return appropriate error based on the message
-      if (errorMessage.includes('No exportable files found')) {
+      if (errorMessage.includes('not found') || errorMessage.includes('No page content found')) {
         return NextResponse.json(
-          { error: 'No exportable files found in selected records' },
+          { error: 'No exportable content found in selected records' },
           { status: 404 }
         )
       }
@@ -138,13 +179,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: 'Access denied to one or more requested records' },
           { status: 403 }
-        )
-      }
-
-      if (errorMessage.includes('No records selected')) {
-        return NextResponse.json(
-          { error: 'No records selected for export' },
-          { status: 400 }
         )
       }
 

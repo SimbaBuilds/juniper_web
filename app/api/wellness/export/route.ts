@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
 import { WellnessExportService } from '@/app/lib/services/WellnessExportService'
 
+interface ChartImage {
+  id: string
+  image: string
+}
+
 interface ExportConfig {
   includeSummary: boolean
   summaryTimeFrame: string
@@ -15,6 +20,7 @@ interface ExportConfig {
     timeRange: string
     isNormalized: boolean
   }>
+  chartImages?: ChartImage[]
 }
 
 export async function POST(request: NextRequest) {
@@ -68,8 +74,20 @@ export async function POST(request: NextRequest) {
       selectedMetricsCount: exportConfig.selectedMetrics?.length || 0,
       includeTrendCharts: exportConfig.includeTrendCharts,
       includeChartValues: exportConfig.includeChartValues,
-      chartCount: exportConfig.trendCharts?.length || 0
+      chartCount: exportConfig.trendCharts?.length || 0,
+      chartImagesCount: exportConfig.chartImages?.length || 0
     })
+
+    // Log chart images details
+    if (exportConfig.chartImages && exportConfig.chartImages.length > 0) {
+      console.log('🖼️ Chart images received:', exportConfig.chartImages.map(img => ({
+        id: img.id,
+        imageSize: img.image.length,
+        imageType: img.image.substring(0, 30) + '...'
+      })))
+    } else {
+      console.log('⚠️ No chart images received in request')
+    }
 
     // Generate the PDF export
     const pdfBuffer = await WellnessExportService.generateExport(

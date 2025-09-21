@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://mobile-jarvis-backend.onrender.com'
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseAppServerClient()
@@ -17,59 +15,71 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError || !session?.access_token) {
-      console.log('Session validation failed - returning 401')
-      return NextResponse.json(
-        { error: 'No valid session token' },
-        { status: 401 }
-      )
-    }
-
     const { searchParams } = new URL(request.url)
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
     const offset = Math.max(parseInt(searchParams.get('offset') || '0'), 0)
 
-    const response = await fetch(
-      `${PYTHON_BACKEND_URL}/api/medical_records?limit=${limit}&offset=${offset}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      }
-    )
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Python backend error details:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorText: errorText
-      })
-
-      if (response.status === 404) {
-        return NextResponse.json(
-          { error: 'Medical records endpoint not found' },
-          { status: 404 }
-        )
-      }
-
-      throw new Error(`Backend error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log('Successfully fetched medical records:', {
-      recordCount: data.records?.length,
-      totalCount: data.total_count,
-      hasMore: data.has_more
+    console.log('🔄 Fetching medical records from Supabase:', {
+      userId: user.id,
+      limit,
+      offset
     })
 
-    return NextResponse.json(data)
+    // Fetch medical records with page counts from Supabase
+    const { data: records, error: recordsError } = await supabase
+      .from('medical_records')
+      .select(`
+        *,
+        page_count:record_pages(count)
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (recordsError) {
+      console.error('❌ Supabase query error:', recordsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch medical records' },
+        { status: 500 }
+      )
+    }
+
+    // Get total count for pagination
+    const { count: totalCount, error: countError } = await supabase
+      .from('medical_records')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    if (countError) {
+      console.error('❌ Count query error:', countError)
+      return NextResponse.json(
+        { error: 'Failed to get total count' },
+        { status: 500 }
+      )
+    }
+
+    // Transform the data to include page count and add upload_url for compatibility
+    const transformedRecords = records?.map(record => ({
+      ...record,
+      page_count: record.page_count?.[0]?.count || 0,
+      // Add upload_url as null for now - we'll use page content instead
+      upload_url: record.page_count?.[0]?.count > 0 ? 'content-available' : null
+    })) || []
+
+    console.log('✅ Successfully fetched medical records:', {
+      recordCount: transformedRecords.length,
+      totalCount,
+      hasMore: offset + limit < (totalCount || 0)
+    })
+
+    return NextResponse.json({
+      records: transformedRecords,
+      total_count: totalCount || 0,
+      has_more: offset + limit < (totalCount || 0)
+    })
 
   } catch (error) {
-    console.error('Medical records list API error:', error)
+    console.error('❌ Medical records list API error:', error)
 
     return NextResponse.json(
       { error: 'Internal server error' },

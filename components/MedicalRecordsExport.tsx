@@ -49,12 +49,32 @@ export function MedicalRecordsExport({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Filter to only show completed records with files
-  const exportableRecords = records.filter(record =>
-    record.status === 'completed' &&
-    record.upload_url &&
-    record.original_filename
-  )
+  // Filter to only show completed records with page content
+  console.log('🔍 MedicalRecordsExport: All records received:', records.length)
+  if (records.length > 0) {
+    console.log('🔍 MedicalRecordsExport: Sample record data:', records[0])
+  }
+
+  const exportableRecords = records.filter(record => {
+    const isCompleted = record.status === 'completed'
+    const hasContent = Boolean(record.upload_url) || Boolean((record as any).page_count > 0)
+    const hasOriginalFilename = Boolean(record.original_filename)
+
+    console.log(`🔍 Record ${record.id}:`, {
+      status: record.status,
+      isCompleted,
+      hasContent,
+      hasOriginalFilename,
+      upload_url: record.upload_url,
+      page_count: (record as any).page_count,
+      original_filename: record.original_filename,
+      title: record.title
+    })
+
+    return isCompleted && hasContent && hasOriginalFilename
+  })
+
+  console.log('🔍 MedicalRecordsExport: Exportable records:', exportableRecords.length, 'out of', records.length)
 
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return 'Unknown size'
