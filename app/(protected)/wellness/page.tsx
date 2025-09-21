@@ -4,13 +4,12 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/utils/supabase/client'
-import { Tags, Activity, Heart, Moon, TrendingUp, Filter, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus, X, Check, ChevronsUpDown, Search, Edit2, FileText, Minimize2 } from 'lucide-react'
+import { Tags, Activity, Heart, Moon, TrendingUp, BarChart3, ChevronDown, ChevronUp, Info, CalendarIcon, Save, Plus, X, Check, ChevronsUpDown, Search, Edit2, FileText, Minimize2 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -458,7 +457,7 @@ function MetricsSelector({ selectedMetrics, onSelectionChange, isDarkMode, mode,
         }
       case 'summary-cards':
         return {
-          infoText: 'Select which summary cards to display',
+          // infoText: 'Select which summary cards to display',
           placeholder: 'Select cards...',
           searchPlaceholder: 'Search cards...',
           emptyText: 'No cards found.',
@@ -1139,9 +1138,9 @@ export default function WellnessPage() {
   const [chartHealthData, setChartHealthData] = useState<Record<string, HealthMetric[]>>({})
   const [resources, setResources] = useState<ResourceWithTags[]>([])
   const [loading, setLoading] = useState(true)
-  const [settingsExpanded, setSettingsExpanded] = useState(false)
-  const [advancedExpanded, setAdvancedExpanded] = useState(false)
   const [resourcesExpanded, setResourcesExpanded] = useState(true)
+  const [manualEntryExpanded, setManualEntryExpanded] = useState(false)
+  const [exportExpanded, setExportExpanded] = useState(false)
   const [manualEntryDate, setManualEntryDate] = useState<Date>()
   const [manualEntryValues, setManualEntryValues] = useState<Record<string, string>>({})
   const [selectedManualMetrics, setSelectedManualMetrics] = useState<string[]>(['sleep_score', 'activity_score', 'readiness_score', 'stress_level', 'recovery_score'])
@@ -1667,191 +1666,170 @@ export default function WellnessPage() {
             Track your health metrics and wellness journey.
           </p>
         </div>
-      </div>
-
-      {/* Filter Controls */}
-      <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-sm flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Options
-          </h3>
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            onClick={() => setManualEntryExpanded(!manualEntryExpanded)}
+            variant="outline"
             size="sm"
-            onClick={() => setSettingsExpanded(!settingsExpanded)}
-            className="h-8 px-2"
+            className="flex items-center gap-2"
           >
-            {settingsExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Hide
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" />
-              </>
-            )}
+            <Plus className="h-4 w-4" />
+            Add Data
+          </Button>
+          <Button
+            onClick={() => setExportExpanded(!exportExpanded)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            Export
           </Button>
         </div>
-        
-        {/* Always visible controls */}
-        {/* <div className="flex gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs">Sort By</Label>
-            <Select
-              value={filterPrefs.sortBy}
-              onValueChange={(value) => updateFilterPref('sortBy', value)}
+      </div>
+
+      {/* Manual Data Entry Section */}
+      {manualEntryExpanded && (
+        <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Manual Data Entry
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setManualEntryExpanded(false)}
+              className="h-8 px-2"
             >
-              <SelectTrigger className="h-8 w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="sleep_score">Sleep</SelectItem>
-                <SelectItem value="activity_score">Activity Score</SelectItem>
-              </SelectContent>
-            </Select>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        </div> */}
 
-        {/* Expandable toggle groups */}
-        {settingsExpanded && (
-          <div className="space-y-4 pt-4 border-t">
-            {/* Advanced Section */}
-            <div className="bg-muted/30 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Manual Data Entry
-                </h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setAdvancedExpanded(!advancedExpanded)}
-                  className="h-7 px-2 text-xs"
-                >
-                  {advancedExpanded ? (
-                    <>
-                      <ChevronUp className="h-3 w-3 mr-1" />
-                      Hide
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                    </>
-                  )}
-                </Button>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Manually add health metric values for specific dates
+            </p>
+
+            <div className="space-y-4">
+              {/* Date Picker */}
+              <div className="space-y-2">
+                <Label className="text-xs">Date</Label>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full h-8 justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {manualEntryDate ? format(manualEntryDate, "MMM d, yyyy") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={manualEntryDate}
+                      onSelect={(date) => {
+                        setManualEntryDate(date)
+                        setIsDatePickerOpen(false)
+                      }}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-              
-              {advancedExpanded && (
-                <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground">
-                    Manually add health metric values for specific dates
-                  </p>
-                  
-                  <div className="space-y-4">
-                    {/* Date Picker */}
-                    <div className="space-y-2">
-                      <Label className="text-xs">Date</Label>
-                      <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full h-8 justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-3 w-3" />
-                            {manualEntryDate ? format(manualEntryDate, "MMM d, yyyy") : "Pick a date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={manualEntryDate}
-                            onSelect={(date) => {
-                              setManualEntryDate(date)
-                              setIsDatePickerOpen(false)
-                            }}
-                            disabled={(date) => date > new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
 
-                    {/* Metrics Selector */}
-                    <div className="space-y-2">
-                      <Label className="text-xs">Metrics to Enter</Label>
-                      <MetricsSelector
-                        selectedMetrics={selectedManualMetrics}
-                        onSelectionChange={setSelectedManualMetrics}
-                        mode="manual-entry"
+              {/* Metrics Selector */}
+              <div className="space-y-2">
+                <Label className="text-xs">Metrics to Enter</Label>
+                <MetricsSelector
+                  selectedMetrics={selectedManualMetrics}
+                  onSelectionChange={setSelectedManualMetrics}
+                  mode="manual-entry"
+                />
+              </div>
+
+              {/* Metrics Grid - only show selected metrics */}
+              {selectedManualMetrics.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {selectedManualMetricsData.map((metric) => (
+                    <div key={metric.value} className="space-y-2">
+                      <Label className="text-xs">{metric.label}</Label>
+                      <Input
+                        type="number"
+                        placeholder="Enter value"
+                        value={manualEntryValues[metric.value] || ''}
+                        onChange={(e) => setManualEntryValues(prev => ({
+                          ...prev,
+                          [metric.value]: e.target.value
+                        }))}
+                        className="h-8"
+                        step="0.01"
                       />
                     </div>
-
-                    {/* Metrics Grid - only show selected metrics */}
-                    {selectedManualMetrics.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {selectedManualMetricsData.map((metric) => (
-                          <div key={metric.value} className="space-y-2">
-                            <Label className="text-xs">{metric.label}</Label>
-                            <Input
-                              type="number"
-                              placeholder="Enter value"
-                              value={manualEntryValues[metric.value] || ''}
-                              onChange={(e) => setManualEntryValues(prev => ({
-                                ...prev,
-                                [metric.value]: e.target.value
-                              }))}
-                              className="h-8"
-                              step="0.01"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Save Button */}
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleManualEntry}
-                        disabled={isSaving || !manualEntryDate || Object.values(manualEntryValues).every(v => !v.trim())}
-                        className="h-8"
-                        size="sm"
-                      >
-                        {isSaving ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-foreground mr-2" />
-                        ) : (
-                          <Save className="h-3 w-3 mr-2" />
-                        )}
-                        Save All Metrics
-                      </Button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
-            </div>
 
-            {/* Data Export Section */}
-            <WellnessDataExport
-              healthData={summaryHealthData}
-              chartData={chartHealthData}
-              trendCharts={filterPrefs.trendCharts}
-              currentSummaryTimeRange={filterPrefs.summaryTimeRange}
-              currentSelectedMetrics={filterPrefs.selectedSummaryCards || []}
-              onExportStart={() => {
-                console.log('Export started')
-              }}
-              onExportComplete={() => {
-                console.log('Export completed successfully')
-              }}
-              onExportError={(error) => {
-                console.error('Export failed:', error)
-              }}
-            />
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleManualEntry}
+                  disabled={isSaving || !manualEntryDate || Object.values(manualEntryValues).every(v => !v.trim())}
+                  className="h-8"
+                  size="sm"
+                >
+                  {isSaving ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-foreground mr-2" />
+                  ) : (
+                    <Save className="h-3 w-3 mr-2" />
+                  )}
+                  Save All Metrics
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Export Section */}
+      {exportExpanded && (
+        <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Export Wellness Data
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setExportExpanded(false)}
+              className="h-8 px-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <WellnessDataExport
+            healthData={summaryHealthData}
+            chartData={chartHealthData}
+            trendCharts={filterPrefs.trendCharts}
+            currentSummaryTimeRange={filterPrefs.summaryTimeRange}
+            currentSelectedMetrics={filterPrefs.selectedSummaryCards || []}
+            onExportStart={() => {
+              console.log('Export started')
+            }}
+            onExportComplete={() => {
+              console.log('Export completed successfully')
+            }}
+            onExportError={(error) => {
+              console.error('Export failed:', error)
+            }}
+          />
+        </div>
+      )}
+
 
 
       {/* Summary Cards Section */}
@@ -2116,7 +2094,7 @@ export default function WellnessPage() {
             Medical Records
           </CardTitle>
           <CardDescription>
-            Provide medical records to Juniper so it can provide valuable insights and conversation around your health data.  We do not share your data with third parties.
+            Provide medical records to Juniper so it can provide valuable insights and conversation around your health data - we do not share your records with third parties.
           </CardDescription>
         </CardHeader>
         <CardContent>
