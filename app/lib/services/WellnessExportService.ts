@@ -130,6 +130,29 @@ const AVAILABLE_METRICS: MetricDefinition[] = [
 ]
 
 export class WellnessExportService {
+  // PDF layout constants
+  private static readonly PAGE_MARGIN_TOP = 20
+  private static readonly PAGE_MARGIN_BOTTOM = 30
+  private static readonly PAGE_MARGIN_LEFT = 20
+  private static readonly PAGE_MARGIN_RIGHT = 20
+  private static readonly PAGE_HEIGHT = 297 // A4 height in mm
+  private static readonly USABLE_HEIGHT = this.PAGE_HEIGHT - this.PAGE_MARGIN_TOP - this.PAGE_MARGIN_BOTTOM
+
+  /**
+   * Check if content will fit on current page, add new page if needed
+   */
+  private static checkPageBreak(pdf: jsPDF, currentY: number, contentHeight: number): number {
+    const maxY = this.PAGE_MARGIN_TOP + this.USABLE_HEIGHT
+
+    if (currentY + contentHeight > maxY) {
+      console.log(`📄 Adding new page - current Y: ${currentY}, content height: ${contentHeight}, max Y: ${maxY}`)
+      pdf.addPage()
+      return this.PAGE_MARGIN_TOP
+    }
+
+    return currentY
+  }
+
   /**
    * Normalize chart data like the wellness page does
    */
@@ -213,15 +236,17 @@ export class WellnessExportService {
     // Add header
     this.addHeader(pdf)
 
-    let yPosition = 40
+    let yPosition = this.PAGE_MARGIN_TOP + 25 // Leave space after header
 
     // Add summary section if requested
     if (config.includeSummary) {
+      yPosition = this.checkPageBreak(pdf, yPosition, 60) // Estimate summary section height
       yPosition = this.addSummarySection(pdf, healthData, config.summaryTimeFrame, config.selectedMetrics, yPosition)
     }
 
     // Add trend charts section if requested
     if (config.includeTrendCharts && config.trendCharts.length > 0) {
+      yPosition = this.checkPageBreak(pdf, yPosition, 100) // Estimate chart section height
       yPosition = this.addTrendChartsSection(pdf, healthData, config, yPosition)
     }
 
@@ -295,7 +320,7 @@ export class WellnessExportService {
 
     pdf.setFontSize(14)
     pdf.setTextColor(51, 51, 51)
-    pdf.text(`Summary Statistics (Last ${days} days)`, 20, startY)
+    pdf.text(`Summary Statistics (Last ${days} days)`, this.PAGE_MARGIN_LEFT, startY)
 
     let yPosition = startY + 15
 
@@ -341,7 +366,7 @@ export class WellnessExportService {
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
-        margin: { left: 20, right: 20 }
+        margin: { left: this.PAGE_MARGIN_LEFT, right: this.PAGE_MARGIN_RIGHT }
       })
 
       yPosition = (pdf as any).lastAutoTable.finalY + 15
@@ -367,7 +392,7 @@ export class WellnessExportService {
 
     pdf.setFontSize(14)
     pdf.setTextColor(51, 51, 51)
-    pdf.text('Trend Charts', 20, startY)
+    pdf.text('Trend Charts', this.PAGE_MARGIN_LEFT, startY)
 
     let yPosition = startY + 15
 
@@ -380,11 +405,8 @@ export class WellnessExportService {
         isNormalized: chart.isNormalized
       })
 
-      // Check if we need a new page
-      if (yPosition > 250) {
-        pdf.addPage()
-        yPosition = 20
-      }
+      // Check if chart section will fit on current page (estimate 120px for chart + legend + spacing)
+      yPosition = this.checkPageBreak(pdf, yPosition, 120)
 
       yPosition = this.addChartSection(pdf, healthData, chart, config.includeChartValues, yPosition, config.chartImages)
     }
@@ -422,11 +444,11 @@ export class WellnessExportService {
 
     pdf.setFontSize(12)
     pdf.setTextColor(51, 51, 51)
-    pdf.text(chart.name, 20, startY)
+    pdf.text(chart.name, this.PAGE_MARGIN_LEFT, startY)
 
     pdf.setFontSize(9)
     pdf.setTextColor(102, 102, 102)
-    pdf.text(`Time Range: ${days} days | Normalization: ${chart.isNormalized ? 'On' : 'Off'}`, 20, startY + 7)
+    pdf.text(`Time Range: ${days} days | Normalization: ${chart.isNormalized ? 'On' : 'Off'}`, this.PAGE_MARGIN_LEFT, startY + 7)
 
     let yPosition = startY + 15
 
@@ -434,7 +456,7 @@ export class WellnessExportService {
     // Original chart is ~1166x400, so maintain ~3:1 aspect ratio
     const chartWidth = 170
     const chartHeight = 60 // Increased from 40 to better match aspect ratio
-    const chartX = 20
+    const chartX = this.PAGE_MARGIN_LEFT
     const chartY = yPosition
 
     // Draw chart background
@@ -580,7 +602,7 @@ export class WellnessExportService {
 
     pdf.setFontSize(10)
     pdf.setTextColor(51, 51, 51)
-    pdf.text('Chart Values (CSV Format)', 20, startY)
+    pdf.text('Chart Values (CSV Format)', this.PAGE_MARGIN_LEFT, startY)
 
     const headers = ['Date', ...chart.selectedMetrics.map(key => {
       const metric = AVAILABLE_METRICS.find(m => m.key === key)
@@ -637,7 +659,7 @@ export class WellnessExportService {
         alternateRowStyles: {
           fillColor: [248, 250, 252]
         },
-        margin: { left: 20, right: 20 },
+        margin: { left: this.PAGE_MARGIN_LEFT, right: this.PAGE_MARGIN_RIGHT },
         pageBreak: 'auto'
       })
 
