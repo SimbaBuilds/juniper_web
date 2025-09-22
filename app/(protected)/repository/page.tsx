@@ -37,7 +37,15 @@ export default function RepositoryPage() {
   const [loading, setLoading] = useState(true)
   const [editingResourceId, setEditingResourceId] = useState<string | null>(null)
   const [medicalRecordsRefresh, setMedicalRecordsRefresh] = useState(0)
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+    // Default all sections to collapsed
+    memory: true,
+    reference: true,
+    sample: true,
+    note: true,
+    'medical-records': true,
+    'expiring-resources': true
+  })
 
   const toggleSection = (sectionType: string) => {
     setCollapsedSections(prev => ({
@@ -278,10 +286,24 @@ export default function RepositoryPage() {
 
       {/* Expiring Resources */}
       {expiringResources.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold text-foreground">Expiring Resources (<span className="text-number">{expiringResources.length}</span>)</h2>
-          <div className="space-y-4">
-            {expiringResources.map((resource) => (
+        <div className="bg-card rounded-lg border border-border">
+          <div
+            className="flex items-center justify-between cursor-pointer group px-6 py-4 hover:bg-accent/50 transition-colors"
+            onClick={() => toggleSection('expiring-resources')}
+          >
+            <h2 className="text-2xl font-semibold text-foreground">Expiring Resources (<span className="text-number">{expiringResources.length}</span>)</h2>
+            <div className="text-muted-foreground group-hover:text-foreground transition-colors">
+              {collapsedSections['expiring-resources'] ? (
+                <ChevronDown className="h-5 w-5" />
+              ) : (
+                <ChevronUp className="h-5 w-5" />
+              )}
+            </div>
+          </div>
+
+          {!collapsedSections['expiring-resources'] && (
+            <div className="space-y-4 px-6 pb-6">
+              {expiringResources.map((resource) => (
               <div key={resource.id} className="space-y-4">
                 {editingResourceId === resource.id ? (
                   <EditResourceSection
@@ -355,8 +377,9 @@ export default function RepositoryPage() {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -481,8 +504,11 @@ export default function RepositoryPage() {
       )}
 
       {/* Medical Records Section */}
-      <div id="medical-records" className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div id="medical-records" className="bg-card rounded-lg border border-border">
+        <div
+          className="flex items-center justify-between cursor-pointer group px-6 py-4 hover:bg-accent/50 transition-colors"
+          onClick={() => toggleSection('medical-records')}
+        >
           <div>
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -504,9 +530,21 @@ export default function RepositoryPage() {
               </Tooltip>
             </div>
           </div>
+          <div className="text-muted-foreground group-hover:text-foreground transition-colors">
+            {collapsedSections['medical-records'] ? (
+              <ChevronDown className="h-5 w-5" />
+            ) : (
+              <ChevronUp className="h-5 w-5" />
+            )}
+          </div>
         </div>
-        <MedicalRecordsUpload onUploadComplete={() => setMedicalRecordsRefresh(prev => prev + 1)} />
-        <MedicalRecordsList refreshTrigger={medicalRecordsRefresh} />
+
+        {!collapsedSections['medical-records'] && (
+          <div className="space-y-4 px-6 pb-6">
+            <MedicalRecordsUpload onUploadComplete={() => setMedicalRecordsRefresh(prev => prev + 1)} />
+            <MedicalRecordsList refreshTrigger={medicalRecordsRefresh} />
+          </div>
+        )}
       </div>
 
     </div>

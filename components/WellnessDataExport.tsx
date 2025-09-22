@@ -105,28 +105,60 @@ export function WellnessDataExport({
 
         if (chartElement) {
           console.log(`📷 Found chart element: ${chart.name} (ID: ${chart.id})`)
-          console.log('📐 Chart element dimensions:', {
-            width: chartElement.offsetWidth,
-            height: chartElement.offsetHeight,
+
+          // Store original dimensions and styles
+          const originalWidth = chartElement.offsetWidth
+          const originalHeight = chartElement.offsetHeight
+          const originalStyle = chartElement.style.cssText
+
+          console.log('📐 Original chart element dimensions:', {
+            width: originalWidth,
+            height: originalHeight,
             visible: chartElement.offsetParent !== null
           })
 
-          // Wait a bit for chart to fully render
-          await new Promise(resolve => setTimeout(resolve, 500))
+          // Set fixed dimensions for consistent capture across devices
+          // Target dimensions: maintain desktop-like aspect ratio
+          const targetWidth = 1166  // Standard desktop chart width
+          const targetHeight = 400  // Standard chart height
+
+          // Apply temporary fixed dimensions for capture
+          chartElement.style.width = `${targetWidth}px`
+          chartElement.style.height = `${targetHeight}px`
+          chartElement.style.position = 'relative'
+
+          // Force a reflow to ensure dimensions are applied
+          chartElement.offsetHeight // Force reflow
+
+          // Wait a bit for chart to re-render with new dimensions
+          await new Promise(resolve => setTimeout(resolve, 800))
+
+          console.log('📐 Capture dimensions set to:', {
+            width: targetWidth,
+            height: targetHeight
+          })
 
           // Capture the chart with html2canvas-pro (supports oklch colors)
-          console.log('🎨 Starting html2canvas-pro capture...')
+          console.log('🎨 Starting html2canvas-pro capture with fixed dimensions...')
           const canvas = await html2canvas(chartElement, {
             useCORS: true,
             allowTaint: false,
             backgroundColor: '#ffffff',
             scale: 2, // Higher resolution
-            logging: false
+            logging: false,
+            width: targetWidth,
+            height: targetHeight,
+            windowWidth: targetWidth,
+            windowHeight: targetHeight
           })
+
+          // Restore original dimensions immediately after capture
+          chartElement.style.cssText = originalStyle
 
           console.log('🖼️ Canvas created:', {
             width: canvas.width,
-            height: canvas.height
+            height: canvas.height,
+            restoredOriginalDimensions: true
           })
 
           // Convert to base64
