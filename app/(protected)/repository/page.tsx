@@ -516,7 +516,6 @@ export default function RepositoryPage() {
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-muted-foreground text-sm">
-                Provide medical records to Juniper so it can provide valuable insights and conversation around your health data
               </p>
               {/* <Tooltip>
                 <TooltipTrigger asChild>

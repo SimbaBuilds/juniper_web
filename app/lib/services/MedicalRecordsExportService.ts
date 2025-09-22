@@ -2,7 +2,7 @@ import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
 import * as archiver from 'archiver'
 import { PassThrough } from 'stream'
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://mobile-jarvis-backend.onrender.com'
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://juniper-python-backend.onrender.com'
 
 interface MedicalRecordMetadata {
   id: string

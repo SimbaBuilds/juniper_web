@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server'
 import { serverRequestService } from '@/lib/services/requestService'
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://mobile-jarvis-backend.onrender.com'
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://juniper-python-backend.onrender.com'
 
 interface ChatMessage {
   role: 'user' | 'assistant'

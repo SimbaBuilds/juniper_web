@@ -1,6 +1,6 @@
 import { serverRequestService } from '@/lib/services/requestService';
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://mobile-jarvis-backend.onrender.com';
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'https://juniper-python-backend.onrender.com';
 
 export interface CompletionResult {
   success: boolean;
