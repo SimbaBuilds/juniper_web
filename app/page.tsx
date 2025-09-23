@@ -29,19 +29,24 @@ const demoVideos = [
     thumbnail: "https://img.youtube.com/vi/FmxwgpCW_7A/maxresdefault.jpg"
   },
   {
-    id: "3n_l7NohHrk", 
+    id: "3n_l7NohHrk",
     title: "Email Integration Flow",
     thumbnail: "https://img.youtube.com/vi/3n_l7NohHrk/maxresdefault.jpg"
   },
   {
     id: "vfv6uGq42DY",
-    title: "Oura Integration + Wellness Dashboard", 
+    title: "Oura Integration + Wellness Dashboard",
     thumbnail: "https://img.youtube.com/vi/vfv6uGq42DY/maxresdefault.jpg"
   },
   {
     id: "quMsf4s5LFQ",
     title: "Juniper Asked About A Run",
     thumbnail: "https://img.youtube.com/vi/quMsf4s5LFQ/maxresdefault.jpg"
+  },
+  {
+    id: "gEakiZ-NB-k",
+    title: "Surgical History Inquiry",
+    thumbnail: "https://img.youtube.com/vi/gEakiZ-NB-k/maxresdefault.jpg"
   }
 ]
 
