@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
-import { User, Bot } from 'lucide-react'
+import { User, Bot, ChevronDown, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -13,8 +15,53 @@ interface ChatMessageProps {
   message: Message
 }
 
+// Function to parse sources from message content
+function parseMessageWithSources(content: string) {
+  // Try markdown format first: **Sources:** [url], [url], [url]
+  const markdownSourcesPattern = /\s*\*\*Sources:\*\*\s*(\[.*?\](?:\s*,\s*\[.*?\])*)\s*$/
+  let match = content.match(markdownSourcesPattern)
+
+  if (match) {
+    // Extract the content without the sources section
+    const cleanContent = content.replace(markdownSourcesPattern, '').trim()
+
+    // Parse the markdown format sources - each URL is wrapped in brackets
+    const sourcesString = match[1]
+    const sources = sourcesString
+      .match(/\[(.*?)\]/g) // Find all [url] patterns
+      ?.map(url => url.slice(1, -1).trim()) // Remove brackets and trim
+      .filter(url => url.length > 0) || []
+
+    return { content: cleanContent, sources }
+  }
+
+  // Fallback to original format: Sources: [url1, url2, etc...]
+  const plainSourcesPattern = /\n*Sources:\s*\[(.*?)\]\s*$/
+  match = content.match(plainSourcesPattern)
+
+  if (!match) {
+    return { content, sources: [] }
+  }
+
+  // Extract the content without the sources section
+  const cleanContent = content.replace(plainSourcesPattern, '').trim()
+
+  // Parse the sources - split by comma and clean up each URL
+  const sourcesString = match[1]
+  const sources = sourcesString
+    .split(',')
+    .map(url => url.trim())
+    .filter(url => url.length > 0)
+
+  return { content: cleanContent, sources }
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user'
+  const [sourcesExpanded, setSourcesExpanded] = useState(false)
+
+  // Parse message content to separate main content and sources
+  const { content: mainContent, sources } = parseMessageWithSources(message.content)
   
   return (
     <div className={cn(
@@ -45,7 +92,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
         )}
         
         {/* Text Content */}
-        {message.content && (
+        {mainContent && (
           <div className="prose prose-sm dark:prose-invert max-w-none">
             <ReactMarkdown
               components={{
@@ -53,8 +100,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 ul: ({ children }) => <ul className="mb-2 list-disc pl-4">{children}</ul>,
                 ol: ({ children }) => <ol className="mb-2 list-decimal pl-4">{children}</ol>,
                 li: ({ children }) => <li className="mb-1">{children}</li>,
-                code: ({ node, inline, className, children, ...props }) => {
-                  if (inline) {
+                code: ({ node, className, children, ...props }) => {
+                  const codeProps = props as any
+                  if (codeProps.inline) {
                     return <code className="px-1 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-sm" {...props}>{children}</code>
                   }
                   return (
@@ -70,8 +118,36 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 ),
               }}
             >
-              {message.content}
+              {mainContent}
             </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Sources Dropdown - Only for assistant messages with sources */}
+        {!isUser && sources.length > 0 && (
+          <div className="mt-3">
+            <Collapsible open={sourcesExpanded} onOpenChange={setSourcesExpanded}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                {sourcesExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                Sources ({sources.length})
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="space-y-1 pl-6">
+                  {sources.map((source, index) => (
+                    <div key={index} className="text-sm">
+                      <a
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+                      >
+                        {source}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         )}
         <div className={cn(
