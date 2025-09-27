@@ -19,6 +19,7 @@ interface ChatRequest {
   integration_in_progress?: boolean
   service_name?: string
   user_id?: string
+  conversation_id?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body: ChatRequest = await request.json()
-    const { message, imageUrl, history, request_id, integration_in_progress, service_name } = body
+    const { message, imageUrl, history, request_id, integration_in_progress, service_name, conversation_id } = body
 
     if ((!message || typeof message !== 'string') && !imageUrl) {
       return NextResponse.json(
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
           service_name: service_name || null,
           timestamp: Date.now()
         },
+        conversation_id: conversation_id,
         network_success: true
       })
     } catch (requestError) {

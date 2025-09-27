@@ -313,16 +313,20 @@ export type UserProfile = {
     status: string;                  // pending, processing, completed, failed, cancelled
     metadata: Record<string, any>;   // Additional request context and data
     image_url?: string;              // Optional image URL for chat requests with image attachments
+    conversation_id?: string;        // Foreign key to conversation that this request belongs to
     created_at: Date;
     updated_at: Date;
     user_message?: string;
     total_turns?: number;
     network_success?: boolean;
+    response_fetched?: boolean;      // Whether the response has been fetched and displayed in UI
+    assistant_response?: string;     // The complete assistant response stored by backend
   };
 
   export const requestFields = [
     'id', 'user_id', 'request_id', 'request_type', 'status',
-    'metadata', 'image_url', 'created_at', 'updated_at', 'network_success'
+    'metadata', 'image_url', 'conversation_id', 'created_at', 'updated_at', 'network_success',
+    'response_fetched', 'assistant_response', 'user_message', 'total_turns'
   ] as const;
   export type RequestField = (typeof requestFields)[number];
 

@@ -30,9 +30,15 @@ export default function ChatPage() {
   const [isRequestInProgress, setIsRequestInProgress] = useState(false)
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null)
   const [requestStatus, setRequestStatus] = useState<string | null>(null)
+
+  // Track previous states for change detection
+  const previousRequestStatusRef = useRef<string | null>(null)
+  const previousIsLoadingRef = useRef<boolean>(false)
+  const previousRequestIdRef = useRef<string | null>(null)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
   const [showOnboardingMessage, setShowOnboardingMessage] = useState(false)
   const [hasCheckedForNewUser, setHasCheckedForNewUser] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -81,38 +87,115 @@ export default function ChatPage() {
   // Integrate polling hook
   const { status: polledStatus } = useRequestStatusPolling({
     requestId: currentRequestId,
-    onStatusChange: (status) => {
- 
+    onStatusChange: (status, pollingRequestId) => {
+      // Debug: Always log status changes to see what's happening
+      console.log('[CHAT] Status change received:', {
+        currentRequestId,
+        pollingRequestId,
+        status,
+        requestIdsMatch: currentRequestId === pollingRequestId,
+        isLoading,
+        isRequestInProgress,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Only process status changes for the current request
+      if (currentRequestId !== pollingRequestId) {
+        console.log('[CHAT] Ignoring status change from old request:', {
+          currentRequestId,
+          pollingRequestId,
+          status,
+          timestamp: new Date().toISOString()
+        });
+        return; // Ignore status changes from old requests
+      }
+
+      console.log('[CHAT] Processing status change:', {
+        requestId: currentRequestId,
+        newStatus: status,
+        previousStatus: previousRequestStatusRef.current,
+        timestamp: new Date().toISOString()
+      });
+
+      // Log only status changes
+      if (status !== previousRequestStatusRef.current) {
+        previousRequestStatusRef.current = status;
+      }
+
       setRequestStatus(status)
       if (finalStates.includes(status)) {
-        console.log('[CHAT] Request reached final state, clearing tracking:', {
+        console.log('[CHAT] Request reached final state, clearing UI tracking:', {
           requestId: currentRequestId,
-          finalStatus: status
-        })
-        // Clear request tracking immediately
+          finalStatus: status,
+          timestamp: new Date().toISOString()
+        });
+        // Clear request tracking only for the current request
         setCurrentRequestId(null)
         setIsLoading(false)
         setIsRequestInProgress(false)
         setRequestStatus(null)
         abortControllerRef.current = null
+        // Reset refs
+        previousRequestStatusRef.current = null
+        previousIsLoadingRef.current = false
+        previousRequestIdRef.current = null
       }
     }
   })
 
-  // Debug logging for cancel button display - only log when relevant values change
+  // Log loading state changes only
   useEffect(() => {
-    if (isLoading || isRequestInProgress || currentRequestId || requestStatus) {
-      console.log('[CHAT] Cancel button display conditions:', {
-        isLoading,
-        isRequestInProgress,
+    if (isLoading !== previousIsLoadingRef.current) {
+      console.log('[CHAT] Loading state changed:', {
+        previousIsLoading: previousIsLoadingRef.current,
+        newIsLoading: isLoading,
         currentRequestId,
         requestStatus,
-        isActiveState: requestStatus ? activeStates.includes(requestStatus) : false,
-        shouldShowCancelButton: isRequestInProgress,
         timestamp: new Date().toISOString()
-      })
+      });
+      previousIsLoadingRef.current = isLoading;
     }
-  }, [isLoading, isRequestInProgress, currentRequestId, requestStatus])
+  }, [isLoading, currentRequestId, requestStatus])
+
+  // Log request ID changes only
+  useEffect(() => {
+    if (currentRequestId !== previousRequestIdRef.current) {
+      console.log('[CHAT] Request ID changed:', {
+        previousRequestId: previousRequestIdRef.current,
+        newRequestId: currentRequestId,
+        timestamp: new Date().toISOString()
+      });
+      previousRequestIdRef.current = currentRequestId;
+    }
+  }, [currentRequestId])
+
+  // Function to create a new conversation
+  const createConversation = async (userId: string, firstMessage: string): Promise<string | null> => {
+    try {
+      const supabase = createClient()
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .insert({
+          user_id: userId,
+          title: firstMessage.substring(0, 100) || 'Untitled',
+          conversation_type: 'chat',
+          status: 'active',
+          metadata: {}
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating conversation:', error)
+        return null
+      }
+
+      return conversation.id
+    } catch (error) {
+      console.error('Error in createConversation:', error)
+      return null
+    }
+  }
 
   // Function to check if user is new (no conversation history)
   const checkForNewUser = async (userId: string) => {
@@ -233,6 +316,7 @@ export default function ChatPage() {
               request_id: requestId,
               integration_in_progress: true,
               service_name: serviceName,
+              conversation_id: conversationId,
             }),
             signal: abortControllerRef.current.signal,
           })
@@ -250,8 +334,24 @@ export default function ChatPage() {
           }
 
           setMessages(prev => [...prev, assistantMessage])
+
+          // Update response_fetched to true since the assistant message is now displayed
+          try {
+            const supabase = createClient()
+            await supabase
+              .from('requests')
+              .update({
+                response_fetched: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('request_id', requestId)
+            console.log('[CHAT] Updated response_fetched to true for integration completion request:', requestId)
+          } catch (error) {
+            console.error('[CHAT] Error updating response_fetched for integration completion:', error)
+          }
+
           toast.success(`${displayName} integration completed successfully!`)
-          
+
           // Don't clear request tracking here - let polling handle it like normal chat
           console.log('[CHAT] Integration completion request completed, response received. Polling will handle cleanup.')
           
@@ -363,14 +463,30 @@ export default function ChatPage() {
 
   const handleSendMessage = async () => {
     const trimmedMessage = inputValue.trim()
-    if ((!trimmedMessage && !selectedImageUrl) || isLoading) return
+    if ((!trimmedMessage && !selectedImageUrl) || isLoading || !user) return
 
-    console.log('[CHAT] Starting to send message:', {
-      messageLength: trimmedMessage.length,
-      currentIsLoading: isLoading,
-      currentRequestId,
-      currentStatus: requestStatus
-    })
+    // console.log('[CHAT] Starting to send message:', {
+    //   messageLength: trimmedMessage.length,
+    //   currentIsLoading: isLoading,
+    //   currentRequestId,
+    //   currentStatus: requestStatus,
+    //   conversationId
+    // })
+
+    // Create conversation if this is the first message
+    let currentConversationId = conversationId
+    if (!currentConversationId && user) {
+      // console.log('[CHAT] Creating new conversation for first message')
+      currentConversationId = await createConversation(user.id, trimmedMessage || 'Image message')
+      if (currentConversationId) {
+        setConversationId(currentConversationId)
+        // console.log('[CHAT] Created conversation with ID:', currentConversationId)
+      } else {
+        // console.error('[CHAT] Failed to create conversation')
+        toast.error('Failed to create conversation. Please try again.')
+        return
+      }
+    }
 
     const userMessage: Message = {
       role: 'user',
@@ -382,20 +498,25 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMessage])
     setInputValue('')
     setSelectedImageUrl(null) // Clear selected image
-    
+
     // Hide onboarding message when user sends first message
     setShowOnboardingMessage(false)
-    
+
     setIsLoading(true)
     setIsRequestInProgress(true)
     setRequestStatus('pending') // Set initial status
 
-    console.log('[CHAT] Message state updated, creating AbortController')
-
     // Generate request ID immediately (like React Native does)
     const requestId = `web-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     setCurrentRequestId(requestId)
-    console.log('[CHAT] Generated request ID:', requestId)
+
+    console.log('[CHAT] Starting new request:', {
+      requestId,
+      messageLength: trimmedMessage.length,
+      hasImage: !!selectedImageUrl,
+      conversationId: currentConversationId,
+      timestamp: new Date().toISOString()
+    })
 
     // Create AbortController for this request
     abortControllerRef.current = new AbortController()
@@ -411,6 +532,7 @@ export default function ChatPage() {
           imageUrl: selectedImageUrl,
           history: [...messages, userMessage],
           request_id: requestId,
+          conversation_id: currentConversationId,
         }),
         signal: abortControllerRef.current.signal,
       })
@@ -420,9 +542,13 @@ export default function ChatPage() {
       }
 
       const data = await response.json()
-      
-      console.log('[CHAT] Request completed successfully with request ID:', requestId)
-      
+
+      console.log('[CHAT] Request completed successfully:', {
+        requestId,
+        responseLength: data.response?.length || 0,
+        timestamp: new Date().toISOString()
+      })
+
       const assistantMessage: Message = {
         role: 'assistant',
         content: data.response,
@@ -430,21 +556,43 @@ export default function ChatPage() {
       }
 
       setMessages(prev => [...prev, assistantMessage])
-      
+
+      // Update response_fetched to true since the assistant message is now displayed
+      try {
+        const supabase = createClient()
+        await supabase
+          .from('requests')
+          .update({
+            response_fetched: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('request_id', requestId)
+        // console.log('[CHAT] Updated response_fetched to true for request:', requestId)
+      } catch (error) {
+        console.error('[CHAT] Error updating response_fetched:', error)
+      }
+
       // Don't clear request tracking here - let polling handle it
-      console.log('[CHAT] Request completed, response received. Polling will handle cleanup.')
+      // console.log('[CHAT] Request completed, response received. Polling will handle cleanup.')
       // The polling hook will clear everything when it detects a final state
       
     } catch (error) {
       // Check if error was due to cancellation
       if (error instanceof Error && (error.name === 'AbortError' || error.message?.includes('aborted'))) {
-        console.log('Request was cancelled by user')
+        console.log('[CHAT] Request was cancelled by user:', {
+          requestId,
+          timestamp: new Date().toISOString()
+        })
         return // Don't show error toast for user-initiated cancellation
       }
-      
-      console.error('Error sending message:', error)
+
+      console.error('[CHAT] Request failed:', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      })
       toast.error('Failed to send message. Please try again.')
-      
+
       // Clear request tracking on error
       setCurrentRequestId(null)
       setRequestStatus(null)
@@ -455,49 +603,81 @@ export default function ChatPage() {
   }
 
   const handleClearChat = async (isAutoRefresh = false) => {
-    if (messages.length === 0) return
+    console.log('[CHAT] New chat button pressed:', {
+      is_auto_refresh: isAutoRefresh,
+      current_conversation_id: conversationId,
+      message_count: messages.length,
+      user_id: user?.id?.substring(0, 8) + '...' || 'unknown',
+      timestamp: new Date().toISOString()
+    });
 
-    try {
-      // Save conversation to database
-      if (user) {
-        const supabase = createClient()
-        // Create conversation
-        const { data: conversation, error: convError } = await supabase
-          .from('conversations')
-          .insert({
-            user_id: user.id,
-            title: messages[0]?.content.substring(0, 100) || 'Untitled',
-            conversation_type: 'chat',
-            status: 'completed',
-            metadata: {}
-          })
-          .select()
-          .single()
-
-        console.log('Conversation save result:', { conversation, convError })
-
-        if (!convError && conversation) {
-          // Save messages
-          const messagesToSave = messages.map(msg => ({
-            conversation_id: conversation.id,
-            user_id: user.id,
-            role: msg.role,
-            content: msg.content,
-            metadata: {},
-            created_at: new Date(msg.timestamp).toISOString()
-          }))
-
-          const { data: savedMessages, error: msgError } = await supabase.from('messages').insert(messagesToSave)
-          console.log('Messages save result:', { savedMessages, msgError })
-        }
-      }
-    } catch (error) {
-      console.error('Error saving conversation:', error)
+    if (messages.length === 0) {
+      console.log('[CHAT] No messages to save, clearing chat state only');
+      setMessages([])
+      setConversationId(null)
+      return;
     }
 
-    // Clear messages
+    try {
+      // Save messages to existing conversation if one exists
+      if (user && conversationId) {
+        console.log('[CHAT] Saving messages to conversation:', {
+          conversation_id: conversationId,
+          message_count: messages.length,
+          user_id: user.id.substring(0, 8) + '...',
+          timestamp: new Date().toISOString()
+        });
+
+        const supabase = createClient()
+
+        // Save messages to the existing conversation
+        const messagesToSave = messages.map(msg => ({
+          conversation_id: conversationId,
+          user_id: user.id,
+          role: msg.role,
+          content: msg.content,
+          metadata: {},
+          created_at: new Date(msg.timestamp).toISOString()
+        }))
+
+        const { data: savedMessages, error: msgError } = await supabase.from('messages').insert(messagesToSave)
+        console.log('[CHAT] Messages save result:', {
+          conversation_id: conversationId,
+          saved_count: savedMessages?.length || 0,
+          error: msgError?.message || null,
+          timestamp: new Date().toISOString()
+        });
+
+        // Update conversation status to completed
+        const { error: convUpdateError } = await supabase
+          .from('conversations')
+          .update({ status: 'completed' })
+          .eq('id', conversationId)
+
+        console.log('[CHAT] Conversation status update result:', {
+          conversation_id: conversationId,
+          error: convUpdateError?.message || null,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('[CHAT] Error saving conversation during clear:', {
+        conversation_id: conversationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Clear messages and conversation state
+    console.log('[CHAT] Clearing chat state:', {
+      previous_conversation_id: conversationId,
+      cleared_message_count: messages.length,
+      timestamp: new Date().toISOString()
+    });
+
     setMessages([])
-    
+    setConversationId(null)
+
     if (!isAutoRefresh) {
       toast.success('Chat cleared. Your conversation has been saved.')
     }
@@ -522,8 +702,11 @@ export default function ChatPage() {
     toast.success('Copied to Clipboard')
   }
 
-  const handleContinueChat = (loadedMessages: Message[]) => {
+  const handleContinueChat = (loadedMessages: Message[], loadedConversationId?: string) => {
     setMessages(loadedMessages)
+    if (loadedConversationId) {
+      setConversationId(loadedConversationId)
+    }
     toast.success('Previous conversation has been loaded.')
   }
 

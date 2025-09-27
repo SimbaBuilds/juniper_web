@@ -20,7 +20,7 @@ interface Conversation {
 }
 
 interface ConversationHistoryProps {
-  onContinueChat: (messages: Message[]) => void
+  onContinueChat: (messages: Message[], conversationId?: string) => void
 }
 
 export function ConversationHistory({ onContinueChat }: ConversationHistoryProps) {
@@ -96,7 +96,7 @@ export function ConversationHistory({ onContinueChat }: ConversationHistoryProps
         timestamp: new Date(msg.created_at).getTime()
       })) || []
 
-      onContinueChat(formattedMessages)
+      onContinueChat(formattedMessages, conversationId)
     } catch (error) {
       console.error('Error loading messages for continue:', error)
       toast.error('Failed to load conversation messages')

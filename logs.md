@@ -1,0 +1,36 @@
+
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953406609-nhbipm6f1', pollingRequestId: 'web-1758953406609-nhbipm6f1', status: 'completed', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953406609-nhbipm6f1', newStatus: 'completed', previousStatus: null, timestamp: '2025-09-27T06:10:19.005Z'}
+page.tsx:127 [CHAT] Request reached final state, clearing UI tracking: {requestId: 'web-1758953406609-nhbipm6f1', finalStatus: 'completed', timestamp: '2025-09-27T06:10:19.005Z'}
+useRequestStatusPolling.ts:157 [POLLING_HOOK] Stopping polling - final state reached: {request_id: 'web-1758953406609-nhbipm6f1', final_status: 'completed', total_turns: 0, was_already_complete_on_first_poll: true, note: 'Request completed before polling started (within 2s delay)', …}
+page.tsx:513 [CHAT] Starting new request: {requestId: 'web-1758953419994-rjq1ncl7g', messageLength: 29, hasImage: false, conversationId: '4a96a351-cbc6-4f09-9837-d5aca5eb4c03', timestamp: '2025-09-27T06:10:19.994Z'}
+useRequestStatusPolling.ts:56 [POLLING_HOOK] Starting polling for request: {request_id: 'web-1758953419994-rjq1ncl7g', interval_ms: 5000, timestamp: '2025-09-27T06:10:20.090Z'}
+page.tsx:149 [CHAT] Loading state changed: {previousIsLoading: false, newIsLoading: true, currentRequestId: 'web-1758953419994-rjq1ncl7g', requestStatus: 'pending', timestamp: '2025-09-27T06:10:20.091Z'}
+page.tsx:163 [CHAT] Request ID changed: {previousRequestId: null, newRequestId: 'web-1758953419994-rjq1ncl7g', timestamp: '2025-09-27T06:10:20.091Z'}
+useRequestStatusPolling.ts:56 [POLLING_HOOK] Starting polling for request: {request_id: 'web-1758953419994-rjq1ncl7g', interval_ms: 5000, timestamp: '2025-09-27T06:10:20.186Z'}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953406609-nhbipm6f1', previous_status: null, new_status: 'completed', user_message: 'hi', total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953406609-nhbipm6f1', pollingRequestId: 'web-1758953406609-nhbipm6f1', status: 'completed', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953406609-nhbipm6f1', newStatus: 'completed', previousStatus: null, timestamp: '2025-09-27T06:10:21.187Z'}
+page.tsx:127 [CHAT] Request reached final state, clearing UI tracking: {requestId: 'web-1758953406609-nhbipm6f1', finalStatus: 'completed', timestamp: '2025-09-27T06:10:21.187Z'}
+useRequestStatusPolling.ts:157 [POLLING_HOOK] Stopping polling - final state reached: {request_id: 'web-1758953406609-nhbipm6f1', final_status: 'completed', total_turns: 0, was_already_complete_on_first_poll: true, note: 'Request completed before polling started (within 2s delay)', …}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953406609-nhbipm6f1', previous_status: null, new_status: 'completed', user_message: 'hi', total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953406609-nhbipm6f1', pollingRequestId: 'web-1758953406609-nhbipm6f1', status: 'completed', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953406609-nhbipm6f1', newStatus: 'completed', previousStatus: null, timestamp: '2025-09-27T06:10:21.413Z'}
+page.tsx:127 [CHAT] Request reached final state, clearing UI tracking: {requestId: 'web-1758953406609-nhbipm6f1', finalStatus: 'completed', timestamp: '2025-09-27T06:10:21.413Z'}
+useRequestStatusPolling.ts:157 [POLLING_HOOK] Stopping polling - final state reached: {request_id: 'web-1758953406609-nhbipm6f1', final_status: 'completed', total_turns: 0, was_already_complete_on_first_poll: true, note: 'Request completed before polling started (within 2s delay)', …}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953406609-nhbipm6f1', previous_status: null, new_status: 'completed', user_message: 'hi', total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953406609-nhbipm6f1', pollingRequestId: 'web-1758953406609-nhbipm6f1', status: 'completed', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953406609-nhbipm6f1', newStatus: 'completed', previousStatus: null, timestamp: '2025-09-27T06:10:21.548Z'}
+page.tsx:127 [CHAT] Request reached final state, clearing UI tracking: {requestId: 'web-1758953406609-nhbipm6f1', finalStatus: 'completed', timestamp: '2025-09-27T06:10:21.548Z'}
+useRequestStatusPolling.ts:157 [POLLING_HOOK] Stopping polling - final state reached: {request_id: 'web-1758953406609-nhbipm6f1', final_status: 'completed', total_turns: 0, was_already_complete_on_first_poll: true, note: 'Request completed before polling started (within 2s delay)', …}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953419994-rjq1ncl7g', previous_status: null, new_status: 'processing', user_message: null, total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953419994-rjq1ncl7g', pollingRequestId: 'web-1758953419994-rjq1ncl7g', status: 'processing', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953419994-rjq1ncl7g', newStatus: 'processing', previousStatus: null, timestamp: '2025-09-27T06:10:22.258Z'}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953419994-rjq1ncl7g', previous_status: null, new_status: 'processing', user_message: null, total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953419994-rjq1ncl7g', pollingRequestId: 'web-1758953419994-rjq1ncl7g', status: 'processing', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953419994-rjq1ncl7g', newStatus: 'processing', previousStatus: 'processing', timestamp: '2025-09-27T06:10:22.481Z'}
+useRequestStatusPolling.ts:127 [POLLING_HOOK] Status changed: {request_id: 'web-1758953406609-nhbipm6f1', previous_status: null, new_status: 'completed', user_message: 'hi', total_turns: 0, …}
+page.tsx:92 [CHAT] Status change received: {currentRequestId: 'web-1758953406609-nhbipm6f1', pollingRequestId: 'web-1758953406609-nhbipm6f1', status: 'completed', requestIdsMatch: true, isLoading: true, …}
+page.tsx:113 [CHAT] Processing status change: {requestId: 'web-1758953406609-nhbipm6f1', newStatus: 'completed', previousStatus: 'processing', timestamp: '2025-09-27T06:10:23.983Z'}
+page.tsx:127 [CHAT] Request reached final state, clearing UI tracking: {requestId: 'web-1758953406609-nhbipm6f1', finalStatus: 'completed', timestamp: '2025-09-27T06:10:23.983Z'}
+useRequestStatusPolling.ts:157 [POLLING_HOOK] Stopping polling - final state reached: {request_id: 'web-1758953406609-nhbipm6f1', final_status: 'completed', total_turns: 0, was_already_complete_on_first_poll: true, note: 'Request completed before polling started (within 2s delay
