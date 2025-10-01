@@ -69,7 +69,7 @@ const features = [
   {
     icon: Zap,
     title: `${publicServicesCount}+ Integrations`,
-    description: "Connect with services like Oura, Gmail, Slack, and Notion"
+    description: "Connect with services like Oura, Gmail, Slack, and Notion for seamless email, calendar, and task management"
   }
 ]
 
