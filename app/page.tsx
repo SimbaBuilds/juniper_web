@@ -312,6 +312,37 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Mobile Apps Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <h3 className="text-3xl font-bold text-foreground mb-4">Unlock Voice Options and Wearable Integrations</h3>
+          <p className="text-lg text-muted-foreground mb-8">
+            Get the full Juniper experience with our mobile apps featuring voice interactions and seamless Pixel/Apple Watch integration
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="https://apps.apple.com/us/app/juniperai/id6749830751"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button size="lg" variant="outline" className="text-lg px-8 py-3">
+                <Smartphone className="mr-2 h-5 w-5" />
+                Download on App Store
+              </Button>
+            </a>
+            <Link href="/support">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-3">
+                <Smartphone className="mr-2 h-5 w-5" />
+                Google Play (Closed Testing)
+              </Button>
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground mt-4">
+            Google Play Store app available via Closed Testing - contact support for access
+          </p>
+        </div>
+      </section>
+
       {/* Business Contact Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">

@@ -993,7 +993,7 @@ export default function ChatPage() {
       </div>
 
       {/* Tip Banner */}
-      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
+      {/* <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
         <div className="flex items-start space-x-2 md:space-x-3">
           <div className="flex-shrink-0">
             <Smartphone className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
@@ -1004,7 +1004,7 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }
