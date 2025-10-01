@@ -18,6 +18,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { WellnessDataExport } from '@/components/WellnessDataExport'
+import { UserWellnessForm } from '@/components/UserWellnessForm'
 
 interface HealthMetric {
   id: string
@@ -2003,6 +2004,9 @@ export default function WellnessPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* User Wellness Form */}
+      <UserWellnessForm />
 
       {/* Resources Section */}
       {filterPrefs.showResources && (

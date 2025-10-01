@@ -35,7 +35,15 @@ interface ChartImage {
   image: string
 }
 
+interface UserWellnessData {
+  goals: string | null
+  status_progress: string | null
+  fav_activities: string | null
+  misc_info: string | null
+}
+
 interface ExportConfig {
+  includeWellnessInfo: boolean
   includeSummary: boolean
   summaryTimeFrame: string
   selectedMetrics: string[]
@@ -227,6 +235,12 @@ export class WellnessExportService {
     // Fetch health data
     const healthData = await this.fetchHealthData(userId, config)
 
+    // Fetch wellness data if requested
+    let wellnessData: UserWellnessData | null = null
+    if (config.includeWellnessInfo) {
+      wellnessData = await this.fetchUserWellnessData(userId)
+    }
+
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4')
 
@@ -237,6 +251,12 @@ export class WellnessExportService {
     this.addHeader(pdf)
 
     let yPosition = this.PAGE_MARGIN_TOP + 25 // Leave space after header
+
+    // Add wellness info section if requested and data exists
+    if (config.includeWellnessInfo && wellnessData) {
+      yPosition = this.checkPageBreak(pdf, yPosition, 80) // Estimate wellness section height
+      yPosition = this.addWellnessInfoSection(pdf, wellnessData, yPosition)
+    }
 
     // Add summary section if requested
     if (config.includeSummary) {
@@ -254,6 +274,28 @@ export class WellnessExportService {
     this.addFooter(pdf)
 
     return Buffer.from(pdf.output('arraybuffer'))
+  }
+
+  /**
+   * Fetch user wellness data from database
+   */
+  private static async fetchUserWellnessData(
+    userId: string
+  ): Promise<UserWellnessData | null> {
+    const supabase = await createSupabaseAppServerClient()
+
+    const { data, error } = await supabase
+      .from('user_wellness')
+      .select('goals, status_progress, fav_activities, misc_info')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Failed to fetch user wellness data:', error.message)
+      return null
+    }
+
+    return data
   }
 
   /**
@@ -291,6 +333,64 @@ export class WellnessExportService {
     }
 
     return data || []
+  }
+
+  /**
+   * Add wellness information section
+   */
+  private static addWellnessInfoSection(
+    pdf: jsPDF,
+    wellnessData: UserWellnessData,
+    startY: number
+  ): number {
+    pdf.setFontSize(14)
+    pdf.setTextColor(51, 51, 51)
+    pdf.text('Personal Wellness Information', this.PAGE_MARGIN_LEFT, startY)
+
+    let yPosition = startY + 10
+
+    const maxWidth = 170 // Max width for text wrapping
+
+    // Helper function to add a field
+    const addField = (label: string, content: string | null): number => {
+      if (!content || content.trim() === '') {
+        return yPosition // Skip empty fields
+      }
+
+      // Add label
+      pdf.setFontSize(11)
+      pdf.setFont('helvetica', 'bold')
+      pdf.setTextColor(51, 51, 51)
+      pdf.text(label, this.PAGE_MARGIN_LEFT, yPosition)
+      yPosition += 6
+
+      // Add content with text wrapping
+      pdf.setFontSize(10)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(75, 85, 99)
+
+      const lines = pdf.splitTextToSize(content.trim(), maxWidth)
+      lines.forEach((line: string) => {
+        // Check if we need a page break
+        if (yPosition > this.PAGE_MARGIN_TOP + this.USABLE_HEIGHT - 10) {
+          pdf.addPage()
+          yPosition = this.PAGE_MARGIN_TOP
+        }
+        pdf.text(line, this.PAGE_MARGIN_LEFT, yPosition)
+        yPosition += 5
+      })
+
+      yPosition += 6 // Add spacing after field
+      return yPosition
+    }
+
+    // Add all fields
+    yPosition = addField('Goals:', wellnessData.goals)
+    yPosition = addField('Status & Progress:', wellnessData.status_progress)
+    yPosition = addField('Favorite Activities:', wellnessData.fav_activities)
+    yPosition = addField('Miscellaneous Info:', wellnessData.misc_info)
+
+    return yPosition + 10 // Add extra spacing after section
   }
 
   /**

@@ -68,6 +68,7 @@ export function WellnessDataExport({
   const [error, setError] = useState<string | null>(null)
 
   // Export options state
+  const [includeWellnessInfo, setIncludeWellnessInfo] = useState(true)
   const [includeSummary, setIncludeSummary] = useState(true)
   const [includeTrendCharts, setIncludeTrendCharts] = useState(true)
   const [includeChartValues, setIncludeChartValues] = useState(false)
@@ -214,6 +215,7 @@ export function WellnessDataExport({
 
       // Prepare export configuration
       const exportConfig = {
+        includeWellnessInfo,
         includeSummary,
         summaryTimeFrame: currentSummaryTimeRange,
         selectedMetrics: currentSelectedMetrics,
@@ -273,7 +275,7 @@ export function WellnessDataExport({
 
   const hasExportableData = healthData.length > 0 || Object.keys(chartData).some(key => chartData[key].length > 0)
   const hasValidSummarySelection = !includeSummary || (currentSelectedMetrics.length > 0)
-  const canExport = hasExportableData && (includeSummary || includeTrendCharts) && hasValidSummarySelection
+  const canExport = hasExportableData && (includeWellnessInfo || includeSummary || includeTrendCharts) && hasValidSummarySelection
 
   return (
     <div className="bg-muted/30 rounded-lg p-4">
@@ -297,6 +299,30 @@ export function WellnessDataExport({
 
           {/* Export Options */}
           <div className="space-y-4">
+            {/* Wellness Info Options */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="include-wellness-info"
+                    checked={includeWellnessInfo}
+                    onCheckedChange={setIncludeWellnessInfo}
+                  />
+                  <Label htmlFor="include-wellness-info" className="text-xs font-medium">
+                    Include Personal Wellness Information
+                  </Label>
+                </div>
+              </div>
+
+              {includeWellnessInfo && (
+                <div className="ml-6">
+                  <p className="text-xs text-muted-foreground">
+                    Exports your wellness goals, progress, favorite activities, and notes
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Summary Options */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -399,7 +425,7 @@ export function WellnessDataExport({
               </p>
             )}
 
-            {hasExportableData && !includeSummary && !includeTrendCharts && (
+            {hasExportableData && !includeWellnessInfo && !includeSummary && !includeTrendCharts && (
               <p className="text-xs text-muted-foreground mt-2 text-center">
                 Select at least one export option
               </p>

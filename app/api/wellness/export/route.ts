@@ -8,6 +8,7 @@ interface ChartImage {
 }
 
 interface ExportConfig {
+  includeWellnessInfo: boolean
   includeSummary: boolean
   summaryTimeFrame: string
   selectedMetrics: string[]
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate export configuration
-    if (!exportConfig.includeSummary && !exportConfig.includeTrendCharts) {
+    if (!exportConfig.includeWellnessInfo && !exportConfig.includeSummary && !exportConfig.includeTrendCharts) {
       return NextResponse.json(
         { error: 'At least one export option must be selected' },
         { status: 400 }
