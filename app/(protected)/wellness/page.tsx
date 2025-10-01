@@ -2009,7 +2009,7 @@ export default function WellnessPage() {
       <UserWellnessForm />
 
       {/* Resources Section */}
-      {filterPrefs.showResources && (
+      {/* {filterPrefs.showResources && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -2082,7 +2082,7 @@ export default function WellnessPage() {
             </CardContent>
           )}
         </Card>
-      )}
+      )} */}
 
       {/* Medical Records Section */}
       <Card>
