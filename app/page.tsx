@@ -53,8 +53,8 @@ const demoVideos = [
 const features = [
   {
     icon: Mic,
-    title: "Chat Focused Processing",
-    description: "Control Juniper's behavior, complete integrations, and delegate tasks all through text and voice chat"
+    title: "Wellness Focused",
+    description: "Integrates with your wearables and medical records and takes a holistic, integrative approach to your health and wellness"
   },
   {
     icon: Smartphone,
@@ -64,7 +64,7 @@ const features = [
   {
     icon: Brain,
     title: "Smart Resource Management",
-    description: "Intuitive Storage of resources like memories and samples to help your AI do things like write emails in your tone or create personalized workoouts based on your health metrics"
+    description: "Intuitive storage of resources like memories and samples to help your AI do things like write emails in your tone or create personalized workoouts based on your health metrics"
   },
   {
     icon: Zap,
