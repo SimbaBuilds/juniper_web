@@ -1000,7 +1000,7 @@ export default function ChatPage() {
           </div>
           <div className="flex-1">
             <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-medium">Tip:</span> Unlock voice options and wearable integrations with our mobile apps! {" "}
+              <span className="font-medium"></span> Unlock voice options and wearable integrations with our mobile apps! {" "}
               <a
                 href="https://apps.apple.com/us/app/juniperai/id6749830751"
                 target="_blank"
