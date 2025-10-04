@@ -993,18 +993,33 @@ export default function ChatPage() {
       </div>
 
       {/* Tip Banner */}
-      {/* <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
+      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
         <div className="flex items-start space-x-2 md:space-x-3">
           <div className="flex-shrink-0">
             <Smartphone className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
-              <span className="font-medium">Tip:</span> iOS and Android apps with voice options coming soon!  For now, feel free to add this page to your mobile home screen.
+              <span className="font-medium">Tip:</span> Unlock voice options and wearable integrations with our mobile apps! {" "}
+              <a
+                href="https://apps.apple.com/us/app/juniperai/id6749830751"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 font-medium underline"
+              >
+                Download on App Store
+              </a>
+              {" | "}
+              <a
+                href="/support"
+                className="text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 font-medium underline"
+              >
+                Google Play (Closed Testing)
+              </a>
             </p>
           </div>
         </div>
-      </div> */}
+      </div>
     </div>
   )
 }
