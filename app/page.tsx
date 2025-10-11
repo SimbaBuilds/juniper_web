@@ -44,9 +44,14 @@ const demoVideos = [
     thumbnail: "https://img.youtube.com/vi/quMsf4s5LFQ/maxresdefault.jpg"
   },
   {
-    id: "gEakiZ-NB-k",
-    title: "Surgical History Inquiry",
-    thumbnail: "https://img.youtube.com/vi/gEakiZ-NB-k/maxresdefault.jpg"
+    id: "gZaz-iuZgcM",
+    title: "Juniper Helps with Achilles Tendonitis",
+    thumbnail: "https://img.youtube.com/vi/gZaz-iuZgcM/maxresdefault.jpg"
+  },
+  {
+    id: "PEUawckN-VA",
+    title: "Juniper Helps with Chronic Fatigue",
+    thumbnail: "https://img.youtube.com/vi/PEUawckN-VA/maxresdefault.jpg"
   }
 ]
 
