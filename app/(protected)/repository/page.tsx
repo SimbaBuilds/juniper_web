@@ -5,7 +5,7 @@ import { RESOURCE_TYPES } from '@/app/lib/repository/types'
 import { Resource, Tag } from '@/lib/tables'
 import { AddResourceSection } from '@/app/components/repository/add-resource-section'
 import { EditResourceSection } from '@/app/components/repository/edit-resource-section'
-import { Pencil, Trash2, Tags, FileText, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { Pencil, Trash2, Tags, FileText, Info, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/utils/supabase/client'
 import { createResourceWithTags, updateResourceWithTags } from '@/lib/client-services'
 import { MedicalRecordsUpload } from '@/components/MedicalRecordsUpload'
@@ -186,10 +186,10 @@ export default function RepositoryPage() {
 
   const handleSaveResource = async (resourceData: Partial<Resource>, tagIds: string[]) => {
     if (!user || !resourceData.id) return
-    
+
     try {
       await updateResourceWithTags(resourceData.id, resourceData, tagIds)
-      
+
       // Fetch the updated resource with tags for display
       const supabase = createClient()
       const { data: resourceWithTags } = await supabase
@@ -204,7 +204,7 @@ export default function RepositoryPage() {
         `)
         .eq('id', resourceData.id)
         .single()
-      
+
       if (resourceWithTags) {
         const tags = [
           resourceWithTags.tag_1,
@@ -213,8 +213,8 @@ export default function RepositoryPage() {
           resourceWithTags.tag_4,
           resourceWithTags.tag_5
         ].filter(Boolean)
-        
-        setResources(prev => prev.map(r => 
+
+        setResources(prev => prev.map(r =>
           r.id === resourceData.id ? { ...resourceWithTags, tags } : r
         ))
       }
@@ -222,6 +222,25 @@ export default function RepositoryPage() {
     } catch (error) {
       console.error('Error saving resource:', error)
       alert('Failed to save resource')
+    }
+  }
+
+  const handleResetRelevance = async (resourceId: string) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('resources')
+        .update({ relevance_score: 100 })
+        .eq('id', resourceId)
+
+      if (error) throw error
+
+      setResources(prev => prev.map(r =>
+        r.id === resourceId ? { ...r, relevance_score: 100 } : r
+      ))
+    } catch (error) {
+      console.error('Error resetting relevance score:', error)
+      alert('Failed to reset relevance score')
     }
   }
 
@@ -328,6 +347,13 @@ export default function RepositoryPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
+                          onClick={() => handleResetRelevance(resource.id)}
+                          className="p-2 text-muted-foreground hover:text-green-500 hover:bg-accent rounded-md transition-colors"
+                          title="Reset Relevance Score"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleEditResource(resource)}
                           className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
                           title="Edit Resource"
@@ -346,7 +372,7 @@ export default function RepositoryPage() {
 
                     <div className="mb-4">
                       <p className="text-foreground">
-                        {resource.content.length > 200 
+                        {resource.content.length > 200
                           ? `${resource.content.substring(0, 200)}...`
                           : resource.content
                         }
