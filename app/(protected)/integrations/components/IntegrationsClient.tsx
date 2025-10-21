@@ -64,7 +64,7 @@ function getServiceCategory(serviceName: string): string {
   const name = serviceName.toLowerCase();
   
   // Health and Wellness
-  if (['oura', 'fitbit', 'mychart', 'apple health', 'google health connect'].includes(name)) {
+  if (['oura', 'fitbit', 'mychart', 'apple health'/*, 'google health connect'*/].includes(name)) {
     return 'Health and Wellness';
   }
   
@@ -304,9 +304,14 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
           });
         }
       });
-      
-      console.log('Final service results:', serviceResults.length, serviceResults);
-      setServices(serviceResults);
+
+      // Filter out Google Health Connect from the displayed services
+      const filteredResults = serviceResults.filter(
+        service => service.service_name !== 'Google Health Connect'
+      );
+
+      console.log('Final service results:', filteredResults.length, filteredResults);
+      setServices(filteredResults);
     } catch (err) {
       console.error('Error loading services:', err);
       setError('Failed to load services');
@@ -575,7 +580,7 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
     }
 
     // Special handling for Apple Health, Google Health Connect, and MyChart - mobile app only
-    if (['Apple Health', 'Google Health Connect', 'MyChart'].includes(service.service_name)) {
+    if (['Apple Health', /* 'Google Health Connect', */ 'MyChart'].includes(service.service_name)) {
       return (
         <Button
           variant="outline"
@@ -778,7 +783,7 @@ export function IntegrationsClient({ userId }: IntegrationsClientProps) {
                   {!(service.service_name === 'Textbelt' && showTextbeltForm && !service.isConnected) && (
                     <div className="mt-4">
                       {/* Special handling for Apple Health, Google Health Connect, and MyChart */}
-                      {['Apple Health', 'Google Health Connect', 'MyChart'].includes(service.service_name) ? (
+                      {['Apple Health', /* 'Google Health Connect', */ 'MyChart'].includes(service.service_name) ? (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-blue-600">
                             <Smartphone className="w-3 h-3" />

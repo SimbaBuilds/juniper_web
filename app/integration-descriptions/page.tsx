@@ -30,7 +30,11 @@ export default function IntegrationDescriptions() {
         }
         
         const servicesData = await response.json();
-        setServices(servicesData);
+        // Filter out Google Health Connect
+        const filteredServices = servicesData.filter(
+          (service: ServiceWithTags) => service.service_name !== 'Google Health Connect'
+        );
+        setServices(filteredServices);
       } catch (err) {
         console.error('Error fetching services:', err);
         setError('Failed to load services');
