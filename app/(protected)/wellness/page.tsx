@@ -1014,6 +1014,59 @@ function TrendChart({
     setIsEditingName(false)
   }
 
+  // Helper function to format dates based on time range for x-axis ticks
+  const formatDateForTimeRange = (timestamp: number, timeRange: string, dataLength: number) => {
+    const date = new Date(timestamp)
+    const daysInRange = timeRange === 'max' ? dataLength : parseInt(timeRange)
+
+    // For 7 days: show day and date (e.g., "Mon 15" or "1/15")
+    if (daysInRange <= 7) {
+      return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+    }
+    // For 30 days: show month and date (e.g., "Jan 15")
+    else if (daysInRange <= 30) {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
+    // For 90 days: show month and date
+    else if (daysInRange <= 90) {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    }
+    // For 1 year: show month only (e.g., "Jan", "Feb")
+    else if (daysInRange <= 365) {
+      return date.toLocaleDateString('en-US', { month: 'short' })
+    }
+    // For max/multi-year: show month and year (e.g., "Jan 2024")
+    else {
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    }
+  }
+
+  // Helper function to calculate tick interval based on time range
+  const getTickInterval = (dataLength: number, timeRange: string) => {
+    const daysInRange = timeRange === 'max' ? dataLength : parseInt(timeRange)
+
+    // For 7 days: show every point or every other point
+    if (daysInRange <= 7) {
+      return dataLength <= 7 ? 0 : Math.floor(dataLength / 7)
+    }
+    // For 30 days: show ~7-8 ticks (every 4-5 days)
+    else if (daysInRange <= 30) {
+      return Math.floor(dataLength / 7)
+    }
+    // For 90 days: show ~10-12 ticks (weekly)
+    else if (daysInRange <= 90) {
+      return Math.floor(dataLength / 10)
+    }
+    // For 1 year: show ~12 ticks (monthly)
+    else if (daysInRange <= 365) {
+      return Math.floor(dataLength / 12)
+    }
+    // For max: show ~12-15 ticks
+    else {
+      return Math.floor(dataLength / 12)
+    }
+  }
+
   return (
     <Card className="pb-2">
       <CardHeader className="pb-3">
@@ -1165,9 +1218,17 @@ function TrendChart({
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={normalizedData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   >
-                  <XAxis dataKey="date" />
+                  <XAxis
+                    dataKey="dateTimestamp"
+                    tickFormatter={(timestamp) => formatDateForTimeRange(timestamp, chart.timeRange, normalizedData.length)}
+                    interval={getTickInterval(normalizedData.length, chart.timeRange)}
+                    minTickGap={20}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
                   <YAxis label={chart.isNormalized ? { value: 'Normalized (%)', angle: -90, position: 'insideLeft' } : undefined} />
                   <RechartsTooltip
                     content={(props) => (
@@ -1691,8 +1752,12 @@ export default function WellnessPage() {
 
   // Helper function to prepare chart data for a specific data set
   const prepareChartData = (healthData: HealthMetric[]) => {
-    return healthData.map(d => ({
-      date: new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    return healthData.map(d => {
+      const dateObj = new Date(d.date + 'T12:00:00')
+      return {
+      date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      dateTimestamp: dateObj.getTime(),
+      rawDate: d.date,
       // Recovery & Sleep scores
       sleep_score: (d.sleep_score && d.sleep_score > 0) ? d.sleep_score : null,
       readiness_score: (d.readiness_score && d.readiness_score > 0) ? d.readiness_score : null,
@@ -1760,7 +1825,8 @@ export default function WellnessPage() {
       vitamin_d: (d.vitamin_d && d.vitamin_d > 0) ? d.vitamin_d : null,
       hdl: (d.hdl && d.hdl > 0) ? d.hdl : null,
       fasting_insulin: (d.fasting_insulin && d.fasting_insulin > 0) ? d.fasting_insulin : null
-    }))
+    }
+    })
   }
 
   // Prepare chart data for each chart based on its specific data
