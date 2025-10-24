@@ -2292,7 +2292,10 @@ export default function WellnessPage() {
             Medical Records
           </CardTitle>
           <CardDescription>
-            Provide medical records to Juniper so it can provide valuable insights and conversation around your health data - we do not share your records with third parties.
+            Provide medical records to Juniper so it can provide valuable insights and conversation around your health data.  We do not share your data with advertisers or health care providers - see full{' '}
+            <a href="https://juniperassistant.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline">
+              privacy policy
+            </a>.
           </CardDescription>
         </CardHeader>
         <CardContent>

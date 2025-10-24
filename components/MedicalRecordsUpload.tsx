@@ -263,7 +263,10 @@ export function MedicalRecordsUpload({ onUploadComplete }: MedicalRecordsUploadP
         </div>
 
         <div className="text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-          🔒 We do not share your records with any third parties.
+          We do not share your data with advertisers or health care providers - see full{' '}
+          <a href="https://juniperassistant.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline hover:text-green-800 dark:hover:text-green-200">
+            privacy policy
+          </a>
         </div>
 
         {error && (
