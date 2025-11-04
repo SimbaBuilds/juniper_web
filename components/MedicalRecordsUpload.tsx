@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { Upload, X, FileText, AlertCircle, CheckCircle, Loader2, Trash2 } from 'lucide-react'
+import { Upload, X, FileText, AlertCircle, CheckCircle, Loader2, Trash2, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -260,6 +260,11 @@ export function MedicalRecordsUpload({ onUploadComplete }: MedicalRecordsUploadP
         <div className="text-sm text-muted-foreground">
           Upload medical files for Juniper to analyze and use in wellness related conversations and tasks. <br />
           Have a MyChart account?  Look for a "Sharing Hub" or "Download All" section to download your records.
+        </div>
+
+        <div className="text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <Info className="h-4 w-4 inline mr-2" />
+          Blood lab results uploaded here will be automatically added to your Wellness tracker.
         </div>
 
         <div className="text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
