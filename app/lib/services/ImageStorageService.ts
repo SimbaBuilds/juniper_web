@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/utils/supabase/client';
+import { sanitizeFilename } from '@/app/lib/utils/sanitizeFilename';
 
 export interface ImageUploadResult {
   success: boolean;
@@ -71,8 +72,11 @@ export class ImageStorageService {
       console.log('✅ ImageStorageService: User authenticated', { userId: user.id });
 
       // Generate file name if not provided
-      const finalFileName = fileName || `image_${Date.now()}.${file.type.split('/')[1]}`;
-      
+      const baseName = fileName || file.name;
+      const sanitizedBaseName = sanitizeFilename(baseName);
+      const extension = file.type.split('/')[1];
+      const finalFileName = fileName ? sanitizedBaseName : `image_${Date.now()}.${extension}`;
+
       // Create file path: userId/images/filename
       const filePath = `${userId}/images/${finalFileName}`;
       console.log('🔄 ImageStorageService: Uploading to path', { filePath });

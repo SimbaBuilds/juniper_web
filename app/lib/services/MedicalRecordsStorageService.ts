@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/utils/supabase/client';
+import { sanitizeFilename } from '@/app/lib/utils/sanitizeFilename';
 
 export interface MedicalRecordUploadResult {
   success: boolean;
@@ -70,7 +71,8 @@ export class MedicalRecordsStorageService {
 
       console.log('✅ MedicalRecordsStorageService: User authenticated', { userId: user.id });
 
-      const finalFileName = fileName || `${Date.now()}_${file.name}`;
+      const sanitizedFileName = sanitizeFilename(fileName || file.name);
+      const finalFileName = fileName ? sanitizedFileName : `${Date.now()}_${sanitizedFileName}`;
       const filePath = `${userId}/${finalFileName}`;
       console.log('🔄 MedicalRecordsStorageService: Uploading to path', { filePath });
 
