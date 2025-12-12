@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/utils/supabase/client'
 import { User } from '@supabase/supabase-js'
 
@@ -12,10 +12,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+async function syncUserTimezone() {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    await fetch('/api/user/update-timezone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timezone }),
+    })
+  } catch (error) {
+    console.error('Failed to sync timezone:', error)
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const timezoneSyncedRef = useRef(false)
 
   useEffect(() => {
     // Get initial session
@@ -23,6 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       setLoading(false)
+
+      // Sync timezone on initial load if user is logged in
+      if (user && !timezoneSyncedRef.current) {
+        timezoneSyncedRef.current = true
+        syncUserTimezone()
+      }
     }
 
     getUser()
@@ -32,6 +52,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         setUser(session?.user ?? null)
         setLoading(false)
+
+        // Sync timezone on sign in
+        if (event === 'SIGNED_IN' && session?.user && !timezoneSyncedRef.current) {
+          timezoneSyncedRef.current = true
+          syncUserTimezone()
+        }
+
+        // Reset flag on sign out so timezone syncs again on next login
+        if (event === 'SIGNED_OUT') {
+          timezoneSyncedRef.current = false
+        }
       }
     )
 

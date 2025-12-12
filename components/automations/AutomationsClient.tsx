@@ -957,6 +957,97 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
               {/* Editable conditions */}
               {renderEditableConditions(editingAutomation.actions)}
+
+              {/* Schedule editing for scheduled automations */}
+              {editingAutomation.trigger_type === 'schedule_recurring' && (
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <Label className="text-sm font-medium">Schedule Settings</Label>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="interval" className="text-sm text-muted-foreground">Interval</Label>
+                      <Select
+                        value={
+                          (editValues.trigger_config as Record<string, unknown>)?.interval as string ||
+                          editingAutomation.trigger_config?.interval ||
+                          'daily'
+                        }
+                        onValueChange={(value) => {
+                          setEditValues(prev => ({
+                            ...prev,
+                            trigger_config: {
+                              ...editingAutomation.trigger_config,
+                              ...(prev.trigger_config as Record<string, unknown> || {}),
+                              interval: value
+                            }
+                          }));
+                        }}
+                      >
+                        <SelectTrigger id="interval">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hourly">Hourly</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="time_of_day" className="text-sm text-muted-foreground">Time of Day</Label>
+                      <Input
+                        id="time_of_day"
+                        type="time"
+                        defaultValue={editingAutomation.trigger_config?.time_of_day || '09:00'}
+                        onChange={(e) => {
+                          setEditValues(prev => ({
+                            ...prev,
+                            trigger_config: {
+                              ...editingAutomation.trigger_config,
+                              ...(prev.trigger_config as Record<string, unknown> || {}),
+                              time_of_day: e.target.value
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {editingAutomation.trigger_type === 'schedule_once' && (
+                <div className="space-y-4 pt-4 border-t border-border">
+                  <Label className="text-sm font-medium">Schedule Settings</Label>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="run_at" className="text-sm text-muted-foreground">Run At</Label>
+                    <Input
+                      id="run_at"
+                      type="datetime-local"
+                      defaultValue={
+                        editingAutomation.trigger_config?.run_at
+                          ? new Date(editingAutomation.trigger_config.run_at).toISOString().slice(0, 16)
+                          : ''
+                      }
+                      onChange={(e) => {
+                        setEditValues(prev => ({
+                          ...prev,
+                          trigger_config: {
+                            ...editingAutomation.trigger_config,
+                            ...(prev.trigger_config as Record<string, unknown> || {}),
+                            run_at: new Date(e.target.value).toISOString()
+                          }
+                        }));
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Times are in your local timezone
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
