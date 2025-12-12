@@ -1,43 +1,11 @@
-I am building out a scheduled and event driven automation feature for Juniper in the FASTAPI backend.  
+Awesome, please update the time display/selection
+- to match the color theme of the rest of the page
+- to reflect the time zone of user_profiles.timezone (stored db value is in UTC)
 
-In this project, I want a front end UI in an authenticated automations page where users can:
+Example automation records and user_profiles:
 
-- view current automations
-- pause an automation 
-- manually trigger an automation (even if it is a scheduled or webhook based automation)
+[{"idx":6,"id":"524a5d67-a0a5-45bd-9c86-f32eaad98d1e","user_id":"56a2c117-6486-4ca5-a57d-6c2e877e7083","name":"Daily Wellness Summary","description":"Fetches yesterday's sleep data from Oura, analyzes it with AI to provide personalized wellness recommendations, and emails the summary","trigger_type":"schedule_recurring","trigger_config":"{\"interval\": \"daily\", \"time_of_day\": \"08:00\"}","script_code":null,"execution_params":"{}","dependencies":[],"active":true,"created_at":"2025-12-09 00:03:33.470477+00","updated_at":"2025-12-10 10:45:39.997753+00","actions":"[{\"id\": \"fetch_sleep\", \"tool\": \"oura_get_daily_sleep\", \"output_as\": \"sleep_data\", \"parameters\": {\"end_date\": \"{{yesterday}}\", \"start_date\": \"{{yesterday}}\"}}, {\"id\": \"analyze_wellness\", \"tool\": \"juniper_call_agent\", \"output_as\": \"wellness_summary\", \"parameters\": {\"context\": {\"sleep_data\": \"{{sleep_data}}\"}, \"message\": \"Analyze this sleep data from yesterday and provide a personalized wellness recommendation. Focus on sleep quality, duration, and any areas for improvement. Keep the response concise and actionable.\"}}, {\"id\": \"send_email\", \"tool\": \"gmail_send_email\", \"parameters\": {\"to\": \"{{user.email}}\", \"body\": \"{{wellness_summary}}\", \"subject\": \"Your Daily Wellness Summary\"}}]","variables":"{}","status":"active","confirmed_at":null,"next_poll_at":null,"last_poll_cursor":null,"polling_interval_minutes":null}]
 
-
-
-Please see the automation records in automation_records_rows.json.
-
-Let me know if you have any clarifying questions.  You will probably need details on how to execute the automations.
-
-Please do not enter plan mode or call a planning agent.
+[{"idx":10,"id":"56a2c117-6486-4ca5-a57d-6c2e877e7083","display_name":"Cameron Hightower","wake_word":"Juniper","timezone":"America/Chicago","created_at":"2025-06-28 21:14:00.507389+00","updated_at":"2025-12-12 05:53:32.614625+00","deepgram_enabled":true,"base_language_model":"claude-sonnet-4-20250514","general_instructions":"","wake_word_detection_enabled":false,"wake_word_sensitivity":"0.2","selected_deepgram_voice":"aura-2-pandora-en","name":null,"location":null,"education":null,"profession":null,"language":null,"requests_today":1,"requests_week":2,"requests_month":20,"enabled_system_integrations":"{\"perplexity\": true, \"xai_live_search\": true}","perplexity_usage_month":12,"xai_live_search_month":10,"textbelt_usage_month":4,"stripe_customer_id":"cus_SplqjHex4iXcn7","stripe_subscription_id":"sub_1Ru6JDP3MuCplnDX2BaxoqHa","subscription_status":"active","subscription_tier":"pro","subscription_current_period_end":null,"subscription_cancel_at_period_end":false,"ubp_current":5,"ubp_max":1400,"user_tags":null},{"idx":13,"id":"7929e259-c728-4cf2-9cc3-da8f712a3976","display_name":"Janelle","wake_word":"Juniper","timezone":"America/New_York","created_at":"2025-10-11 19:42:45.56395+00","updated_at":"2025-10-11 19:43:05.687111+00","deepgram_enabled":false,"base_language_model":"claude-sonnet-4-20250514","general_instructions":"","wake_word_detection_enabled":false,"wake_word_sensitivity":"0.2","selected_deepgram_voice":"aura-2-pandora-en","name":null,"location":null,"education":null,"profession":null,"language":null,"requests_today":0,"requests_week":0,"requests_month":0,"enabled_system_integrations":"{\"textbelt\": true, \"perplexity\": true, \"xai_live_search\": true}","perplexity_usage_month":0,"xai_live_search_month":0,"textbelt_usage_month":0,"stripe_customer_id":null,"stripe_subscription_id":null,"subscription_status":null,"subscription_tier":"free","subscription_current_period_end":null,"subscription_cancel_at_period_end":false,"ubp_current":0,"ubp_max":0,"user_tags":null},{"idx":16,"id":"8e79449c-0fe4-4b2e-906a-7bf62ad1ea72","display_name":"Herbert Perry","wake_word":"Juniper","timezone":"Europe/Paris","created_at":"2025-10-27 09:54:15.257807+00","updated_at":"2025-11-03 00:00:00.043003+00","deepgram_enabled":false,"base_language_model":"claude-sonnet-4-20250514","general_instructions":"","wake_word_detection_enabled":false,"wake_word_sensitivity":"0.3","selected_deepgram_voice":"aura-2-pandora-en","name":null,"location":null,"education":null,"profession":null,"language":null,"requests_today":0,"requests_week":0,"requests_month":3,"enabled_system_integrations":"{\"textbelt\": true, \"perplexity\": true, \"xai_live_search\": true}","perplexity_usage_month":0,"xai_live_search_month":0,"textbelt_usage_month":0,"stripe_customer_id":null,"stripe_subscription_id":null,"subscription_status":null,"subscription_tier":"free","subscription_current_period_end":null,"subscription_cancel_at_period_end":false,"ubp_current":0,"ubp_max":0,"user_tags":null}]
 
 
-
- Clarifying Questions:
-
-  1. Triggering automations: What FastAPI endpoint should I call to manually trigger an automation? Something like POST 
-  /automations/{id}/execute? What base URL and auth headers does it need?
-
-This actually happens in a Supabase Edge Function called event-processor.  Can you access the Supabase Edge functions or do i need to provide them to you?
-
-  2. Pausing automations: Is there an existing endpoint to update the active field, or should I create a Supabase direct update
-   via a Next.js API route? (e.g., PATCH /automations/{id} with {active: boolean})
-
-Would have to be direct
-
-  3. Trigger display: For scheduled automations, should I show the next scheduled run time, or just the interval/config? For
-  webhooks/polling, should I show the service name and event type?
-
-All of that data sounds good - as much data as possible (within reason for non technical users), and please make appropriate values mutable by the user, including condiitonal values like > 70
-
-  4. Execution history: Do you want to show any execution logs/history on this page, or just the current automation list with
-  controls?
-
-
-  Execution logs would make sense - maybe expandable and auto load 10 most recent with option to load more.  Example: automation_execution_logs_rows.json  - this is not comprehensive so please leave room for more data types and lean toward displaying raw field data
-
-
-edge function reference in root: edge_function_reference/

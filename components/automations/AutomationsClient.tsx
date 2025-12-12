@@ -66,6 +66,165 @@ const triggerTypeConfig: Record<string, { icon: React.ElementType; label: string
   polling: { icon: RefreshCw, label: 'Polling', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
 };
 
+// Timezone conversion utilities
+// Convert UTC time string (HH:MM) to user's timezone
+function convertUtcTimeToTimezone(utcTime: string, timezone: string): string {
+  // Create a date object for today with the UTC time
+  const today = new Date();
+  const [hours, minutes] = utcTime.split(':').map(Number);
+  const utcDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes));
+
+  // Format in user's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone
+  });
+
+  return formatter.format(utcDate);
+}
+
+// Convert user's local time string (HH:MM) to UTC
+function convertTimezoneToUtc(localTime: string, timezone: string): string {
+  const today = new Date();
+  const [hours, minutes] = localTime.split(':').map(Number);
+
+  // Create a date string with the local time and parse it in the user's timezone
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}T${localTime}:00`;
+
+  // Get the offset for the user's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  // Parse as if it's in the user's timezone
+  const localDate = new Date(dateStr);
+  const tzOffset = localDate.getTimezoneOffset(); // Browser's offset
+
+  // Get the user's timezone offset
+  const parts = formatter.formatToParts(new Date());
+  const utcFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  // Convert to timestamp treating the time as in the target timezone
+  const fakeUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+  const tzDate = new Date(fakeUtc);
+
+  // Get UTC representation
+  const targetFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+
+  // Find the offset by comparing
+  const targetParts = targetFormatter.formatToParts(tzDate);
+  const targetHour = parseInt(targetParts.find(p => p.type === 'hour')?.value || '0');
+  const targetMinute = parseInt(targetParts.find(p => p.type === 'minute')?.value || '0');
+
+  // Calculate offset in minutes
+  let offsetMinutes = (targetHour * 60 + targetMinute) - (hours * 60 + minutes);
+  if (offsetMinutes > 720) offsetMinutes -= 1440;
+  if (offsetMinutes < -720) offsetMinutes += 1440;
+
+  // Apply inverse offset to get UTC
+  let utcMinutes = hours * 60 + minutes - offsetMinutes;
+  if (utcMinutes < 0) utcMinutes += 1440;
+  if (utcMinutes >= 1440) utcMinutes -= 1440;
+
+  const utcHours = Math.floor(utcMinutes / 60);
+  const utcMins = utcMinutes % 60;
+
+  return `${String(utcHours).padStart(2, '0')}:${String(utcMins).padStart(2, '0')}`;
+}
+
+// Convert UTC ISO datetime to user's timezone for datetime-local input
+function convertUtcDatetimeToTimezone(utcDatetime: string, timezone: string): string {
+  const date = new Date(utcDatetime);
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  const hour = parts.find(p => p.type === 'hour')?.value;
+  const minute = parts.find(p => p.type === 'minute')?.value;
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+// Convert datetime-local value (in user's timezone) to UTC ISO string
+function convertTimezoneDatetimeToUtc(localDatetime: string, timezone: string): string {
+  // Parse the datetime-local value
+  const [datePart, timePart] = localDatetime.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+
+  // Create a UTC date and find the offset
+  const fakeUtc = Date.UTC(year, month - 1, day, hours, minutes);
+  const tzDate = new Date(fakeUtc);
+
+  const targetFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+
+  const targetParts = targetFormatter.formatToParts(tzDate);
+  const targetHour = parseInt(targetParts.find(p => p.type === 'hour')?.value || '0');
+  const targetMinute = parseInt(targetParts.find(p => p.type === 'minute')?.value || '0');
+  const targetDay = parseInt(targetParts.find(p => p.type === 'day')?.value || '0');
+
+  // Calculate offset
+  let offsetMinutes = (targetHour * 60 + targetMinute) - (hours * 60 + minutes);
+  const dayDiff = targetDay - day;
+  if (dayDiff !== 0) offsetMinutes += dayDiff * 1440;
+
+  // Apply inverse offset to get UTC
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes) - offsetMinutes * 60000);
+
+  return utcDate.toISOString();
+}
+
+// Format time for display with timezone label
+function formatTimeWithTimezone(utcTime: string, timezone: string): string {
+  const localTime = convertUtcTimeToTimezone(utcTime, timezone);
+  const tzAbbr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'short'
+  }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || timezone;
+
+  return `${localTime} ${tzAbbr}`;
+}
+
 export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [automations, setAutomations] = useState<AutomationRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,27 +237,57 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [editValues, setEditValues] = useState<Record<string, unknown>>({});
   const [deletingAutomation, setDeletingAutomation] = useState<AutomationRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [userTimezone, setUserTimezone] = useState<string>('UTC');
 
   // Filters
   const [filterService, setFilterService] = useState<string>('all');
   const [filterTriggerType, setFilterTriggerType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  // Get unique services from automations
+  // Extract service name from tool name (e.g., "oura_get_daily_sleep" -> "oura")
+  const extractServiceFromTool = (tool: string): string | null => {
+    const parts = tool.split('_');
+    if (parts.length >= 2) {
+      return parts[0].toLowerCase();
+    }
+    return null;
+  };
+
+  // Get all services for an automation (from trigger_config and actions)
+  const getAutomationServices = (automation: AutomationRecord): string[] => {
+    const services = new Set<string>();
+
+    // Add service from trigger_config if present
+    if (automation.trigger_config?.service) {
+      services.add(automation.trigger_config.service.toLowerCase());
+    }
+
+    // Extract services from action tool names
+    if (automation.actions) {
+      for (const action of automation.actions) {
+        const service = extractServiceFromTool(action.tool);
+        if (service) {
+          services.add(service);
+        }
+      }
+    }
+
+    return Array.from(services);
+  };
+
+  // Get unique services from automations (from both triggers and actions)
   const uniqueServices = Array.from(
     new Set(
-      automations
-        .map(a => a.trigger_config?.service)
-        .filter((s): s is string => !!s)
+      automations.flatMap(a => getAutomationServices(a))
     )
   ).sort();
 
   // Filter automations
   const filteredAutomations = automations.filter(automation => {
-    // Filter by service
+    // Filter by service (checks both trigger_config.service and action tools)
     if (filterService !== 'all') {
-      const service = automation.trigger_config?.service;
-      if (service !== filterService) return false;
+      const services = getAutomationServices(automation);
+      if (!services.includes(filterService.toLowerCase())) return false;
     }
 
     // Filter by trigger type
@@ -115,7 +304,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
     return true;
   });
 
-  // Fetch automations
+  // Fetch automations and user timezone
   const fetchAutomations = useCallback(async () => {
     try {
       const supabase = createClient();
@@ -127,6 +316,17 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         toast.error('Please sign in to view automations');
         setLoading(false);
         return;
+      }
+
+      // Fetch user's timezone from user_profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('timezone')
+        .eq('id', user.id)
+        .single();
+
+      if (!profileError && profileData?.timezone) {
+        setUserTimezone(profileData.timezone);
       }
 
       // Fetch automations from the automations schema
@@ -484,12 +684,23 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       case 'webhook':
         return `${config.service || 'Unknown'} - ${config.event_type || config.event_types?.join(', ') || 'events'}`;
       case 'schedule_recurring':
-        if (config.interval === 'daily' && config.time_of_day) {
-          return `Daily at ${config.time_of_day}`;
+        if (config.time_of_day) {
+          const localTime = formatTimeWithTimezone(config.time_of_day, userTimezone);
+          const intervalLabel = config.interval ? config.interval.charAt(0).toUpperCase() + config.interval.slice(1) : 'Daily';
+          return `${intervalLabel} at ${localTime}`;
         }
         return config.interval || 'Recurring';
       case 'schedule_once':
-        return config.run_at ? `Scheduled for ${new Date(config.run_at).toLocaleString()}` : 'One-time';
+        if (config.run_at) {
+          const localDatetime = convertUtcDatetimeToTimezone(config.run_at, userTimezone);
+          const date = new Date(localDatetime);
+          const tzAbbr = new Intl.DateTimeFormat('en-US', {
+            timeZone: userTimezone,
+            timeZoneName: 'short'
+          }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone;
+          return `Scheduled for ${date.toLocaleString()} ${tzAbbr}`;
+        }
+        return 'One-time';
       case 'polling':
         return `${config.service || 'Unknown'} - every ${config.poll_interval || '5min'}`;
       case 'manual':
@@ -961,7 +1172,15 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
               {/* Schedule editing for scheduled automations */}
               {editingAutomation.trigger_type === 'schedule_recurring' && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium">Schedule Settings</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Schedule Settings</Label>
+                    <span className="text-xs text-muted-foreground">
+                      Timezone: {new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        timeZoneName: 'long'
+                      }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone}
+                    </span>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1000,14 +1219,21 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                       <Input
                         id="time_of_day"
                         type="time"
-                        defaultValue={editingAutomation.trigger_config?.time_of_day || '09:00'}
+                        className="bg-background text-foreground"
+                        defaultValue={
+                          editingAutomation.trigger_config?.time_of_day
+                            ? convertUtcTimeToTimezone(editingAutomation.trigger_config.time_of_day, userTimezone)
+                            : '09:00'
+                        }
                         onChange={(e) => {
+                          // Convert user's local time to UTC for storage
+                          const utcTime = convertTimezoneToUtc(e.target.value, userTimezone);
                           setEditValues(prev => ({
                             ...prev,
                             trigger_config: {
                               ...editingAutomation.trigger_config,
                               ...(prev.trigger_config as Record<string, unknown> || {}),
-                              time_of_day: e.target.value
+                              time_of_day: utcTime
                             }
                           }));
                         }}
@@ -1019,32 +1245,40 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
               {editingAutomation.trigger_type === 'schedule_once' && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium">Schedule Settings</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Schedule Settings</Label>
+                    <span className="text-xs text-muted-foreground">
+                      Timezone: {new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        timeZoneName: 'long'
+                      }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone}
+                    </span>
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="run_at" className="text-sm text-muted-foreground">Run At</Label>
                     <Input
                       id="run_at"
                       type="datetime-local"
+                      className="bg-background text-foreground"
                       defaultValue={
                         editingAutomation.trigger_config?.run_at
-                          ? new Date(editingAutomation.trigger_config.run_at).toISOString().slice(0, 16)
+                          ? convertUtcDatetimeToTimezone(editingAutomation.trigger_config.run_at, userTimezone)
                           : ''
                       }
                       onChange={(e) => {
+                        // Convert user's local datetime to UTC for storage
+                        const utcDatetime = convertTimezoneDatetimeToUtc(e.target.value, userTimezone);
                         setEditValues(prev => ({
                           ...prev,
                           trigger_config: {
                             ...editingAutomation.trigger_config,
                             ...(prev.trigger_config as Record<string, unknown> || {}),
-                            run_at: new Date(e.target.value).toISOString()
+                            run_at: utcDatetime
                           }
                         }));
                       }}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Times are in your local timezone
-                    </p>
                   </div>
                 </div>
               )}
