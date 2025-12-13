@@ -975,8 +975,8 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {/* Trigger button - only for manual and scheduled automations */}
-                        {['manual', 'schedule_recurring', 'schedule_once'].includes(automation.trigger_type) && (
+                        {/* Trigger button - for manual, scheduled, and polling automations */}
+                        {['manual', 'schedule_recurring', 'schedule_once', 'polling'].includes(automation.trigger_type) && (
                           <Button
                             variant="outline"
                             size="sm"
