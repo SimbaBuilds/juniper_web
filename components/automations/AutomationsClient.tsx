@@ -225,6 +225,122 @@ function formatTimeWithTimezone(utcTime: string, timezone: string): string {
   return `${localTime} ${tzAbbr}`;
 }
 
+// ============================================================================
+// Dynamic Editability Helpers
+// ============================================================================
+
+// Keys to always hide from trigger_config editing
+const HIDDEN_TRIGGER_CONFIG_KEYS = new Set([
+  'service', 'event_type', 'source_tool', 'field',  // Internal routing config
+]);
+
+// Keys to always hide from action parameter editing
+const HIDDEN_PARAM_KEYS = new Set([
+  'data',  // Complex nested objects for internal use
+]);
+
+// Check if a parameter should be hidden from editing
+function shouldHideParam(key: string, value: unknown): boolean {
+  // Hide explicit hidden keys
+  if (HIDDEN_PARAM_KEYS.has(key)) return true;
+
+  // Hide ID reference fields
+  if (key.endsWith('_id') || key === 'id') return true;
+
+  // Hide pure template references like "{{trigger_data.id}}"
+  if (typeof value === 'string' && /^\{\{[^}]+\}\}$/.test(value)) return true;
+
+  // Hide complex nested objects (but NOT arrays)
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) return true;
+
+  return false;
+}
+
+// Check if a trigger_config key should be hidden
+function shouldHideTriggerConfigKey(key: string): boolean {
+  return HIDDEN_TRIGGER_CONFIG_KEYS.has(key);
+}
+
+// Check if a condition should be hidden (references an action output)
+function shouldHideCondition(path: string, outputVars: string[]): boolean {
+  // Hide conditions that reference action outputs like "classification.answer"
+  return outputVars.some(v => path.startsWith(v + '.') || path === v);
+}
+
+// Infer the input type based on key name and value
+function inferInputType(key: string, value: unknown): 'text' | 'textarea' | 'number' | 'array' | 'checkbox' | 'email' | 'select' {
+  // Textarea for long text fields
+  if (['message', 'body', 'description', 'question', 'prompt', 'content'].includes(key)) {
+    return 'textarea';
+  }
+
+  // Email fields
+  if (key === 'to' || key.includes('email')) return 'email';
+
+  // Special select for polling interval
+  if (key === 'polling_interval_minutes') return 'select';
+
+  // Numbers
+  if (typeof value === 'number') return 'number';
+
+  // Arrays
+  if (Array.isArray(value)) return 'array';
+
+  // Booleans
+  if (typeof value === 'boolean') return 'checkbox';
+
+  // Default to text
+  return 'text';
+}
+
+// Format a key name for display (snake_case to Title Case)
+function formatKeyLabel(key: string | undefined | null): string {
+  if (!key) return 'Unknown';
+  return key
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Editable field definition
+interface EditableField {
+  path: string;
+  key: string;
+  value: unknown;
+  inputType: 'text' | 'textarea' | 'number' | 'array' | 'checkbox' | 'email' | 'select';
+  label: string;
+}
+
+// Recursively find editable fields in an object
+function findEditableFields(obj: Record<string, unknown>, basePath = ''): EditableField[] {
+  const fields: EditableField[] = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    const fieldPath = basePath ? `${basePath}.${key}` : key;
+
+    // Skip hidden fields
+    if (shouldHideParam(key, value)) continue;
+    if (basePath === '' && shouldHideTriggerConfigKey(key)) continue;
+
+    // If it's a nested object (but not array), recurse
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      fields.push(...findEditableFields(value as Record<string, unknown>, fieldPath));
+    } else {
+      // It's an editable leaf value
+      const inputType = inferInputType(key, value);
+      fields.push({
+        path: fieldPath,
+        key,
+        value,
+        inputType,
+        label: formatKeyLabel(key)
+      });
+    }
+  }
+
+  return fields;
+}
+
 export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [automations, setAutomations] = useState<AutomationRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -553,15 +669,12 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       };
 
       // Add fields from editValues
+      // Note: JSONB columns (trigger_config, actions, variables) accept objects directly
+      // Do NOT stringify them - Supabase handles the conversion
       const allowedFields = ['active', 'name', 'description', 'trigger_config', 'actions', 'variables'];
       for (const field of allowedFields) {
         if (editValues[field] !== undefined) {
-          // Stringify JSON fields if they're objects
-          if (['trigger_config', 'actions', 'variables'].includes(field) && typeof editValues[field] === 'object') {
-            updatePayload[field] = JSON.stringify(editValues[field]);
-          } else {
-            updatePayload[field] = editValues[field];
-          }
+          updatePayload[field] = editValues[field];
         }
       }
 
@@ -693,30 +806,51 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
     }
   };
 
-  // Render action conditions as editable fields
+  // Render action conditions as editable fields (hides output-referenced conditions)
   const renderEditableConditions = (actions: AutomationAction[] | null) => {
     if (!actions) return null;
 
-    const editableConditions: { actionId: string; path: string; op: string; value: unknown }[] = [];
+    // Collect output variable names from actions
+    const outputVars = actions
+      .filter(a => a.output_as)
+      .map(a => a.output_as as string);
 
-    actions.forEach(action => {
+    const editableConditions: { actionId: string; actionIdx: number; actionLabel: string; path: string; op: string; value: unknown }[] = [];
+
+    // Helper to get action ID (supports both 'id' and 'action_id')
+    const getConditionActionId = (action: AutomationAction): string => {
+      return action.id || (action as Record<string, unknown>).action_id as string || '';
+    };
+
+    actions.forEach((action, idx) => {
+      const actionId = getConditionActionId(action);
       if (action.condition) {
         if (action.condition.clauses) {
-          action.condition.clauses.forEach((clause, idx) => {
-            editableConditions.push({
-              actionId: action.id,
-              path: clause.path,
-              op: clause.op,
-              value: clause.value
-            });
+          action.condition.clauses.forEach((clause) => {
+            // Skip conditions that reference action outputs
+            if (!shouldHideCondition(clause.path, outputVars)) {
+              editableConditions.push({
+                actionId,
+                actionIdx: idx,
+                actionLabel: formatKeyLabel(actionId || action.tool),
+                path: clause.path,
+                op: clause.op,
+                value: clause.value
+              });
+            }
           });
         } else if (action.condition.path && action.condition.op) {
-          editableConditions.push({
-            actionId: action.id,
-            path: action.condition.path,
-            op: action.condition.op,
-            value: action.condition.value
-          });
+          // Skip conditions that reference action outputs
+          if (!shouldHideCondition(action.condition.path, outputVars)) {
+            editableConditions.push({
+              actionId,
+              actionIdx: idx,
+              actionLabel: formatKeyLabel(actionId || action.tool),
+              path: action.condition.path,
+              op: action.condition.op,
+              value: action.condition.value
+            });
+          }
         }
       }
     });
@@ -728,17 +862,16 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         <Label className="text-sm font-medium">Conditions</Label>
         {editableConditions.map((cond, idx) => (
           <div key={idx} className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground font-mono">{cond.path}</span>
+            <span className="text-muted-foreground font-mono text-xs">{cond.path}</span>
             <span className="text-muted-foreground">{cond.op}</span>
             <Input
-              type="text"
+              type={typeof cond.value === 'number' ? 'number' : 'text'}
               className="w-24 h-8"
               defaultValue={String(cond.value)}
               onChange={(e) => {
-                // Update the condition value in editValues
                 const newActions = [...(editValues.actions as AutomationAction[] || editingAutomation?.actions || [])];
-                const actionIdx = newActions.findIndex(a => a.id === cond.actionId);
-                if (actionIdx >= 0) {
+                const actionIdx = cond.actionIdx;
+                if (actionIdx >= 0 && actionIdx < newActions.length) {
                   const action = { ...newActions[actionIdx] };
                   if (action.condition?.clauses) {
                     const clauseIdx = action.condition.clauses.findIndex(
@@ -763,6 +896,296 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         ))}
       </div>
     );
+  };
+
+  // Render editable trigger_config fields
+  const renderEditableTriggerConfig = (automation: AutomationRecord) => {
+    if (!automation.trigger_config) return null;
+
+    // Already handled by existing schedule editors
+    if (automation.trigger_type === 'schedule_recurring' || automation.trigger_type === 'schedule_once') {
+      return null;
+    }
+
+    const config = typeof automation.trigger_config === 'string'
+      ? JSON.parse(automation.trigger_config)
+      : automation.trigger_config;
+
+    const editableFields = findEditableFields(config);
+
+    if (editableFields.length === 0) return null;
+
+    return (
+      <div className="space-y-4 pt-4 border-t border-border">
+        <Label className="text-sm font-medium">Trigger Settings</Label>
+        {editableFields.map((field, idx) => (
+          <div key={idx} className="space-y-2">
+            <Label htmlFor={`trigger-${field.path}`} className="text-sm text-muted-foreground">
+              {field.label}
+            </Label>
+            {renderFieldInput(field, 'trigger_config', config)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Helper to get action ID (supports both 'id' and 'action_id' schemas)
+  const getActionId = (action: AutomationAction): string => {
+    return action.id || (action as Record<string, unknown>).action_id as string || `action-${Math.random()}`;
+  };
+
+  // Helper to get action parameters (supports both 'parameters' and 'params' schemas)
+  const getActionParams = (action: AutomationAction): Record<string, unknown> | null => {
+    const params = action.parameters || (action as Record<string, unknown>).params;
+    if (!params) return null;
+    return typeof params === 'string' ? JSON.parse(params) : params;
+  };
+
+  // Render editable action parameters
+  const renderEditableActionParams = (actions: AutomationAction[] | null) => {
+    if (!actions || actions.length === 0) return null;
+
+    const actionFields: { action: AutomationAction; actionIdx: number; fields: EditableField[] }[] = [];
+
+    actions.forEach((action, actionIdx) => {
+      const params = getActionParams(action);
+      if (params) {
+        const fields = findEditableFields(params);
+        if (fields.length > 0) {
+          actionFields.push({ action, actionIdx, fields });
+        }
+      }
+    });
+
+    if (actionFields.length === 0) return null;
+
+    return (
+      <div className="space-y-4 pt-4 border-t border-border">
+        <Label className="text-sm font-medium">Action Parameters</Label>
+        {actionFields.map(({ action, actionIdx, fields }) => {
+          const actionId = getActionId(action);
+          return (
+            <div key={actionId} className="space-y-3 pl-2 border-l-2 border-muted">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {formatKeyLabel(action.tool)}
+              </span>
+              {fields.map((field, fieldIdx) => (
+                <div key={fieldIdx} className="space-y-1">
+                  <Label
+                    htmlFor={`action-${actionId}-${field.path}`}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {field.label}
+                  </Label>
+                  {renderActionFieldInput(field, action, actionIdx)}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Helper to render input for a trigger_config field
+  const renderFieldInput = (field: EditableField, configType: string, currentConfig: Record<string, unknown>) => {
+    const currentValue = editValues.trigger_config
+      ? getNestedValue(editValues.trigger_config as Record<string, unknown>, field.path)
+      : getNestedValue(currentConfig, field.path);
+
+    const value = currentValue !== undefined ? currentValue : field.value;
+
+    const updateValue = (newValue: unknown) => {
+      const updatedConfig = { ...currentConfig };
+      setNestedValue(updatedConfig, field.path, newValue);
+      setEditValues(prev => ({
+        ...prev,
+        trigger_config: {
+          ...(prev.trigger_config as Record<string, unknown> || {}),
+          ...updatedConfig
+        }
+      }));
+    };
+
+    switch (field.inputType) {
+      case 'textarea':
+        return (
+          <textarea
+            id={`trigger-${field.path}`}
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-input rounded-md bg-background"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+
+      case 'array':
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type="text"
+            placeholder="Comma-separated values"
+            defaultValue={Array.isArray(value) ? (value as string[]).join(', ') : ''}
+            onChange={(e) => updateValue(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+          />
+        );
+
+      case 'select':
+        if (field.key === 'polling_interval_minutes') {
+          return (
+            <Select
+              value={String(value || 5)}
+              onValueChange={(v) => updateValue(Number(v))}
+            >
+              <SelectTrigger id={`trigger-${field.path}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 minute</SelectItem>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+          );
+        }
+        return <Input id={`trigger-${field.path}`} defaultValue={String(value || '')} onChange={(e) => updateValue(e.target.value)} />;
+
+      case 'number':
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type="number"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(Number(e.target.value))}
+          />
+        );
+
+      case 'checkbox':
+        return (
+          <Switch
+            id={`trigger-${field.path}`}
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => updateValue(checked)}
+          />
+        );
+
+      default:
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type={field.inputType === 'email' ? 'email' : 'text'}
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+    }
+  };
+
+  // Helper to render input for an action parameter field
+  const renderActionFieldInput = (field: EditableField, action: AutomationAction, actionIdx: number) => {
+    const currentActions = editValues.actions as AutomationAction[] || editingAutomation?.actions || [];
+    const currentAction = currentActions[actionIdx] || action;
+    const parsedParams = getActionParams(currentAction) || getActionParams(action) || {};
+    const actionId = getActionId(action);
+
+    const value = getNestedValue(parsedParams, field.path) ?? field.value;
+
+    // Determine which key the original action uses for parameters
+    const paramsKey = (action as Record<string, unknown>).params ? 'params' : 'parameters';
+
+    const updateValue = (newValue: unknown) => {
+      const newActions = [...currentActions];
+      const updatedParams = { ...parsedParams };
+      setNestedValue(updatedParams, field.path, newValue);
+      newActions[actionIdx] = {
+        ...newActions[actionIdx],
+        [paramsKey]: updatedParams
+      };
+      setEditValues(prev => ({ ...prev, actions: newActions }));
+    };
+
+    switch (field.inputType) {
+      case 'textarea':
+        return (
+          <textarea
+            id={`action-${actionId}-${field.path}`}
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-input rounded-md bg-background"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+
+      case 'array':
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type="text"
+            placeholder="Comma-separated values"
+            defaultValue={Array.isArray(value) ? (value as string[]).join(', ') : ''}
+            onChange={(e) => updateValue(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+          />
+        );
+
+      case 'number':
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type="number"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(Number(e.target.value))}
+          />
+        );
+
+      case 'checkbox':
+        return (
+          <Switch
+            id={`action-${actionId}-${field.path}`}
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => updateValue(checked)}
+          />
+        );
+
+      default:
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type={field.inputType === 'email' ? 'email' : 'text'}
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+    }
+  };
+
+  // Helper to get nested value from object by path (e.g., "filter.contains_any")
+  const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+    return path.split('.').reduce((acc: unknown, key) => {
+      if (acc && typeof acc === 'object') {
+        return (acc as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
+  };
+
+  // Helper to set nested value in object by path
+  const setNestedValue = (obj: Record<string, unknown>, path: string, value: unknown): void => {
+    const keys = path.split('.');
+    const lastKey = keys.pop()!;
+    const target = keys.reduce((acc: unknown, key) => {
+      if (acc && typeof acc === 'object') {
+        if (!(key in (acc as Record<string, unknown>))) {
+          (acc as Record<string, unknown>)[key] = {};
+        }
+        return (acc as Record<string, unknown>)[key];
+      }
+      return acc;
+    }, obj);
+    if (target && typeof target === 'object') {
+      (target as Record<string, unknown>)[lastKey] = value;
+    }
   };
 
   if (loading) {
@@ -1121,7 +1544,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingAutomation} onOpenChange={(open) => !open && setEditingAutomation(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Automation</DialogTitle>
             <DialogDescription>
@@ -1265,6 +1688,12 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                   </div>
                 </div>
               )}
+
+              {/* Dynamic trigger config fields (for webhook, polling, manual) */}
+              {renderEditableTriggerConfig(editingAutomation)}
+
+              {/* Dynamic action parameters */}
+              {renderEditableActionParams(editingAutomation.actions)}
             </div>
           )}
 
