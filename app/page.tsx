@@ -157,9 +157,9 @@ export default function HomePage() {
           </motion.div>
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-6">
-              <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
+              {/* <Link href="/blog" className="text-foreground hover:text-primary transition-colors">
                 Blog
-              </Link>
+              </Link> */}
               <Link href="/integration-descriptions" className="text-foreground hover:text-primary transition-colors">
                 Integrations
               </Link>
