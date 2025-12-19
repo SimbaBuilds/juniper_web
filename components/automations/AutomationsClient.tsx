@@ -16,7 +16,8 @@ import {
   Loader2,
   Settings,
   History,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -362,6 +363,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [filterService, setFilterService] = useState<string>('all');
   const [filterTriggerType, setFilterTriggerType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Extract service name from tool name (e.g., "oura_get_daily_sleep" -> "oura")
   const extractServiceFromTool = (tool: string): string | null => {
@@ -403,6 +405,14 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
   // Filter automations
   const filteredAutomations = automations.filter(automation => {
+    // Filter by search query (name and description)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const nameMatch = automation.name?.toLowerCase().includes(query);
+      const descMatch = automation.description?.toLowerCase().includes(query);
+      if (!nameMatch && !descMatch) return false;
+    }
+
     // Filter by service (checks both trigger_config.service and action tools)
     if (filterService !== 'all') {
       const services = getAutomationServices(automation);
@@ -1219,7 +1229,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const activeAutomations = automations.filter(a => a.active);
   const inactiveAutomations = automations.filter(a => !a.active);
 
-  const hasActiveFilters = filterService !== 'all' || filterTriggerType !== 'all' || filterStatus !== 'all';
+  const hasActiveFilters = filterService !== 'all' || filterTriggerType !== 'all' || filterStatus !== 'all' || searchQuery.trim() !== '';
 
   return (
     <div className="space-y-8">
@@ -1247,6 +1257,17 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       {/* Filters */}
       <div className="bg-card p-4 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Label htmlFor="filter-status" className="text-sm text-muted-foreground whitespace-nowrap">Status:</Label>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -1305,6 +1326,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                 setFilterStatus('all');
                 setFilterTriggerType('all');
                 setFilterService('all');
+                setSearchQuery('');
               }}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -1349,6 +1371,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                 setFilterStatus('all');
                 setFilterTriggerType('all');
                 setFilterService('all');
+                setSearchQuery('');
               }}
               className="mt-4"
             >
