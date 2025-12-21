@@ -9,7 +9,7 @@ export default async function AutomationsPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Automations</h1>
         <p className="text-muted-foreground">
-          Manage your automated workflows. Pause, resume, or manually trigger automations.
+          Manage your automated workflows. Pause, resume, edit, or manually trigger automations.
         </p>
       </div>
 

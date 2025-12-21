@@ -1,3 +1,5 @@
-Please add a search automations by title/description the automations page.
+Not working:
 
-Please give a concise plan non sub agents or olan mode
+ex
+
+[{"idx":1,"id":"dc12464e-e105-4291-9171-0ed3c6a34702","user_id":"56a2c117-6486-4ca5-a57d-6c2e877e7083","name":"Unsent Draft Reminder","description":"Checks for unsent Gmail drafts and sends SMS reminder if any are found","trigger_type":"polling","trigger_config":"{\"service\": \"Gmail\", \"event_type\": \"drafts_found\", \"source_tool\": \"gmail_get_messages\", \"tool_params\": {\"query\": \"in:drafts\", \"max_results\": 10, \"include_content\": false}, \"polling_interval_minutes\": 60}","script_code":null,"execution_params":"{}","dependencies":[],"active":true,"created_at":"2025-12-20 14:59:01.850394+00","updated_at":"2025-12-20 21:00:06.911837+00","actions":"[{\"id\": \"send_reminder\", \"tool\": \"textbelt_send_sms\", \"parameters\": {\"message\": \"Reminder: You have unsent email drafts including '{{trigger_data.0.subject}}'. Don't forget to send them!\"}}]","variables":"{}","status":"active","confirmed_at":"2025-12-20 14:59:01.850343+00","next_poll_at":"2025-12-20 22:00:06.884+00","last_poll_cursor":"Thu, 27 Feb 2025 19:47:01 -0600","polling_interval_minutes":60}]
