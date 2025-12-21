@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { createSupabaseAppServerClient } from '@/lib/utils/supabase/server';
 
 // Helper to wait for a specified duration
@@ -10,7 +11,28 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // - others: Direct execution via script-executor
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseAppServerClient();
+    // Check for Bearer token from mobile app
+    const authHeader = request.headers.get('Authorization');
+    let supabase;
+    let accessToken: string | null = null;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      // Mobile app auth - use the token directly
+      accessToken = authHeader.replace('Bearer ', '');
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }
+        }
+      );
+    } else {
+      // Web app auth - use cookies
+      supabase = await createSupabaseAppServerClient();
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -148,11 +170,14 @@ export async function POST(request: NextRequest) {
     // ALL OTHER AUTOMATION TYPES - Direct execution
     // ================================================================
 
-    // Get user's session token to authenticate with edge function
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session?.access_token) {
-      return NextResponse.json({ error: 'Failed to get session' }, { status: 401 });
+    // Get access token for edge function calls
+    // For mobile (Bearer token), we already have it; for web (cookies), get from session
+    if (!accessToken) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        return NextResponse.json({ error: 'Failed to get session' }, { status: 401 });
+      }
+      accessToken = session.access_token;
     }
 
     const executorUrl = `${supabaseUrl}/functions/v1/script-executor/manual`;
@@ -179,7 +204,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        'Authorization': `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload)
     });
