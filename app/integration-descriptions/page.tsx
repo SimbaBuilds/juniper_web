@@ -31,10 +31,10 @@ export default function IntegrationDescriptions() {
         
         const servicesData = await response.json();
         // Filter out Google Health Connect
-        const filteredServices = servicesData.filter(
-          (service: ServiceWithTags) => service.service_name !== 'Google Health Connect'
-        );
-        setServices(filteredServices);
+        // const filteredServices = servicesData.filter(
+        //   (service: ServiceWithTags) => service.service_name !== 'Google Health Connect'
+        // );
+        setServices(servicesData);
       } catch (err) {
         console.error('Error fetching services:', err);
         setError('Failed to load services');
@@ -50,7 +50,7 @@ export default function IntegrationDescriptions() {
     const name = serviceName.toLowerCase();
     
     // Health and Wellness
-    if (['oura', 'fitbit', 'mychart', 'apple health', 'google fit'].includes(name)) {
+    if (['oura', 'fitbit', 'mychart', 'apple health', 'google fit', 'google health connect'].includes(name)) {
       return 'Health and Wellness';
     }
     

@@ -68,14 +68,37 @@ const triggerTypeConfig: Record<string, { icon: React.ElementType; label: string
 };
 
 // Timezone conversion utilities
-// Convert UTC time string (HH:MM) to user's timezone
+// Convert UTC time string (HH:MM) to user's timezone (returns friendly format like "1pm" or "1:30pm")
 function convertUtcTimeToTimezone(utcTime: string, timezone: string): string {
   // Create a date object for today with the UTC time
   const today = new Date();
   const [hours, minutes] = utcTime.split(':').map(Number);
   const utcDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes));
 
-  // Format in user's timezone
+  // Format in user's timezone with 12-hour format
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone
+  });
+
+  const formatted = formatter.format(utcDate);
+
+  // Clean up format: "1:00 PM" -> "1pm", "1:30 PM" -> "1:30pm"
+  return formatted
+    .replace(':00', '')           // Remove :00 for on-the-hour times
+    .replace(' ', '')             // Remove space before AM/PM
+    .toLowerCase();               // Lowercase am/pm
+}
+
+// Convert UTC time string (HH:MM) to user's timezone in 24-hour format for time inputs
+function convertUtcTimeToTimezone24h(utcTime: string, timezone: string): string {
+  const today = new Date();
+  const [hours, minutes] = utcTime.split(':').map(Number);
+  const utcDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes));
+
+  // Format in user's timezone with 24-hour format for input elements
   const formatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
@@ -357,7 +380,14 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [editValues, setEditValues] = useState<Record<string, unknown>>({});
   const [deletingAutomation, setDeletingAutomation] = useState<AutomationRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [userTimezone, setUserTimezone] = useState<string>('UTC');
+  // Default to browser timezone, will be overridden by user profile timezone if available
+  const [userTimezone, setUserTimezone] = useState<string>(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
+    }
+  });
 
   // Filters
   const [filterService, setFilterService] = useState<string>('all');
@@ -454,7 +484,10 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         .eq('id', user.id)
         .single();
 
-      if (!profileError && profileData?.timezone) {
+      if (profileError) {
+        console.warn('Could not fetch user timezone from profile:', profileError.message);
+        // Will use browser timezone as fallback (set in initial state)
+      } else if (profileData?.timezone) {
         setUserTimezone(profileData.timezone);
       }
 
@@ -1654,7 +1687,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                         className="bg-background text-foreground"
                         defaultValue={
                           editingAutomation.trigger_config?.time_of_day
-                            ? convertUtcTimeToTimezone(editingAutomation.trigger_config.time_of_day, userTimezone)
+                            ? convertUtcTimeToTimezone24h(editingAutomation.trigger_config.time_of_day, userTimezone)
                             : '09:00'
                         }
                         onChange={(e) => {
