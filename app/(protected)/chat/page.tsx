@@ -873,10 +873,9 @@ export default function ChatPage() {
                               <strong>Welcome to Juniper! 🎉</strong>
                             </p>
                             <p className="mb-3">
-                            Hi there! I'm Juniper. We're honored to be part of your journey toward greater wellbeing and productivity. Together with my specialized agent team, we can help optimize your daily life - from tracking your health metrics to drafting and sending emails in your unique voice.
-                            </p>
+                            Hi there! I'm Juniper, and I am honored to be part of your wellness and creative journey. My agent team and I can help out in multiple areas - from providing insights based on your health metrics and medical records to sending emails in your unique voice.  One cool feature is our automations workflow.  You can ask me “give me a weekly wellness report and analysis every Sunday at 8pm” and I will set that automation for you that you or I can edit any time.  It also works across productivity services: “Let me know whenever the new project budget is mentioned in Slack”.                            </p>
                             <p className="mb-0">
-                              What would you like to get started with today? If you aren't sure, starting with an integration is a great way to learn about what we can do.
+                              What would you like to get started with today?
                             </p>
                           </div>
                         </div>
