@@ -16,7 +16,8 @@ import {
   Loader2,
   Settings,
   History,
-  Trash2
+  Trash2,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -66,6 +67,307 @@ const triggerTypeConfig: Record<string, { icon: React.ElementType; label: string
   polling: { icon: RefreshCw, label: 'Polling', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
 };
 
+// Timezone conversion utilities
+// Convert UTC time string (HH:MM) to user's timezone (returns friendly format like "1pm" or "1:30pm")
+function convertUtcTimeToTimezone(utcTime: string, timezone: string): string {
+  // Create a date object for today with the UTC time
+  const today = new Date();
+  const [hours, minutes] = utcTime.split(':').map(Number);
+  const utcDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes));
+
+  // Format in user's timezone with 12-hour format
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: timezone
+  });
+
+  const formatted = formatter.format(utcDate);
+
+  // Clean up format: "1:00 PM" -> "1pm", "1:30 PM" -> "1:30pm"
+  return formatted
+    .replace(':00', '')           // Remove :00 for on-the-hour times
+    .replace(' ', '')             // Remove space before AM/PM
+    .toLowerCase();               // Lowercase am/pm
+}
+
+// Convert UTC time string (HH:MM) to user's timezone in 24-hour format for time inputs
+function convertUtcTimeToTimezone24h(utcTime: string, timezone: string): string {
+  const today = new Date();
+  const [hours, minutes] = utcTime.split(':').map(Number);
+  const utcDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes));
+
+  // Format in user's timezone with 24-hour format for input elements
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone
+  });
+
+  return formatter.format(utcDate);
+}
+
+// Convert user's local time string (HH:MM) to UTC
+function convertTimezoneToUtc(localTime: string, timezone: string): string {
+  const today = new Date();
+  const [hours, minutes] = localTime.split(':').map(Number);
+
+  // Create a date string with the local time and parse it in the user's timezone
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}T${localTime}:00`;
+
+  // Get the offset for the user's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  // Parse as if it's in the user's timezone
+  const localDate = new Date(dateStr);
+  const tzOffset = localDate.getTimezoneOffset(); // Browser's offset
+
+  // Get the user's timezone offset
+  const parts = formatter.formatToParts(new Date());
+  const utcFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  // Convert to timestamp treating the time as in the target timezone
+  const fakeUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+  const tzDate = new Date(fakeUtc);
+
+  // Get UTC representation
+  const targetFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+
+  // Find the offset by comparing
+  const targetParts = targetFormatter.formatToParts(tzDate);
+  const targetHour = parseInt(targetParts.find(p => p.type === 'hour')?.value || '0');
+  const targetMinute = parseInt(targetParts.find(p => p.type === 'minute')?.value || '0');
+
+  // Calculate offset in minutes
+  let offsetMinutes = (targetHour * 60 + targetMinute) - (hours * 60 + minutes);
+  if (offsetMinutes > 720) offsetMinutes -= 1440;
+  if (offsetMinutes < -720) offsetMinutes += 1440;
+
+  // Apply inverse offset to get UTC
+  let utcMinutes = hours * 60 + minutes - offsetMinutes;
+  if (utcMinutes < 0) utcMinutes += 1440;
+  if (utcMinutes >= 1440) utcMinutes -= 1440;
+
+  const utcHours = Math.floor(utcMinutes / 60);
+  const utcMins = utcMinutes % 60;
+
+  return `${String(utcHours).padStart(2, '0')}:${String(utcMins).padStart(2, '0')}`;
+}
+
+// Convert UTC ISO datetime to user's timezone for datetime-local input
+function convertUtcDatetimeToTimezone(utcDatetime: string, timezone: string): string {
+  const date = new Date(utcDatetime);
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(date);
+  const year = parts.find(p => p.type === 'year')?.value;
+  const month = parts.find(p => p.type === 'month')?.value;
+  const day = parts.find(p => p.type === 'day')?.value;
+  const hour = parts.find(p => p.type === 'hour')?.value;
+  const minute = parts.find(p => p.type === 'minute')?.value;
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+// Convert datetime-local value (in user's timezone) to UTC ISO string
+function convertTimezoneDatetimeToUtc(localDatetime: string, timezone: string): string {
+  // Parse the datetime-local value
+  const [datePart, timePart] = localDatetime.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+
+  // Create a UTC date and find the offset
+  const fakeUtc = Date.UTC(year, month - 1, day, hours, minutes);
+  const tzDate = new Date(fakeUtc);
+
+  const targetFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+
+  const targetParts = targetFormatter.formatToParts(tzDate);
+  const targetHour = parseInt(targetParts.find(p => p.type === 'hour')?.value || '0');
+  const targetMinute = parseInt(targetParts.find(p => p.type === 'minute')?.value || '0');
+  const targetDay = parseInt(targetParts.find(p => p.type === 'day')?.value || '0');
+
+  // Calculate offset
+  let offsetMinutes = (targetHour * 60 + targetMinute) - (hours * 60 + minutes);
+  const dayDiff = targetDay - day;
+  if (dayDiff !== 0) offsetMinutes += dayDiff * 1440;
+
+  // Apply inverse offset to get UTC
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes) - offsetMinutes * 60000);
+
+  return utcDate.toISOString();
+}
+
+// Format time for display with timezone label
+function formatTimeWithTimezone(utcTime: string, timezone: string): string {
+  const localTime = convertUtcTimeToTimezone(utcTime, timezone);
+  const tzAbbr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'short'
+  }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || timezone;
+
+  return `${localTime} ${tzAbbr}`;
+}
+
+// ============================================================================
+// Dynamic Editability Helpers
+// ============================================================================
+
+// Keys to always hide from trigger_config editing
+const HIDDEN_TRIGGER_CONFIG_KEYS = new Set([
+  'service', 'event_type', 'source_tool', 'field',  // Internal routing config
+]);
+
+// Keys to always hide from action parameter editing
+const HIDDEN_PARAM_KEYS = new Set([
+  'data',  // Complex nested objects for internal use
+]);
+
+// Check if a parameter should be hidden from editing
+function shouldHideParam(key: string, value: unknown): boolean {
+  // Hide explicit hidden keys
+  if (HIDDEN_PARAM_KEYS.has(key)) return true;
+
+  // Hide ID reference fields
+  if (key.endsWith('_id') || key === 'id') return true;
+
+  // Hide pure template references like "{{trigger_data.id}}"
+  if (typeof value === 'string' && /^\{\{[^}]+\}\}$/.test(value)) return true;
+
+  // Hide complex nested objects
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) return true;
+
+  // Hide arrays of objects (but keep arrays of primitives like ["sleep_score", "readiness_score"])
+  if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') return true;
+
+  return false;
+}
+
+// Check if a trigger_config key should be hidden
+function shouldHideTriggerConfigKey(key: string): boolean {
+  return HIDDEN_TRIGGER_CONFIG_KEYS.has(key);
+}
+
+// Check if a condition should be hidden (references an action output)
+function shouldHideCondition(path: string, outputVars: string[]): boolean {
+  // Hide conditions that reference action outputs like "classification.answer"
+  return outputVars.some(v => path.startsWith(v + '.') || path === v);
+}
+
+// Infer the input type based on key name and value
+function inferInputType(key: string, value: unknown): 'text' | 'textarea' | 'number' | 'array' | 'checkbox' | 'email' | 'select' {
+  // Textarea for long text fields
+  if (['message', 'body', 'description', 'question', 'prompt', 'content'].includes(key)) {
+    return 'textarea';
+  }
+
+  // Email fields
+  if (key === 'to' || key.includes('email')) return 'email';
+
+  // Special select for polling interval
+  if (key === 'polling_interval_minutes') return 'select';
+
+  // Numbers
+  if (typeof value === 'number') return 'number';
+
+  // Arrays
+  if (Array.isArray(value)) return 'array';
+
+  // Booleans
+  if (typeof value === 'boolean') return 'checkbox';
+
+  // Default to text
+  return 'text';
+}
+
+// Format a key name for display (snake_case to Title Case)
+function formatKeyLabel(key: string | undefined | null): string {
+  if (!key) return 'Unknown';
+  return key
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Editable field definition
+interface EditableField {
+  path: string;
+  key: string;
+  value: unknown;
+  inputType: 'text' | 'textarea' | 'number' | 'array' | 'checkbox' | 'email' | 'select';
+  label: string;
+}
+
+// Recursively find editable fields in an object
+function findEditableFields(obj: Record<string, unknown>, basePath = ''): EditableField[] {
+  const fields: EditableField[] = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    const fieldPath = basePath ? `${basePath}.${key}` : key;
+
+    // Skip hidden fields
+    if (shouldHideParam(key, value)) continue;
+    if (basePath === '' && shouldHideTriggerConfigKey(key)) continue;
+
+    // If it's a nested object (but not array), recurse
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      fields.push(...findEditableFields(value as Record<string, unknown>, fieldPath));
+    } else {
+      // It's an editable leaf value
+      const inputType = inferInputType(key, value);
+      fields.push({
+        path: fieldPath,
+        key,
+        value,
+        inputType,
+        label: formatKeyLabel(key)
+      });
+    }
+  }
+
+  return fields;
+}
+
 export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [automations, setAutomations] = useState<AutomationRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,27 +380,73 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const [editValues, setEditValues] = useState<Record<string, unknown>>({});
   const [deletingAutomation, setDeletingAutomation] = useState<AutomationRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Default to browser timezone, will be overridden by user profile timezone if available
+  const [userTimezone, setUserTimezone] = useState<string>(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC';
+    }
+  });
 
   // Filters
   const [filterService, setFilterService] = useState<string>('all');
   const [filterTriggerType, setFilterTriggerType] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Get unique services from automations
+  // Extract service name from tool name (e.g., "oura_get_daily_sleep" -> "oura")
+  const extractServiceFromTool = (tool: string): string | null => {
+    const parts = tool.split('_');
+    if (parts.length >= 2) {
+      return parts[0].toLowerCase();
+    }
+    return null;
+  };
+
+  // Get all services for an automation (from trigger_config and actions)
+  const getAutomationServices = (automation: AutomationRecord): string[] => {
+    const services = new Set<string>();
+
+    // Add service from trigger_config if present
+    if (automation.trigger_config?.service) {
+      services.add(automation.trigger_config.service.toLowerCase());
+    }
+
+    // Extract services from action tool names
+    if (automation.actions) {
+      for (const action of automation.actions) {
+        const service = extractServiceFromTool(action.tool);
+        if (service) {
+          services.add(service);
+        }
+      }
+    }
+
+    return Array.from(services);
+  };
+
+  // Get unique services from automations (from both triggers and actions)
   const uniqueServices = Array.from(
     new Set(
-      automations
-        .map(a => a.trigger_config?.service)
-        .filter((s): s is string => !!s)
+      automations.flatMap(a => getAutomationServices(a))
     )
   ).sort();
 
   // Filter automations
   const filteredAutomations = automations.filter(automation => {
-    // Filter by service
+    // Filter by search query (name and description)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const nameMatch = automation.name?.toLowerCase().includes(query);
+      const descMatch = automation.description?.toLowerCase().includes(query);
+      if (!nameMatch && !descMatch) return false;
+    }
+
+    // Filter by service (checks both trigger_config.service and action tools)
     if (filterService !== 'all') {
-      const service = automation.trigger_config?.service;
-      if (service !== filterService) return false;
+      const services = getAutomationServices(automation);
+      if (!services.includes(filterService.toLowerCase())) return false;
     }
 
     // Filter by trigger type
@@ -115,7 +463,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
     return true;
   });
 
-  // Fetch automations
+  // Fetch automations and user timezone
   const fetchAutomations = useCallback(async () => {
     try {
       const supabase = createClient();
@@ -127,6 +475,20 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         toast.error('Please sign in to view automations');
         setLoading(false);
         return;
+      }
+
+      // Fetch user's timezone from user_profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('timezone')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.warn('Could not fetch user timezone from profile:', profileError.message);
+        // Will use browser timezone as fallback (set in initial state)
+      } else if (profileData?.timezone) {
+        setUserTimezone(profileData.timezone);
       }
 
       // Fetch automations from the automations schema
@@ -225,6 +587,9 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   };
 
   // Manually trigger automation
+  // Uses the /api/automations/trigger route which handles:
+  // - Polling automations: poll → wait → process events
+  // - Other types: direct execution via script-executor
   const handleTrigger = async (automation: AutomationRecord) => {
     setLoadingStates(prev => ({
       ...prev,
@@ -232,54 +597,34 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
     }));
 
     try {
-      const supabase = createClient();
+      console.log(`Triggering ${automation.trigger_type} automation ${automation.id} (${automation.name})`);
 
-      // Get session for authentication with edge function
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.access_token) {
-        throw new Error('Please sign in to trigger automations');
-      }
-
-      // Get Supabase URL from env
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (!supabaseUrl) {
-        throw new Error('Configuration error');
-      }
-
-      const executorUrl = `${supabaseUrl}/functions/v1/script-executor/manual`;
-
-      const manualTriggerData = {
-        trigger_type: 'manual',
-        triggered_at: new Date().toISOString(),
-        triggered_by: 'web_ui',
-      };
-
-      console.log(`Triggering automation ${automation.id} (${automation.name})`);
-
-      const response = await fetch(executorUrl, {
+      const response = await fetch('/api/automations/trigger', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          automation_id: automation.id,
-          trigger_data: manualTriggerData,
-          test_mode: false
+          automation_id: automation.id
         })
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorText = await response.text();
-        try {
-          const errorJson = JSON.parse(errorText);
-          throw new Error(errorJson.error || errorJson.message || 'Execution failed');
-        } catch {
-          throw new Error(`Execution failed: ${errorText}`);
-        }
+        throw new Error(result.error || 'Execution failed');
       }
 
-      toast.success(`Automation "${automation.name}" triggered successfully`);
+      // Show appropriate success message based on trigger type
+      if (automation.trigger_type === 'polling') {
+        const pollResult = result.poll_result || {};
+        const processResult = result.process_result || {};
+        toast.success(
+          `Polled ${pollResult.items_found || 0} items, processed ${processResult.events_processed || 0} events`
+        );
+      } else {
+        toast.success(`Automation "${automation.name}" triggered successfully`);
+      }
 
       // Refresh logs for this automation
       if (expandedLogs[automation.id]) {
@@ -370,15 +715,12 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       };
 
       // Add fields from editValues
+      // Note: JSONB columns (trigger_config, actions, variables) accept objects directly
+      // Do NOT stringify them - Supabase handles the conversion
       const allowedFields = ['active', 'name', 'description', 'trigger_config', 'actions', 'variables'];
       for (const field of allowedFields) {
         if (editValues[field] !== undefined) {
-          // Stringify JSON fields if they're objects
-          if (['trigger_config', 'actions', 'variables'].includes(field) && typeof editValues[field] === 'object') {
-            updatePayload[field] = JSON.stringify(editValues[field]);
-          } else {
-            updatePayload[field] = editValues[field];
-          }
+          updatePayload[field] = editValues[field];
         }
       }
 
@@ -484,12 +826,23 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       case 'webhook':
         return `${config.service || 'Unknown'} - ${config.event_type || config.event_types?.join(', ') || 'events'}`;
       case 'schedule_recurring':
-        if (config.interval === 'daily' && config.time_of_day) {
-          return `Daily at ${config.time_of_day}`;
+        if (config.time_of_day) {
+          const localTime = formatTimeWithTimezone(config.time_of_day, userTimezone);
+          const intervalLabel = config.interval ? config.interval.charAt(0).toUpperCase() + config.interval.slice(1) : 'Daily';
+          return `${intervalLabel} at ${localTime}`;
         }
         return config.interval || 'Recurring';
       case 'schedule_once':
-        return config.run_at ? `Scheduled for ${new Date(config.run_at).toLocaleString()}` : 'One-time';
+        if (config.run_at) {
+          const localDatetime = convertUtcDatetimeToTimezone(config.run_at, userTimezone);
+          const date = new Date(localDatetime);
+          const tzAbbr = new Intl.DateTimeFormat('en-US', {
+            timeZone: userTimezone,
+            timeZoneName: 'short'
+          }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone;
+          return `Scheduled for ${date.toLocaleString()} ${tzAbbr}`;
+        }
+        return 'One-time';
       case 'polling':
         return `${config.service || 'Unknown'} - every ${config.poll_interval || '5min'}`;
       case 'manual':
@@ -499,30 +852,51 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
     }
   };
 
-  // Render action conditions as editable fields
+  // Render action conditions as editable fields (hides output-referenced conditions)
   const renderEditableConditions = (actions: AutomationAction[] | null) => {
     if (!actions) return null;
 
-    const editableConditions: { actionId: string; path: string; op: string; value: unknown }[] = [];
+    // Collect output variable names from actions
+    const outputVars = actions
+      .filter(a => a.output_as)
+      .map(a => a.output_as as string);
 
-    actions.forEach(action => {
+    const editableConditions: { actionId: string; actionIdx: number; actionLabel: string; path: string; op: string; value: unknown }[] = [];
+
+    // Helper to get action ID (supports both 'id' and 'action_id')
+    const getConditionActionId = (action: AutomationAction): string => {
+      return action.id || (action as Record<string, unknown>).action_id as string || '';
+    };
+
+    actions.forEach((action, idx) => {
+      const actionId = getConditionActionId(action);
       if (action.condition) {
         if (action.condition.clauses) {
-          action.condition.clauses.forEach((clause, idx) => {
-            editableConditions.push({
-              actionId: action.id,
-              path: clause.path,
-              op: clause.op,
-              value: clause.value
-            });
+          action.condition.clauses.forEach((clause) => {
+            // Skip conditions that reference action outputs
+            if (!shouldHideCondition(clause.path, outputVars)) {
+              editableConditions.push({
+                actionId,
+                actionIdx: idx,
+                actionLabel: formatKeyLabel(actionId || action.tool),
+                path: clause.path,
+                op: clause.op,
+                value: clause.value
+              });
+            }
           });
         } else if (action.condition.path && action.condition.op) {
-          editableConditions.push({
-            actionId: action.id,
-            path: action.condition.path,
-            op: action.condition.op,
-            value: action.condition.value
-          });
+          // Skip conditions that reference action outputs
+          if (!shouldHideCondition(action.condition.path, outputVars)) {
+            editableConditions.push({
+              actionId,
+              actionIdx: idx,
+              actionLabel: formatKeyLabel(actionId || action.tool),
+              path: action.condition.path,
+              op: action.condition.op,
+              value: action.condition.value
+            });
+          }
         }
       }
     });
@@ -534,17 +908,16 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         <Label className="text-sm font-medium">Conditions</Label>
         {editableConditions.map((cond, idx) => (
           <div key={idx} className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground font-mono">{cond.path}</span>
+            <span className="text-muted-foreground font-mono text-xs">{cond.path}</span>
             <span className="text-muted-foreground">{cond.op}</span>
             <Input
-              type="text"
+              type={typeof cond.value === 'number' ? 'number' : 'text'}
               className="w-24 h-8"
               defaultValue={String(cond.value)}
               onChange={(e) => {
-                // Update the condition value in editValues
                 const newActions = [...(editValues.actions as AutomationAction[] || editingAutomation?.actions || [])];
-                const actionIdx = newActions.findIndex(a => a.id === cond.actionId);
-                if (actionIdx >= 0) {
+                const actionIdx = cond.actionIdx;
+                if (actionIdx >= 0 && actionIdx < newActions.length) {
                   const action = { ...newActions[actionIdx] };
                   if (action.condition?.clauses) {
                     const clauseIdx = action.condition.clauses.findIndex(
@@ -569,6 +942,296 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         ))}
       </div>
     );
+  };
+
+  // Render editable trigger_config fields
+  const renderEditableTriggerConfig = (automation: AutomationRecord) => {
+    if (!automation.trigger_config) return null;
+
+    // Already handled by existing schedule editors
+    if (automation.trigger_type === 'schedule_recurring' || automation.trigger_type === 'schedule_once') {
+      return null;
+    }
+
+    const config = typeof automation.trigger_config === 'string'
+      ? JSON.parse(automation.trigger_config)
+      : automation.trigger_config;
+
+    const editableFields = findEditableFields(config);
+
+    if (editableFields.length === 0) return null;
+
+    return (
+      <div className="space-y-4 pt-4 border-t border-border">
+        <Label className="text-sm font-medium">Trigger Settings</Label>
+        {editableFields.map((field, idx) => (
+          <div key={idx} className="space-y-2">
+            <Label htmlFor={`trigger-${field.path}`} className="text-sm text-muted-foreground">
+              {field.label}
+            </Label>
+            {renderFieldInput(field, 'trigger_config', config)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Helper to get action ID (supports both 'id' and 'action_id' schemas)
+  const getActionId = (action: AutomationAction): string => {
+    return action.id || (action as Record<string, unknown>).action_id as string || `action-${Math.random()}`;
+  };
+
+  // Helper to get action parameters (supports both 'parameters' and 'params' schemas)
+  const getActionParams = (action: AutomationAction): Record<string, unknown> | null => {
+    const params = action.parameters || (action as Record<string, unknown>).params;
+    if (!params) return null;
+    return typeof params === 'string' ? JSON.parse(params) : params;
+  };
+
+  // Render editable action parameters
+  const renderEditableActionParams = (actions: AutomationAction[] | null) => {
+    if (!actions || actions.length === 0) return null;
+
+    const actionFields: { action: AutomationAction; actionIdx: number; fields: EditableField[] }[] = [];
+
+    actions.forEach((action, actionIdx) => {
+      const params = getActionParams(action);
+      if (params) {
+        const fields = findEditableFields(params);
+        if (fields.length > 0) {
+          actionFields.push({ action, actionIdx, fields });
+        }
+      }
+    });
+
+    if (actionFields.length === 0) return null;
+
+    return (
+      <div className="space-y-4 pt-4 border-t border-border">
+        <Label className="text-sm font-medium">Action Parameters</Label>
+        {actionFields.map(({ action, actionIdx, fields }) => {
+          const actionId = getActionId(action);
+          return (
+            <div key={actionId} className="space-y-3 pl-2 border-l-2 border-muted">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {formatKeyLabel(action.tool)}
+              </span>
+              {fields.map((field, fieldIdx) => (
+                <div key={fieldIdx} className="space-y-1">
+                  <Label
+                    htmlFor={`action-${actionId}-${field.path}`}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {field.label}
+                  </Label>
+                  {renderActionFieldInput(field, action, actionIdx)}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Helper to render input for a trigger_config field
+  const renderFieldInput = (field: EditableField, configType: string, currentConfig: Record<string, unknown>) => {
+    const currentValue = editValues.trigger_config
+      ? getNestedValue(editValues.trigger_config as Record<string, unknown>, field.path)
+      : getNestedValue(currentConfig, field.path);
+
+    const value = currentValue !== undefined ? currentValue : field.value;
+
+    const updateValue = (newValue: unknown) => {
+      const updatedConfig = { ...currentConfig };
+      setNestedValue(updatedConfig, field.path, newValue);
+      setEditValues(prev => ({
+        ...prev,
+        trigger_config: {
+          ...(prev.trigger_config as Record<string, unknown> || {}),
+          ...updatedConfig
+        }
+      }));
+    };
+
+    switch (field.inputType) {
+      case 'textarea':
+        return (
+          <textarea
+            id={`trigger-${field.path}`}
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-input rounded-md bg-background"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+
+      case 'array':
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type="text"
+            placeholder="Comma-separated values"
+            defaultValue={Array.isArray(value) ? (value as string[]).join(', ') : ''}
+            onChange={(e) => updateValue(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+          />
+        );
+
+      case 'select':
+        if (field.key === 'polling_interval_minutes') {
+          return (
+            <Select
+              value={String(value || 5)}
+              onValueChange={(v) => updateValue(Number(v))}
+            >
+              <SelectTrigger id={`trigger-${field.path}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 minute</SelectItem>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="15">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+              </SelectContent>
+            </Select>
+          );
+        }
+        return <Input id={`trigger-${field.path}`} defaultValue={String(value || '')} onChange={(e) => updateValue(e.target.value)} />;
+
+      case 'number':
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type="number"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(Number(e.target.value))}
+          />
+        );
+
+      case 'checkbox':
+        return (
+          <Switch
+            id={`trigger-${field.path}`}
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => updateValue(checked)}
+          />
+        );
+
+      default:
+        return (
+          <Input
+            id={`trigger-${field.path}`}
+            type={field.inputType === 'email' ? 'email' : 'text'}
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+    }
+  };
+
+  // Helper to render input for an action parameter field
+  const renderActionFieldInput = (field: EditableField, action: AutomationAction, actionIdx: number) => {
+    const currentActions = editValues.actions as AutomationAction[] || editingAutomation?.actions || [];
+    const currentAction = currentActions[actionIdx] || action;
+    const parsedParams = getActionParams(currentAction) || getActionParams(action) || {};
+    const actionId = getActionId(action);
+
+    const value = getNestedValue(parsedParams, field.path) ?? field.value;
+
+    // Determine which key the original action uses for parameters
+    const paramsKey = (action as Record<string, unknown>).params ? 'params' : 'parameters';
+
+    const updateValue = (newValue: unknown) => {
+      const newActions = [...currentActions];
+      const updatedParams = { ...parsedParams };
+      setNestedValue(updatedParams, field.path, newValue);
+      newActions[actionIdx] = {
+        ...newActions[actionIdx],
+        [paramsKey]: updatedParams
+      };
+      setEditValues(prev => ({ ...prev, actions: newActions }));
+    };
+
+    switch (field.inputType) {
+      case 'textarea':
+        return (
+          <textarea
+            id={`action-${actionId}-${field.path}`}
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-input rounded-md bg-background"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+
+      case 'array':
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type="text"
+            placeholder="Comma-separated values"
+            defaultValue={Array.isArray(value) ? (value as string[]).join(', ') : ''}
+            onChange={(e) => updateValue(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+          />
+        );
+
+      case 'number':
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type="number"
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(Number(e.target.value))}
+          />
+        );
+
+      case 'checkbox':
+        return (
+          <Switch
+            id={`action-${actionId}-${field.path}`}
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => updateValue(checked)}
+          />
+        );
+
+      default:
+        return (
+          <Input
+            id={`action-${actionId}-${field.path}`}
+            type={field.inputType === 'email' ? 'email' : 'text'}
+            defaultValue={String(value || '')}
+            onChange={(e) => updateValue(e.target.value)}
+          />
+        );
+    }
+  };
+
+  // Helper to get nested value from object by path (e.g., "filter.contains_any")
+  const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+    return path.split('.').reduce((acc: unknown, key) => {
+      if (acc && typeof acc === 'object') {
+        return (acc as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
+  };
+
+  // Helper to set nested value in object by path
+  const setNestedValue = (obj: Record<string, unknown>, path: string, value: unknown): void => {
+    const keys = path.split('.');
+    const lastKey = keys.pop()!;
+    const target = keys.reduce((acc: unknown, key) => {
+      if (acc && typeof acc === 'object') {
+        if (!(key in (acc as Record<string, unknown>))) {
+          (acc as Record<string, unknown>)[key] = {};
+        }
+        return (acc as Record<string, unknown>)[key];
+      }
+      return acc;
+    }, obj);
+    if (target && typeof target === 'object') {
+      (target as Record<string, unknown>)[lastKey] = value;
+    }
   };
 
   if (loading) {
@@ -599,7 +1262,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
   const activeAutomations = automations.filter(a => a.active);
   const inactiveAutomations = automations.filter(a => !a.active);
 
-  const hasActiveFilters = filterService !== 'all' || filterTriggerType !== 'all' || filterStatus !== 'all';
+  const hasActiveFilters = filterService !== 'all' || filterTriggerType !== 'all' || filterStatus !== 'all' || searchQuery.trim() !== '';
 
   return (
     <div className="space-y-8">
@@ -627,6 +1290,17 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
       {/* Filters */}
       <div className="bg-card p-4 rounded-lg border border-border">
         <div className="flex flex-wrap items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Label htmlFor="filter-status" className="text-sm text-muted-foreground whitespace-nowrap">Status:</Label>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -685,6 +1359,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                 setFilterStatus('all');
                 setFilterTriggerType('all');
                 setFilterService('all');
+                setSearchQuery('');
               }}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -705,7 +1380,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
         <div>
           <h2 className="text-2xl font-semibold text-foreground mb-2">Your Automations</h2>
           <p className="text-sm text-muted-foreground">
-            View, pause, and manually trigger your automations. Click on an automation to see execution history.
+            View, pause, edit, and manually trigger your automations. Click on an automation to see execution history.
           </p>
         </div>
 
@@ -729,6 +1404,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                 setFilterStatus('all');
                 setFilterTriggerType('all');
                 setFilterService('all');
+                setSearchQuery('');
               }}
               className="mt-4"
             >
@@ -764,8 +1440,8 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {/* Trigger button - only for manual and scheduled automations */}
-                        {['manual', 'schedule_recurring', 'schedule_once'].includes(automation.trigger_type) && (
+                        {/* Trigger button - for manual, scheduled, and polling automations */}
+                        {['manual', 'schedule_recurring', 'schedule_once', 'polling'].includes(automation.trigger_type) && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -927,7 +1603,7 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingAutomation} onOpenChange={(open) => !open && setEditingAutomation(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Automation</DialogTitle>
             <DialogDescription>
@@ -961,7 +1637,15 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
               {/* Schedule editing for scheduled automations */}
               {editingAutomation.trigger_type === 'schedule_recurring' && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium">Schedule Settings</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Schedule Settings</Label>
+                    <span className="text-xs text-muted-foreground">
+                      Timezone: {new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        timeZoneName: 'long'
+                      }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone}
+                    </span>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -1000,14 +1684,21 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
                       <Input
                         id="time_of_day"
                         type="time"
-                        defaultValue={editingAutomation.trigger_config?.time_of_day || '09:00'}
+                        className="bg-background text-foreground"
+                        defaultValue={
+                          editingAutomation.trigger_config?.time_of_day
+                            ? convertUtcTimeToTimezone24h(editingAutomation.trigger_config.time_of_day, userTimezone)
+                            : '09:00'
+                        }
                         onChange={(e) => {
+                          // Convert user's local time to UTC for storage
+                          const utcTime = convertTimezoneToUtc(e.target.value, userTimezone);
                           setEditValues(prev => ({
                             ...prev,
                             trigger_config: {
                               ...editingAutomation.trigger_config,
                               ...(prev.trigger_config as Record<string, unknown> || {}),
-                              time_of_day: e.target.value
+                              time_of_day: utcTime
                             }
                           }));
                         }}
@@ -1019,35 +1710,49 @@ export function AutomationsClient({ userId }: AutomationsClientProps) {
 
               {editingAutomation.trigger_type === 'schedule_once' && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium">Schedule Settings</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Schedule Settings</Label>
+                    <span className="text-xs text-muted-foreground">
+                      Timezone: {new Intl.DateTimeFormat('en-US', {
+                        timeZone: userTimezone,
+                        timeZoneName: 'long'
+                      }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || userTimezone}
+                    </span>
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="run_at" className="text-sm text-muted-foreground">Run At</Label>
                     <Input
                       id="run_at"
                       type="datetime-local"
+                      className="bg-background text-foreground"
                       defaultValue={
                         editingAutomation.trigger_config?.run_at
-                          ? new Date(editingAutomation.trigger_config.run_at).toISOString().slice(0, 16)
+                          ? convertUtcDatetimeToTimezone(editingAutomation.trigger_config.run_at, userTimezone)
                           : ''
                       }
                       onChange={(e) => {
+                        // Convert user's local datetime to UTC for storage
+                        const utcDatetime = convertTimezoneDatetimeToUtc(e.target.value, userTimezone);
                         setEditValues(prev => ({
                           ...prev,
                           trigger_config: {
                             ...editingAutomation.trigger_config,
                             ...(prev.trigger_config as Record<string, unknown> || {}),
-                            run_at: new Date(e.target.value).toISOString()
+                            run_at: utcDatetime
                           }
                         }));
                       }}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Times are in your local timezone
-                    </p>
                   </div>
                 </div>
               )}
+
+              {/* Dynamic trigger config fields (for webhook, polling, manual) */}
+              {renderEditableTriggerConfig(editingAutomation)}
+
+              {/* Dynamic action parameters */}
+              {renderEditableActionParams(editingAutomation.actions)}
             </div>
           )}
 

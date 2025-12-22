@@ -80,23 +80,30 @@ export async function fetchServicesWithTags(): Promise<ServiceWithTags[]> {
 
 export async function fetchAutomations(userId?: string): Promise<Automation[]> {
   const supabase = await createSupabaseAppServerClient()
-  
+
   let query = supabase
-    .from('automations')
+    .schema('automations')
+    .from('automation_records')
     .select('*')
     .order('created_at', { ascending: false })
-  
+
   if (userId) {
     query = query.eq('user_id', userId)
   }
-  
+
   const { data: automations, error } = await query
-  
+
   if (error) {
+    console.error('Error fetching automations:', error)
     return []
   }
-  
-  return automations || []
+
+  // Map automation_records fields to expected Automation interface
+  return (automations || []).map(a => ({
+    ...a,
+    is_active: a.active ?? a.is_active ?? false,
+    last_executed: a.updated_at
+  }))
 }
 
 export async function fetchHotPhrases(userId?: string): Promise<HotPhrase[]> {
@@ -402,7 +409,7 @@ export async function createResourceWithTags(userId: string, resourceData: Parti
 
 export async function updateResourceWithTags(resourceId: string, resourceData: Partial<Resource>, tagIds: string[]) {
   const supabase = await createSupabaseAppServerClient()
-  
+
   // Map tag IDs to the tag_1_id through tag_5_id fields
   const tagFields: Record<string, string | null> = {
     tag_1_id: null,
@@ -411,28 +418,94 @@ export async function updateResourceWithTags(resourceId: string, resourceData: P
     tag_4_id: null,
     tag_5_id: null
   }
-  
+
   tagIds.forEach((tagId, index) => {
     if (index < 5) { // Max 5 tags
       tagFields[`tag_${index + 1}_id`] = tagId
     }
   })
-  
+
   const { data: resource, error } = await supabase
     .from('resources')
-    .update({ 
-      ...resourceData, 
+    .update({
+      ...resourceData,
       ...tagFields,
-      updated_at: new Date() 
+      updated_at: new Date()
     })
     .eq('id', resourceId)
     .select()
     .single()
-  
+
   if (error) {
     console.error('Error updating resource with tags:', error)
     throw error
   }
-  
+
   return resource
+}
+
+export interface ExecutionLog {
+  id: string
+  automation_id: string
+  user_id: string
+  started_at: string
+  completed_at: string | null
+  duration_ms: number | null
+  trigger_type: string
+  trigger_data: Record<string, unknown>
+  status: string
+  actions_executed: number
+  actions_failed: number
+  action_results: Array<{
+    action_id: string
+    tool: string
+    success: boolean
+    output: unknown
+    error: string | null
+    duration_ms: number
+    skipped: boolean
+  }>
+  error_summary: string | null
+  created_at: string
+  automation_name?: string
+}
+
+export async function fetchExecutionLogs(userId: string, limit = 10): Promise<ExecutionLog[]> {
+  const supabase = await createSupabaseAppServerClient()
+
+  // Fetch execution logs from automations schema
+  const { data: logs, error } = await supabase
+    .schema('automations')
+    .from('automation_execution_logs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching execution logs:', error)
+    return []
+  }
+
+  if (!logs || logs.length === 0) {
+    return []
+  }
+
+  // Get automation names for the logs
+  const automationIds = [...new Set(logs.map(log => log.automation_id))]
+  const { data: automations } = await supabase
+    .schema('automations')
+    .from('automation_records')
+    .select('id, name')
+    .in('id', automationIds)
+
+  const automationMap = new Map(automations?.map(a => [a.id, a.name]) || [])
+
+  // Parse JSON fields and add automation names
+  return logs.map(log => ({
+    ...log,
+    trigger_data: typeof log.trigger_data === 'string' ? JSON.parse(log.trigger_data) : log.trigger_data,
+    action_results: typeof log.action_results === 'string' ? JSON.parse(log.action_results) : log.action_results,
+    automation_name: automationMap.get(log.automation_id) || 'Unknown Automation'
+  }))
 }

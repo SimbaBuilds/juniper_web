@@ -952,12 +952,18 @@ const CustomTooltip = ({ active, payload, label, isNormalized, originalData }: a
     return null
   }
 
+  // Format the timestamp label into a readable date
+  const formattedDate = typeof label === 'number'
+    ? new Date(label).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    : label
+
   return (
     <div className="bg-background border border-border rounded-lg shadow-lg p-3">
-      <p className="font-medium mb-2">{label}</p>
+      <p className="font-medium mb-2">{formattedDate}</p>
       {payload.map((entry: any, index: number) => {
+        // Look up original data by matching timestamp instead of formatted date
         const originalValue = isNormalized && originalData
-          ? originalData.find((d: any) => d.date === label)?.[entry.dataKey]
+          ? originalData.find((d: any) => d.dateTimestamp === label)?.[entry.dataKey]
           : entry.value
 
         return (

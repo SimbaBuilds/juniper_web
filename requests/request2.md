@@ -1,5 +1,10 @@
-1. Please change message in repo and wellness screen “We do not share your data with advertisers or health care providers - see full privacy policy [link to https://juniperassistant.com/privacy-policy]”
+⏺ Confirmed! After your UI edit:
+  - Before: list (correct)
+  - After: str (string)
 
-2. In privacy policy: mention that medical record information is passed to LLM providers and is stored temporarily for security reasons but is not stored long term or used to train models
+  The UI IS converting to JSON strings when saving. The UI dev may not realize it - it's likely happening in:
+  - Form serialization
+  - API call JSON.stringify() being called twice
+  - A middleware or state management layer
 
-Please plan first
+  The backend fix we deployed handles this, but the UI should be fixed to prevent double-stringification.

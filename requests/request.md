@@ -1,43 +1,4 @@
-I am building out a scheduled and event driven automation feature for Juniper in the FASTAPI backend.  
-
-In this project, I want a front end UI in an authenticated automations page where users can:
-
-- view current automations
-- pause an automation 
-- manually trigger an automation (even if it is a scheduled or webhook based automation)
+Please check the time of day editor - time is not populating for this record
 
 
-
-Please see the automation records in automation_records_rows.json.
-
-Let me know if you have any clarifying questions.  You will probably need details on how to execute the automations.
-
-Please do not enter plan mode or call a planning agent.
-
-
-
- Clarifying Questions:
-
-  1. Triggering automations: What FastAPI endpoint should I call to manually trigger an automation? Something like POST 
-  /automations/{id}/execute? What base URL and auth headers does it need?
-
-This actually happens in a Supabase Edge Function called event-processor.  Can you access the Supabase Edge functions or do i need to provide them to you?
-
-  2. Pausing automations: Is there an existing endpoint to update the active field, or should I create a Supabase direct update
-   via a Next.js API route? (e.g., PATCH /automations/{id} with {active: boolean})
-
-Would have to be direct
-
-  3. Trigger display: For scheduled automations, should I show the next scheduled run time, or just the interval/config? For
-  webhooks/polling, should I show the service name and event type?
-
-All of that data sounds good - as much data as possible (within reason for non technical users), and please make appropriate values mutable by the user, including condiitonal values like > 70
-
-  4. Execution history: Do you want to show any execution logs/history on this page, or just the current automation list with
-  controls?
-
-
-  Execution logs would make sense - maybe expandable and auto load 10 most recent with option to load more.  Example: automation_execution_logs_rows.json  - this is not comprehensive so please leave room for more data types and lean toward displaying raw field data
-
-
-edge function reference in root: edge_function_reference/
+[{"idx":0,"id":"5134c476-dbf0-4e13-bcbe-811edd0c5ff3","user_id":"56a2c117-6486-4ca5-a57d-6c2e877e7083","name":"Morning Oura Summary","description":"Daily morning summary of Oura sleep and readiness data sent via push notification at 8:30am","trigger_type":"schedule_recurring","trigger_config":"{\"interval\": \"daily\", \"time_of_day\": \"14:30\"}","script_code":null,"execution_params":"{}","dependencies":[],"active":true,"created_at":"2025-12-22 14:30:58.948107+00","updated_at":"2025-12-22 14:30:58.948108+00","actions":"[{\"id\": \"get_sleep\", \"tool\": \"oura_get_daily_sleep\", \"output_as\": \"sleep_data\", \"parameters\": {\"end_date\": \"{{today}}\", \"start_date\": \"{{today}}\"}}, {\"id\": \"get_readiness\", \"tool\": \"oura_get_daily_readiness\", \"output_as\": \"readiness_data\", \"parameters\": {\"end_date\": \"{{today}}\", \"start_date\": \"{{today}}\"}}, {\"id\": \"create_summary\", \"tool\": \"juniper_call_agent\", \"output_as\": \"summary\", \"parameters\": {\"message\": \"Create a brief, friendly morning summary (2-3 sentences max) from this Oura data. Sleep data: {{sleep_data}}. Readiness data: {{readiness_data}}. Focus on the scores and one key insight. Return ONLY the summary text, no JSON or extra formatting.\"}}, {\"id\": \"send_notification\", \"tool\": \"push_notifications_send\", \"parameters\": {\"body\": \"{{summary}}\", \"data\": {\"screen\": \"Wellness\"}, \"title\": \"Good Morning! 🌅\"}}]","variables":"{}","status":"active","confirmed_at":"2025-12-22 14:30:58.948062+00","next_poll_at":null,"last_poll_cursor":null,"polling_interval_minutes":null}]

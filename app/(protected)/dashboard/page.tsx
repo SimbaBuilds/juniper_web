@@ -1,11 +1,12 @@
 import { getUser } from '@/lib/auth/get-user'
-import { getDashboardStats, fetchUserProfile } from '@/lib/services'
+import { getDashboardStats, fetchUserProfile, fetchExecutionLogs, ExecutionLog } from '@/lib/services'
 
 export default async function DashboardPage() {
   const user = await getUser()
-  const [dashboardStats, userProfile] = await Promise.all([
+  const [dashboardStats, userProfile, executionLogs] = await Promise.all([
     getDashboardStats(user.id),
-    fetchUserProfile(user.id)
+    fetchUserProfile(user.id),
+    fetchExecutionLogs(user.id, 5)
   ])
 
   return (
@@ -42,13 +43,13 @@ export default async function DashboardPage() {
           <div className="text-number-lg mb-1">{dashboardStats.activeIntegrationsCount}</div>
           <p className="text-sm text-muted-foreground">Connected services</p>
         </div>
-        
-        {/* <div className="bg-card p-6 rounded-lg border border-border">
+
+        <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Automations</h3>
           <div className="text-number-lg mb-1">{dashboardStats.activeAutomationsCount}</div>
           <p className="text-sm text-muted-foreground">Active workflows</p>
-        </div> */}
-        
+        </div>
+
         <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-2">Repository Items</h3>
           <div className="text-number-lg mb-1">{dashboardStats.resourcesCount}</div>
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
           </a>
         </div>
 
-        {/* <div className="bg-card p-6 rounded-lg border border-border">
+        <div className="bg-card p-6 rounded-lg border border-border">
           <h3 className="text-lg font-semibold text-foreground mb-4">Recent Automations</h3>
           <div className="space-y-3">
             {dashboardStats.recentAutomations.length > 0 ? (
@@ -104,7 +105,56 @@ export default async function DashboardPage() {
           <a href="/automations" className="text-primary hover:underline text-sm mt-4 inline-block">
             View all automations →
           </a>
-        </div> */}
+        </div>
+      </div>
+
+      {/* Recent Execution Logs */}
+      <div className="bg-card p-6 rounded-lg border border-border">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Recent Execution Logs</h3>
+        <div className="space-y-3">
+          {executionLogs.length > 0 ? (
+            executionLogs.map((log: ExecutionLog) => (
+              <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    log.status === 'completed' && log.actions_failed === 0 ? 'bg-green-500' :
+                    log.status === 'completed' && log.actions_failed > 0 ? 'bg-yellow-500' :
+                    log.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                  }`}></div>
+                  <div>
+                    <span className="text-sm text-foreground">{log.automation_name}</span>
+                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                      <span>{log.actions_executed} action{log.actions_executed !== 1 ? 's' : ''}</span>
+                      {log.actions_failed > 0 && (
+                        <span className="text-red-500">{log.actions_failed} failed</span>
+                      )}
+                      {log.duration_ms && (
+                        <span>{(log.duration_ms / 1000).toFixed(1)}s</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    log.trigger_type === 'manual' ? 'bg-blue-500/20 text-blue-400' :
+                    log.trigger_type === 'polling' ? 'bg-purple-500/20 text-purple-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {log.trigger_type}
+                  </span>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {new Date(log.started_at).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No execution logs yet</p>
+          )}
+        </div>
+        <a href="/automations" className="text-primary hover:underline text-sm mt-4 inline-block">
+          View all automations →
+        </a>
       </div>
 
       {/* Quick Actions */}
@@ -114,11 +164,11 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">View and configure your connected services</p>
         </a>
         
-        {/* <a href="/automations" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
+        <a href="/automations" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
           <h3 className="text-lg font-semibold text-foreground mb-2">View Automations</h3>
           <p className="text-sm text-muted-foreground">Check your automated workflows</p>
-        </a> */}
-        
+        </a>
+
         <a href="/repository" className="bg-card p-6 rounded-lg border border-border hover:bg-accent transition-colors">
           <h3 className="text-lg font-semibold text-foreground mb-2">Browse Repository</h3>
           <p className="text-sm text-muted-foreground">Access your saved data and files</p>

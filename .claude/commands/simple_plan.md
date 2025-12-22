@@ -1,0 +1,1 @@
+Rather than call a Planning Agent or go into Plan Mode, please come up with the plan yourself and provide a concise summary to the user in the chat.
